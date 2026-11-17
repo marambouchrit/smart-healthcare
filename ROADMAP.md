@@ -45,7 +45,7 @@ Objectif : le workflow complet fonctionne en version minimale avant d'enrichir q
 - [x] P1.1 Service SOAP : `verifierDroitsCNAM` seul, généré depuis le WSDL (JAX-WS / Apache CXF, approche top-down)
 - [x] P1.2 Service REST : `POST /api/urgences` seul
 - [x] P1.3 Service GraphQL : mutation `creerFicheUrgence` + query `patient(id)` minimale
-- [ ] P1.4 Service gRPC : `EnvoyerMesures` + `SuivreAlertes` avec un seul seuil (fréquence cardiaque)
+- [x] P1.4 Service gRPC : `EnvoyerMesures` + `SuivreAlertes` avec un seul seuil (fréquence cardiaque)
 - [ ] P1.5 Script capteurs IoT minimal (un patient, injection d'une valeur critique)
 - [ ] P1.6 Orchestrateur : abonnement au flux d'alertes gRPC → appel SOAP → appel REST → mutation GraphQL, avec logs de chaque étape
 

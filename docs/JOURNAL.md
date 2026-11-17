@@ -14,6 +14,12 @@ Modèle :
 
 ---
 
+## 2026-11-17 — P1.4
+- Fait : `services/grpc-telemetrie` (Python 3.12, grpcio 1.85.1) : `generer.py` (code généré depuis `contracts/grpc/telemetrie.proto` dans `telemetrie/gen/`, ignoré par git), `telemetrie/serveur.py` : `EnvoyerMesures` (client streaming, récapitulatif), `SuivreAlertes` (server streaming, filtres niveau minimal et patient, une file par abonné), seuil FC > 140 bpm → CRITIQUE (D24), port 50051. Tests `tests/test_serveur.py` (unittest, appels réseau réels).
+- Vérification : `python -m unittest discover -s tests -t . -v` → 5 tests OK (valeurs normales sans alerte, 165 bpm diffusé à l'abonné avec niveau/seuil/horodatage, filtre par patient, SpO2/chute ignorés en phase 1, patient inconnu → NOT_FOUND). Serveur lancé (`python -m telemetrie.serveur`) + 2 clients séparés : capteur 78/85/165/90 bpm → récapitulatif « 4 mesures, 1 alerte » ; l'abonné a reçu `ALR-000001 TN-0012345 CRITIQUE - Fréquence cardiaque 165 bpm > 140 bpm`.
+- Reste à faire / blocages : P1.5 (script capteurs IoT).
+- Contrats ou décisions modifiés : aucun contrat ; D24.
+
 ## 2026-11-17 — P1.3
 - Fait : projet `services/graphql-dashboard` (Spring Boot 3.5.16, Spring for GraphQL, Java 21, Maven Wrapper), port 8083, `/graphql` + GraphiQL `/graphiql`. Schéma = `contracts/graphql/dashboard.graphqls` sans copie manuelle. Vue consolidée en mémoire initialisée depuis le seed (patients, médecins, services, traitements). Query `patient(id)` (profil, service, médecin traitant, traitements en cours, alertes récentes, fiches d'urgence ; `dernieresConstantes` vide jusqu'à `enregistrerConstantes`). Mutations `enregistrerAlerte` et `creerFicheUrgence` (D23).
 - Vérification : `./mvnw test` → 6 tests, 0 échec (patient minimal, patient inconnu → null, alerte → fiche → visible dans le dossier, alerte inconnue → NOT_FOUND, patient inconnu → NOT_FOUND, DateTime invalide rejeté). Service lancé + requêtes HTTP : GraphiQL HTTP 200 ; `enregistrerAlerte` ALR-0001 → OK ; `creerFicheUrgence` → FIC-000001 ; `patient(id: "TN-0012345")` renvoie l'alerte CRITIQUE et la fiche liée à RDV-000001 ; alerte ALR-9999 → erreur `NOT_FOUND`. Inspection du schéma au démarrage : champs non encore implémentés = `couverture`, `historiqueSoins`, `patients`, `services`, `enregistrerConstantes`, `mettreAJourCouverture` (phase 2).

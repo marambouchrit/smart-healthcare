@@ -87,6 +87,9 @@ Conventions :
 | `cd services/rest-portail && ./mvnw package -DskipTests && java -jar target/rest-portail-0.1.0.jar` | Lance le service REST sur le port 8082 | Oui |
 | `cd services/graphql-dashboard && ./mvnw test` | Tests du service GraphQL | Oui |
 | `cd services/graphql-dashboard && ./mvnw package -DskipTests && java -jar target/graphql-dashboard-0.1.0.jar` | Lance le service GraphQL sur le port 8083 (GraphiQL : `/graphiql`) | Oui |
+| `cd services/grpc-telemetrie && python -m venv .venv && .venv/Scripts/pip install -r requirements.txt && .venv/Scripts/python generer.py` | Prépare le service gRPC (environnement + code généré depuis le `.proto`) | Oui |
+| `cd services/grpc-telemetrie && .venv/Scripts/python -m unittest discover -s tests -t . -v` | Tests du service gRPC | Oui |
+| `cd services/grpc-telemetrie && .venv/Scripts/python -m telemetrie.serveur` | Lance le service gRPC sur le port 50051 | Oui |
 | `docker compose up --build` | Lance toute la plateforme | À partir de la phase 3 |
 
 Ajouter ici chaque nouvelle commande (build, tests) au moment où elle est créée.
