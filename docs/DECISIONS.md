@@ -27,6 +27,7 @@ Toute décision prise avec l'utilisateur est notée ici. Une décision ne change
 | D19 | 2026-11-17 | Contrat REST : OpenAPI 3.0.3 ; erreurs au format Problem Details (`application/problem+json`, natif Spring) ; identifiants générés `RDV-`, `CRN-`, `ORD-`, `AMB-` + 6 chiffres ; urgence = `POST /api/urgences` (réserve un créneau URGENCES, 409 `aucun-creneau` sinon) puis, en cas d'échec, `POST /api/ambulances` décidé par l'orchestrateur ; ordonnance = traitements d'un même médecin à la même date | La décision « RDV ou ambulance » reste dans l'orchestrateur (P5.2) ; formats cohérents avec D13 |
 | D20 | 2026-11-17 | Créneaux générés par le service REST à partir d'un fichier `contracts/seed/plannings.json` (médecin, jours, heures, durée) à créer en P1.2 (réponse à Q5) | Respecte « données uniquement dans contracts/seed » sans lister chaque créneau à la main |
 | D21 | 2026-11-17 | Build Java avec le **Maven Wrapper** (`mvnw`) inclus dans chaque projet ; pas d'installation globale de Maven | Maven n'est pas installé sur le poste ; le wrapper fixe la version pour tous |
+| D22 | 2026-11-17 | Service REST : créneaux générés au démarrage depuis `plannings.json` sur **14 jours** (heure locale **Africa/Tunis**) ; une urgence réserve le premier créneau URGENCES **d'aujourd'hui qui n'a pas commencé** ; identifiants `CRN-`/`RDV-` séquentiels ; stockage en mémoire jusqu'à la phase 2 | Comportement déterministe et testable (horloge injectable) ; un appel le soir tombe sur 409 → ambulance (P5.2) |
 
 ## Ports et routes
 

@@ -14,6 +14,7 @@ C'est la seule source de données du projet : chaque service charge ici la parti
 | `couvertures-cnam.json` | Vignettes CNAM, filière, période de validité, taux de remboursement | SOAP |
 | `lettres-cles.json` | Lettres-clés de cotation des actes et valeur unitaire (fictive) en dinars | SOAP (énumération `LettreCle` du XSD) |
 | `traitements.json` | Traitements en cours et terminés | REST (ordonnances), GraphQL (traitement en cours) |
+| `plannings.json` | Jours et plages de consultation de chaque médecin, durée d'un créneau (D20). Heures locales Tunisie | REST (génération des créneaux) |
 
 ## Formats des identifiants
 

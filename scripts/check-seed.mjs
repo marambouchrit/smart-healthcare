@@ -66,10 +66,22 @@ for (const t of traitements) {
   check(t.statut === 'EN_COURS' ? t.dateFin === null : isDate(t.dateFin), `traitements ${t.id} : dateFin incohérente avec le statut`);
 }
 
+const plannings = load('plannings.json');
+const JOURS = ['LUNDI', 'MARDI', 'MERCREDI', 'JEUDI', 'VENDREDI', 'SAMEDI', 'DIMANCHE'];
+const isHeure = (s) => /^([01]\d|2[0-3]):[0-5]\d$/.test(s);
+for (const p of plannings) {
+  check(medecinIds.has(p.medecinId), `plannings : médecin inconnu « ${p.medecinId} »`);
+  check(Array.isArray(p.jours) && p.jours.length > 0 && p.jours.every((j) => JOURS.includes(j)), `plannings ${p.medecinId} : jours invalides`);
+  check(isHeure(p.debut) && isHeure(p.fin) && p.debut < p.fin, `plannings ${p.medecinId} : plage horaire invalide`);
+  check(Number.isInteger(p.dureeMinutes) && p.dureeMinutes > 0, `plannings ${p.medecinId} : durée invalide`);
+}
+check(plannings.some((p) => medecins.find((m) => m.id === p.medecinId)?.serviceCode === 'URGENCES'),
+  'plannings : aucun planning pour le service URGENCES');
+
 if (errors.length) {
   console.error(`ÉCHEC : ${errors.length} erreur(s)`);
   for (const e of errors) console.error(' - ' + e);
   process.exit(1);
 }
 console.log(`OK : ${services.length} services, ${medecins.length} médecins, ${patients.length} patients, ` +
-  `${couvertures.length} couvertures, ${lettres.length} lettres-clés, ${traitements.length} traitements`);
+  `${couvertures.length} couvertures, ${lettres.length} lettres-clés, ${traitements.length} traitements, ${plannings.length} plannings`);

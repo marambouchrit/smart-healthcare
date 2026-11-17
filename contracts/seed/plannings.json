@@ -1,0 +1,6 @@
+[
+  { "medecinId": "MED-001", "jours": ["LUNDI", "MERCREDI", "VENDREDI"],                                              "debut": "09:00", "fin": "12:00", "dureeMinutes": 30 },
+  { "medecinId": "MED-002", "jours": ["MARDI", "JEUDI"],                                                             "debut": "09:00", "fin": "13:00", "dureeMinutes": 30 },
+  { "medecinId": "MED-003", "jours": ["LUNDI", "MARDI", "MERCREDI", "JEUDI", "VENDREDI"],                           "debut": "14:00", "fin": "17:00", "dureeMinutes": 30 },
+  { "medecinId": "MED-004", "jours": ["LUNDI", "MARDI", "MERCREDI", "JEUDI", "VENDREDI", "SAMEDI", "DIMANCHE"],     "debut": "08:00", "fin": "20:00", "dureeMinutes": 30 }
+]
