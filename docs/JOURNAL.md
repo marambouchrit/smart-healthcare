@@ -14,6 +14,12 @@ Modèle :
 
 ---
 
+## 2026-11-17 — P1.5
+- Fait : `iot-simulator/` (Python, grpcio 1.85.1) : `generer.py` (code gRPC depuis `contracts/grpc/telemetrie.proto` dans `capteur/gen/`, non versionné), `capteur/simulateur.py` : un patient, N mesures de fréquence cardiaque (valeurs normales 65–95 bpm), valeur critique injectée à une position donnée, intervalle et graine configurables ; options en ligne de commande ou variables d'environnement (pour Docker). Tests `tests/test_simulateur.py`.
+- Vérification : `python -m unittest discover -s tests -t . -v` → 5 tests OK. Contre le service gRPC lancé : `python -m capteur.simulateur --patient TN-0012345 --mesures 6 --critique-a 4 --valeur-critique 172 --intervalle 0.5 --graine 7` → récapitulatif « 6 mesures, 1 alerte » (exit 0) et l'abonné a reçu `ALR-000002 TN-0012345 CRITIQUE - Fréquence cardiaque 172 bpm > 140 bpm` ; patient TN-9999999 → « Refus du service : NOT_FOUND » (exit 1).
+- Reste à faire / blocages : P1.6 (orchestrateur).
+- Contrats ou décisions modifiés : aucun.
+
 ## 2026-11-17 — P1.4
 - Fait : `services/grpc-telemetrie` (Python 3.12, grpcio 1.85.1) : `generer.py` (code généré depuis `contracts/grpc/telemetrie.proto` dans `telemetrie/gen/`, ignoré par git), `telemetrie/serveur.py` : `EnvoyerMesures` (client streaming, récapitulatif), `SuivreAlertes` (server streaming, filtres niveau minimal et patient, une file par abonné), seuil FC > 140 bpm → CRITIQUE (D24), port 50051. Tests `tests/test_serveur.py` (unittest, appels réseau réels).
 - Vérification : `python -m unittest discover -s tests -t . -v` → 5 tests OK (valeurs normales sans alerte, 165 bpm diffusé à l'abonné avec niveau/seuil/horodatage, filtre par patient, SpO2/chute ignorés en phase 1, patient inconnu → NOT_FOUND). Serveur lancé (`python -m telemetrie.serveur`) + 2 clients séparés : capteur 78/85/165/90 bpm → récapitulatif « 4 mesures, 1 alerte » ; l'abonné a reçu `ALR-000001 TN-0012345 CRITIQUE - Fréquence cardiaque 165 bpm > 140 bpm`.
