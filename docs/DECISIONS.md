@@ -25,6 +25,8 @@ Toute décision prise avec l'utilisateur est notée ici. Une décision ne change
 | D17 | 2026-11-17 | Code Java généré depuis `telemetrie.proto` dans le package `tn.ginf.smarthealthcare.telemetrie` (`java_multiple_files = true`) | Suit la convention `tn.ginf.smarthealthcare.<...>` sans lier le contrat à un consommateur |
 | D18 | 2026-11-17 | 4ᵉ mutation GraphQL **`enregistrerConstantes`** appelée périodiquement par l'orchestrateur pour alimenter `dernieresConstantes` (réponse (b) à Q4) | Un patient sans alerte doit aussi afficher ses constantes |
 | D19 | 2026-11-17 | Contrat REST : OpenAPI 3.0.3 ; erreurs au format Problem Details (`application/problem+json`, natif Spring) ; identifiants générés `RDV-`, `CRN-`, `ORD-`, `AMB-` + 6 chiffres ; urgence = `POST /api/urgences` (réserve un créneau URGENCES, 409 `aucun-creneau` sinon) puis, en cas d'échec, `POST /api/ambulances` décidé par l'orchestrateur ; ordonnance = traitements d'un même médecin à la même date | La décision « RDV ou ambulance » reste dans l'orchestrateur (P5.2) ; formats cohérents avec D13 |
+| D20 | 2026-11-17 | Créneaux générés par le service REST à partir d'un fichier `contracts/seed/plannings.json` (médecin, jours, heures, durée) à créer en P1.2 (réponse à Q5) | Respecte « données uniquement dans contracts/seed » sans lister chaque créneau à la main |
+| D21 | 2026-11-17 | Build Java avec le **Maven Wrapper** (`mvnw`) inclus dans chaque projet ; pas d'installation globale de Maven | Maven n'est pas installé sur le poste ; le wrapper fixe la version pour tous |
 
 ## Ports et routes
 
@@ -70,5 +72,5 @@ Toute décision prise avec l'utilisateur est notée ici. Une décision ne change
 | Q1 | Qui émet le jeton JWT au login (endpoint dans la gateway, dans le service REST, ou un petit service d'authentification) ? | À décider avant P3.4 |
 | Q3 | D2 prévoit Java 17, mais le JDK installé est 21.0.9 (vérifié le 2026-11-17) : garder 17 (installer un JDK 17) ou passer la cible à 21 ? | Réglée par D15 (Java 21) |
 | Q4 | Comment alimenter `dernieresConstantes` du tableau de bord ? (a) uniquement avec les valeurs des alertes reçues ; (b) ajouter une 4ᵉ mutation `enregistrerConstantes` que l'orchestrateur appelle périodiquement | Réglée par D18 |
-| Q5 | Les créneaux ne sont pas dans `contracts/seed/` : ajouter un fichier de plannings (médecin, jours, heures, durée) d'où le service REST génère ses créneaux ? | À décider avant P1.2 |
+| Q5 | Les créneaux ne sont pas dans `contracts/seed/` : ajouter un fichier de plannings (médecin, jours, heures, durée) d'où le service REST génère ses créneaux ? | Réglée par D20 |
 | Q2 | Rôles exacts côté client (patient, médecin, administrateur) et ce que chacun voit | À décider avant P4.1 |
