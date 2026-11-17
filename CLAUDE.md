@@ -77,6 +77,7 @@ Conventions :
 | `python scripts/check_wsdl.py <wsdl> <xsd>` | Charge le WSDL avec zeep et vérifie chaque opération (prérequis : `pip install zeep==4.3.3`) | Oui |
 | `python scripts/check_proto.py` | Compile `telemetrie.proto` et vérifie le contrat gRPC (prérequis : `pip install grpcio-tools==1.85.1`) | Oui |
 | `python scripts/check_graphql.py` | Charge le schéma GraphQL et valide les exemples (prérequis : `pip install graphql-core==3.3.2`) | Oui |
+| `python scripts/check_openapi.py [fichier]` | Valide le contrat OpenAPI et sa cohérence avec le seed (prérequis : `pip install openapi-spec-validator==0.9.0`) | Oui |
 | `/avancement` | Point d'avancement détaillé (commande Claude) | Oui |
 | `/tache-suivante` | Prépare et démarre la prochaine tâche | Oui |
 | `/terminer-tache` | Vérifie, coche, met à jour le journal | Oui |

@@ -14,6 +14,13 @@ Modèle :
 
 ---
 
+## 2026-11-17 — P0.7 (fin de la phase 0)
+- Fait : `contracts/rest/portail-openapi.yaml` (OpenAPI 3.0.3) : `GET /api/creneaux` (filtres médecin, service, date, disponibilité) ; CRUD `/api/rendez-vous` (GET liste, POST, GET, PUT, PATCH, DELETE) ; `GET/PATCH /api/patients/{patientId}` ; `GET /api/patients/{patientId}/ordonnances` ; `POST /api/urgences` et `POST /api/ambulances` ; réponses 200/201/204/400/404/409 en Problem Details (D19). Script `scripts/check_openapi.py`.
+- Vérification : `python scripts/check_openapi.py` (openapi-spec-validator 0.9.0) → SPEC OK, 23 références résolues, 6/6 chemins avec leurs méthodes, 8 patients du seed conformes à `ProfilPatient`, 5/5 corps invalides REJETÉ (exit 0). Test négatif (référence vers un schéma inexistant) → SPEC KO (exit 1) ; ce cas n'était pas détecté par le validateur seul, d'où le contrôle explicite des `$ref`.
+- Vérification de la phase 0 : WSDL importé dans SoapUI ✔, XSD valide les exemples ✔, `.proto` compilé ✔, schéma GraphQL chargé ✔, OpenAPI validé ✔.
+- Reste à faire / blocages : Q5 (données de créneaux) avant P1.2 ; démarrer la phase 1 (P1.1).
+- Contrats ou décisions modifiés : création de `portail-openapi.yaml` ; D19 ; Q5 ouverte.
+
 ## 2026-11-17 — Vérifications phase 0 (SoapUI) et D18
 - Fait : import de `contracts/soap/dossier.wsdl` dans SoapUI Open Source par l'utilisatrice. Ajout de la mutation `enregistrerConstantes` (+ `ConstanteInput`) au contrat GraphQL et à l'exemple orchestrateur.
 - Vérification : SoapUI (capture d'écran) → binding `DossierSoapBinding`, namespace `http://hopital.tn/dossier`, SOAP 1.1, style Document, parties `dossier.wsdl` + `dossier.xsd`, 4 opérations Literal avec leur soapAction, sans erreur. `python scripts/check_graphql.py` → SCHEMA OK (4 mutations), 4/4 exemples VALIDE, 4/4 négatifs REJETÉ (exit 0).

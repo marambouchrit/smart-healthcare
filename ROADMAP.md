@@ -32,7 +32,7 @@ Objectif : figer le domaine et les 4 contrats avant d'écrire le code des servic
 - [x] P0.4 `contracts/soap/dossier.wsdl` (style document/literal) : opérations `verifierDroitsCNAM`, `emettreFeuilleDeSoins`, `consulterHistorique`, comparaison des garanties entre deux prises en charge
 - [x] P0.5 `contracts/grpc/telemetrie.proto` : `EnvoyerMesures` (client streaming), `SuivreAlertes` (server streaming), messages Mesure / Alerte / Niveau
 - [x] P0.6 `contracts/graphql/dashboard.graphqls` : query `patient(id)`, query `patients(filtres)`, mutations alimentées par l'orchestrateur (`enregistrerAlerte`, `mettreAJourCouverture`, `creerFicheUrgence`)
-- [ ] P0.7 `contracts/rest/portail-openapi.yaml` : créneaux, rendez-vous (CRUD), ordonnances, profil patient, urgences
+- [x] P0.7 `contracts/rest/portail-openapi.yaml` : créneaux, rendez-vous (CRUD), ordonnances, profil patient, urgences
 
 **Vérification phase 0** : le WSDL s'importe sans erreur dans SoapUI ; le XSD valide un message d'exemple ; `protoc` compile le `.proto` ; le schéma GraphQL se charge sans erreur ; le fichier OpenAPI passe un validateur OpenAPI 3.
 

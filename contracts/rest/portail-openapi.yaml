@@ -1,0 +1,454 @@
+openapi: 3.0.3
+info:
+  title: Portail patient & rendez-vous — Smart Healthcare
+  version: 1.0.0
+  description: |
+    Contrat du service REST (P0.7). Port interne 8082, route publique `/api/**` via la gateway (port 8080).
+    Données initiales : `contracts/seed/` (patients, médecins, services, traitements).
+    Les erreurs suivent le format Problem Details (RFC 9457, `application/problem+json`).
+    Codes utilisés : 200, 201, 204, 400, 404, 409 (P2.REST.5).
+servers:
+  - url: http://localhost:8080
+    description: Via l'API Gateway
+  - url: http://localhost:8082
+    description: Service REST en direct (développement)
+tags:
+  - name: Créneaux
+  - name: Rendez-vous
+  - name: Ordonnances
+  - name: Profil patient
+  - name: Urgences
+    description: Opérations appelées par l'orchestrateur pendant le workflow d'alerte.
+
+paths:
+  /api/creneaux:
+    get:
+      tags: [Créneaux]
+      operationId: listerCreneaux
+      summary: Créneaux de consultation, filtrables par médecin, service et date
+      parameters:
+        - name: medecinId
+          in: query
+          schema: { $ref: '#/components/schemas/IdentifiantMedecin' }
+        - name: serviceCode
+          in: query
+          schema: { type: string, example: CARDIO }
+        - name: date
+          in: query
+          description: Jour recherché (AAAA-MM-JJ).
+          schema: { type: string, format: date }
+        - name: disponible
+          in: query
+          description: Par défaut, seuls les créneaux libres sont renvoyés.
+          schema: { type: boolean, default: true }
+      responses:
+        '200':
+          description: Liste des créneaux (éventuellement vide)
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Creneau' }
+        '400': { $ref: '#/components/responses/RequeteInvalide' }
+
+  /api/rendez-vous:
+    get:
+      tags: [Rendez-vous]
+      operationId: listerRendezVous
+      summary: Rendez-vous, filtrables par patient, médecin et date
+      parameters:
+        - name: patientId
+          in: query
+          schema: { $ref: '#/components/schemas/IdentifiantPatient' }
+        - name: medecinId
+          in: query
+          schema: { $ref: '#/components/schemas/IdentifiantMedecin' }
+        - name: date
+          in: query
+          schema: { type: string, format: date }
+      responses:
+        '200':
+          description: Liste des rendez-vous
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/RendezVous' }
+        '400': { $ref: '#/components/responses/RequeteInvalide' }
+    post:
+      tags: [Rendez-vous]
+      operationId: creerRendezVous
+      summary: Prendre un rendez-vous sur un créneau libre
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RendezVousCreation' }
+      responses:
+        '201':
+          description: Rendez-vous créé
+          headers:
+            Location:
+              description: URL du rendez-vous créé
+              schema: { type: string, example: /api/rendez-vous/RDV-000001 }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RendezVous' }
+        '400': { $ref: '#/components/responses/RequeteInvalide' }
+        '404': { $ref: '#/components/responses/NonTrouve' }
+        '409': { $ref: '#/components/responses/Conflit' }
+
+  /api/rendez-vous/{id}:
+    parameters:
+      - $ref: '#/components/parameters/IdRendezVous'
+    get:
+      tags: [Rendez-vous]
+      operationId: obtenirRendezVous
+      summary: Détail d'un rendez-vous
+      responses:
+        '200':
+          description: Rendez-vous trouvé
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RendezVous' }
+        '404': { $ref: '#/components/responses/NonTrouve' }
+    put:
+      tags: [Rendez-vous]
+      operationId: remplacerRendezVous
+      summary: Modifier un rendez-vous (remplacement complet, ex. changement de créneau)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RendezVousCreation' }
+      responses:
+        '200':
+          description: Rendez-vous modifié
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RendezVous' }
+        '400': { $ref: '#/components/responses/RequeteInvalide' }
+        '404': { $ref: '#/components/responses/NonTrouve' }
+        '409': { $ref: '#/components/responses/Conflit' }
+    patch:
+      tags: [Rendez-vous]
+      operationId: modifierRendezVous
+      summary: Modification partielle (motif, statut)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RendezVousModification' }
+      responses:
+        '200':
+          description: Rendez-vous modifié
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RendezVous' }
+        '400': { $ref: '#/components/responses/RequeteInvalide' }
+        '404': { $ref: '#/components/responses/NonTrouve' }
+        '409': { $ref: '#/components/responses/Conflit' }
+    delete:
+      tags: [Rendez-vous]
+      operationId: supprimerRendezVous
+      summary: Annuler et supprimer un rendez-vous (le créneau redevient libre)
+      responses:
+        '204': { description: Rendez-vous supprimé }
+        '404': { $ref: '#/components/responses/NonTrouve' }
+
+  /api/patients/{patientId}:
+    parameters:
+      - $ref: '#/components/parameters/IdPatient'
+    get:
+      tags: [Profil patient]
+      operationId: obtenirProfil
+      summary: Profil et coordonnées du patient
+      responses:
+        '200':
+          description: Profil trouvé
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ProfilPatient' }
+        '404': { $ref: '#/components/responses/NonTrouve' }
+    patch:
+      tags: [Profil patient]
+      operationId: modifierProfil
+      summary: Mettre à jour les coordonnées (champs absents inchangés)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ProfilModification' }
+      responses:
+        '200':
+          description: Profil mis à jour
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ProfilPatient' }
+        '400': { $ref: '#/components/responses/RequeteInvalide' }
+        '404': { $ref: '#/components/responses/NonTrouve' }
+
+  /api/patients/{patientId}/ordonnances:
+    parameters:
+      - $ref: '#/components/parameters/IdPatient'
+    get:
+      tags: [Ordonnances]
+      operationId: listerOrdonnances
+      summary: Historique des ordonnances et prescriptions du patient (plus récentes d'abord)
+      parameters:
+        - name: statut
+          in: query
+          description: Ne garder que les ordonnances contenant au moins une ligne de ce statut.
+          schema: { $ref: '#/components/schemas/StatutTraitement' }
+      responses:
+        '200':
+          description: Liste des ordonnances (éventuellement vide)
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Ordonnance' }
+        '404': { $ref: '#/components/responses/NonTrouve' }
+
+  /api/urgences:
+    post:
+      tags: [Urgences]
+      operationId: reserverCreneauUrgence
+      summary: Réserver le premier créneau libre du service des urgences pour un patient en alerte
+      description: |
+        Appelé par l'orchestrateur (étape 3 du workflow). Si aucun créneau n'est libre, la réponse est 409
+        avec le type `aucun-creneau` ; l'orchestrateur appelle alors `POST /api/ambulances` (P5.2).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/DemandeUrgence' }
+      responses:
+        '201':
+          description: Rendez-vous d'urgence créé
+          headers:
+            Location:
+              schema: { type: string, example: /api/rendez-vous/RDV-000002 }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RendezVous' }
+        '400': { $ref: '#/components/responses/RequeteInvalide' }
+        '404': { $ref: '#/components/responses/NonTrouve' }
+        '409': { $ref: '#/components/responses/Conflit' }
+
+  /api/ambulances:
+    post:
+      tags: [Urgences]
+      operationId: envoyerAmbulance
+      summary: Déclencher l'envoi d'une ambulance au domicile du patient (simulé)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/DemandeUrgence' }
+      responses:
+        '201':
+          description: Intervention d'ambulance enregistrée
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/InterventionAmbulance' }
+        '400': { $ref: '#/components/responses/RequeteInvalide' }
+        '404': { $ref: '#/components/responses/NonTrouve' }
+
+components:
+  parameters:
+    IdRendezVous:
+      name: id
+      in: path
+      required: true
+      schema: { $ref: '#/components/schemas/IdentifiantRendezVous' }
+    IdPatient:
+      name: patientId
+      in: path
+      required: true
+      schema: { $ref: '#/components/schemas/IdentifiantPatient' }
+
+  responses:
+    RequeteInvalide:
+      description: Requête invalide (paramètre ou corps non conforme)
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Probleme' }
+          example:
+            type: /problemes/requete-invalide
+            title: Requête invalide
+            status: 400
+            detail: Le champ creneauId est obligatoire.
+    NonTrouve:
+      description: Ressource introuvable (patient, médecin, créneau ou rendez-vous)
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Probleme' }
+          example:
+            type: /problemes/non-trouve
+            title: Ressource introuvable
+            status: 404
+            detail: Aucun patient TN-9999999.
+    Conflit:
+      description: Conflit avec l'état courant (créneau déjà réservé, aucun créneau d'urgence libre, rendez-vous annulé)
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Probleme' }
+          example:
+            type: /problemes/aucun-creneau
+            title: Aucun créneau libre
+            status: 409
+            detail: Aucun créneau libre aux urgences aujourd'hui.
+
+  schemas:
+    IdentifiantPatient:
+      type: string
+      pattern: '^TN-[0-9]{7}$'
+      example: TN-0012345
+    IdentifiantMedecin:
+      type: string
+      pattern: '^MED-[0-9]{3}$'
+      example: MED-001
+    IdentifiantRendezVous:
+      type: string
+      pattern: '^RDV-[0-9]{6}$'
+      example: RDV-000001
+    StatutRendezVous:
+      type: string
+      enum: [CONFIRME, ANNULE, HONORE]
+    StatutTraitement:
+      type: string
+      enum: [EN_COURS, TERMINE]
+    NiveauAlerte:
+      type: string
+      enum: [INFO, URGENT, CRITIQUE]
+
+    Creneau:
+      type: object
+      required: [id, medecinId, serviceCode, debut, fin, disponible]
+      properties:
+        id: { type: string, pattern: '^CRN-[0-9]{6}$', example: CRN-000001 }
+        medecinId: { $ref: '#/components/schemas/IdentifiantMedecin' }
+        serviceCode: { type: string, example: CARDIO }
+        debut: { type: string, format: date-time, example: '2026-11-18T09:00:00+01:00' }
+        fin: { type: string, format: date-time, example: '2026-11-18T09:30:00+01:00' }
+        disponible: { type: boolean }
+
+    RendezVous:
+      type: object
+      required: [id, patientId, creneau, statut, urgence, creeLe]
+      properties:
+        id: { $ref: '#/components/schemas/IdentifiantRendezVous' }
+        patientId: { $ref: '#/components/schemas/IdentifiantPatient' }
+        creneau: { $ref: '#/components/schemas/Creneau' }
+        motif: { type: string, maxLength: 500, example: Contrôle cardiologique }
+        statut: { $ref: '#/components/schemas/StatutRendezVous' }
+        urgence: { type: boolean, description: Vrai si créé par POST /api/urgences }
+        creeLe: { type: string, format: date-time }
+
+    RendezVousCreation:
+      type: object
+      required: [patientId, creneauId]
+      properties:
+        patientId: { $ref: '#/components/schemas/IdentifiantPatient' }
+        creneauId: { type: string, pattern: '^CRN-[0-9]{6}$', example: CRN-000001 }
+        motif: { type: string, maxLength: 500 }
+
+    RendezVousModification:
+      type: object
+      minProperties: 1
+      properties:
+        motif: { type: string, maxLength: 500 }
+        statut: { $ref: '#/components/schemas/StatutRendezVous' }
+
+    Adresse:
+      type: object
+      required: [rue, ville, codePostal]
+      properties:
+        rue: { type: string, example: 12 rue de Marseille }
+        ville: { type: string, example: Tunis }
+        codePostal: { type: string, pattern: '^[0-9]{4}$', example: '1000' }
+
+    ProfilPatient:
+      type: object
+      required: [id, nom, prenom, dateNaissance, sexe, adresse]
+      properties:
+        id: { $ref: '#/components/schemas/IdentifiantPatient' }
+        nom: { type: string }
+        prenom: { type: string }
+        dateNaissance: { type: string, format: date }
+        sexe: { type: string, enum: [M, F] }
+        telephone: { type: string, example: +216 20 000 001 }
+        email: { type: string, format: email }
+        adresse: { $ref: '#/components/schemas/Adresse' }
+        medecinTraitantId: { $ref: '#/components/schemas/IdentifiantMedecin' }
+
+    ProfilModification:
+      type: object
+      description: Seules les coordonnées sont modifiables par le patient.
+      minProperties: 1
+      properties:
+        telephone: { type: string, pattern: '^\+?[0-9 ]{8,20}$' }
+        email: { type: string, format: email }
+        adresse: { $ref: '#/components/schemas/Adresse' }
+
+    LignePrescription:
+      type: object
+      required: [traitementId, medicament, dosage, posologie, dateDebut, statut]
+      properties:
+        traitementId: { type: string, pattern: '^TRT-[0-9]{3}$', example: TRT-001 }
+        medicament: { type: string, example: Bisoprolol }
+        dosage: { type: string, example: 5 mg }
+        posologie: { type: string, example: 1 comprimé le matin }
+        dateDebut: { type: string, format: date }
+        dateFin: { type: string, format: date, nullable: true }
+        statut: { $ref: '#/components/schemas/StatutTraitement' }
+
+    Ordonnance:
+      type: object
+      description: Regroupe les traitements prescrits le même jour par le même médecin (contracts/seed/traitements.json).
+      required: [id, patientId, medecinId, date, lignes]
+      properties:
+        id: { type: string, pattern: '^ORD-[0-9]{6}$', example: ORD-000001 }
+        patientId: { $ref: '#/components/schemas/IdentifiantPatient' }
+        medecinId: { $ref: '#/components/schemas/IdentifiantMedecin' }
+        date: { type: string, format: date }
+        lignes:
+          type: array
+          minItems: 1
+          items: { $ref: '#/components/schemas/LignePrescription' }
+
+    DemandeUrgence:
+      type: object
+      required: [patientId, identifiantAlerte, niveau]
+      properties:
+        patientId: { $ref: '#/components/schemas/IdentifiantPatient' }
+        identifiantAlerte: { type: string, example: ALR-0001 }
+        niveau: { $ref: '#/components/schemas/NiveauAlerte' }
+        motif: { type: string, example: Fréquence cardiaque 165 bpm > 140 bpm }
+        aRegulariser:
+          type: boolean
+          default: false
+          description: Vrai si la couverture CNAM n'a pas pu être validée (P5.1).
+
+    InterventionAmbulance:
+      type: object
+      required: [id, patientId, identifiantAlerte, adresse, declencheeLe, arriveeEstimee]
+      properties:
+        id: { type: string, pattern: '^AMB-[0-9]{6}$', example: AMB-000001 }
+        patientId: { $ref: '#/components/schemas/IdentifiantPatient' }
+        identifiantAlerte: { type: string }
+        adresse: { $ref: '#/components/schemas/Adresse' }
+        declencheeLe: { type: string, format: date-time }
+        arriveeEstimee: { type: string, format: date-time }
+
+    Probleme:
+      type: object
+      description: Problem Details (RFC 9457), format natif de Spring (ProblemDetail).
+      required: [type, title, status]
+      properties:
+        type: { type: string, example: /problemes/non-trouve }
+        title: { type: string }
+        status: { type: integer, example: 404 }
+        detail: { type: string }
+        instance: { type: string }
