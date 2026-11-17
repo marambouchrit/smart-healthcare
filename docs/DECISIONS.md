@@ -23,6 +23,7 @@ Toute décision prise avec l'utilisateur est notée ici. Une décision ne change
 | D15 | 2026-11-17 | **Java 21** pour tous les composants Java (remplace « Java 17 » de D2 ; le reste de D2 est inchangé) | JDK 21.0.9 déjà installé ; compatible Spring Boot 3 (réponse à Q3) |
 | D16 | 2026-11-17 | Opération SOAP de comparaison nommée **`comparerGaranties`** : deux prises en charge (patient, lettre-clé, coefficient, date) → taux, montant remboursé de chacune et écart | Le sujet ne nomme pas l'opération |
 | D17 | 2026-11-17 | Code Java généré depuis `telemetrie.proto` dans le package `tn.ginf.smarthealthcare.telemetrie` (`java_multiple_files = true`) | Suit la convention `tn.ginf.smarthealthcare.<...>` sans lier le contrat à un consommateur |
+| D18 | 2026-11-17 | 4ᵉ mutation GraphQL **`enregistrerConstantes`** appelée périodiquement par l'orchestrateur pour alimenter `dernieresConstantes` (réponse (b) à Q4) | Un patient sans alerte doit aussi afficher ses constantes |
 
 ## Ports et routes
 
@@ -66,5 +67,5 @@ Toute décision prise avec l'utilisateur est notée ici. Une décision ne change
 |---|---|---|
 | Q1 | Qui émet le jeton JWT au login (endpoint dans la gateway, dans le service REST, ou un petit service d'authentification) ? | À décider avant P3.4 |
 | Q3 | D2 prévoit Java 17, mais le JDK installé est 21.0.9 (vérifié le 2026-11-17) : garder 17 (installer un JDK 17) ou passer la cible à 21 ? | Réglée par D15 (Java 21) |
-| Q4 | Comment alimenter `dernieresConstantes` du tableau de bord ? (a) uniquement avec les valeurs des alertes reçues ; (b) ajouter une 4ᵉ mutation `enregistrerConstantes` que l'orchestrateur appelle périodiquement | À décider avant P2.GQL.1 |
+| Q4 | Comment alimenter `dernieresConstantes` du tableau de bord ? (a) uniquement avec les valeurs des alertes reçues ; (b) ajouter une 4ᵉ mutation `enregistrerConstantes` que l'orchestrateur appelle périodiquement | Réglée par D18 |
 | Q2 | Rôles exacts côté client (patient, médecin, administrateur) et ce que chacun voit | À décider avant P4.1 |

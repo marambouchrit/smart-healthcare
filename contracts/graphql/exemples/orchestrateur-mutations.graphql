@@ -1,4 +1,11 @@
 # Mutations envoyées par l'orchestrateur pendant le workflow d'alerte
+mutation EnregistrerConstantes {
+  enregistrerConstantes(identifiantPatient: "TN-0012345", constantes: [
+    { type: FREQUENCE_CARDIAQUE, valeur: 82, horodatage: "2026-11-17T10:25:00+01:00" },
+    { type: SPO2, valeur: 96, horodatage: "2026-11-17T10:25:00+01:00" }
+  ]) { type valeur }
+}
+
 mutation EnregistrerAlerte {
   enregistrerAlerte(alerte: {
     identifiantAlerte: "ALR-0001", identifiantPatient: "TN-0012345", niveau: CRITIQUE,

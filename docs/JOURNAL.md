@@ -14,6 +14,12 @@ Modèle :
 
 ---
 
+## 2026-11-17 — Vérifications phase 0 (SoapUI) et D18
+- Fait : import de `contracts/soap/dossier.wsdl` dans SoapUI Open Source par l'utilisatrice. Ajout de la mutation `enregistrerConstantes` (+ `ConstanteInput`) au contrat GraphQL et à l'exemple orchestrateur.
+- Vérification : SoapUI (capture d'écran) → binding `DossierSoapBinding`, namespace `http://hopital.tn/dossier`, SOAP 1.1, style Document, parties `dossier.wsdl` + `dossier.xsd`, 4 opérations Literal avec leur soapAction, sans erreur. `python scripts/check_graphql.py` → SCHEMA OK (4 mutations), 4/4 exemples VALIDE, 4/4 négatifs REJETÉ (exit 0).
+- Reste à faire / blocages : P0.7.
+- Contrats ou décisions modifiés : `dashboard.graphqls` (D18) ; Q4 réglée.
+
 ## 2026-11-17 — P0.6
 - Fait : `contracts/graphql/dashboard.graphqls` : scalaires `Date`/`DateTime` ; types Patient (profil, dernieresConstantes, alertesRecentes, traitementsEnCours, fichesUrgence, historiqueSoins agrégé), Medecin, ServiceHospitalier, Constante, Alerte, Traitement, Couverture, FicheUrgence, HistoriqueSoins ; queries `patient(id)`, `patients(filtres)`, `services` ; mutations orchestrateur `enregistrerAlerte`, `mettreAJourCouverture`, `creerFicheUrgence` ; énumérations alignées sur seed / XSD / proto. 4 fichiers d'exemple dans `contracts/graphql/exemples/`. Script `scripts/check_graphql.py`.
 - Vérification : `python scripts/check_graphql.py` (graphql-core 3.3.2) → SCHEMA OK, 4/4 exemples VALIDE, 4/4 opérations négatives REJETÉ (champ inconnu, énumération invalide, argument manquant, mutation hors contrat) (exit 0).

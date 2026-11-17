@@ -168,6 +168,12 @@ input AlerteInput {
   horodatage: DateTime!
 }
 
+input ConstanteInput {
+  type: TypeMesure!
+  valeur: Float!
+  horodatage: DateTime!
+}
+
 input CouvertureInput {
   identifiantPatient: ID!
   statut: StatutCouverture!
@@ -201,6 +207,8 @@ type Query {
 
 """Mutations appelées uniquement par l'orchestrateur (D5)."""
 type Mutation {
+  "Dernières valeurs mesurées, transmises périodiquement par l'orchestrateur (D18)."
+  enregistrerConstantes(identifiantPatient: ID!, constantes: [ConstanteInput!]!): [Constante!]!
   enregistrerAlerte(alerte: AlerteInput!): Alerte!
   mettreAJourCouverture(couverture: CouvertureInput!): Couverture!
   creerFicheUrgence(fiche: FicheUrgenceInput!): FicheUrgence!
