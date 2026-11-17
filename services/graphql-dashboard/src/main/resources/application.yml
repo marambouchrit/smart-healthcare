@@ -1,0 +1,18 @@
+server:
+  port: 8083
+
+spring:
+  application:
+    name: graphql-dashboard
+  graphql:
+    path: /graphql
+    graphiql:
+      # Interface de test : http://localhost:8083/graphiql
+      enabled: true
+
+dashboard:
+  fuseau: Africa/Tunis
+
+logging:
+  level:
+    tn.ginf.smarthealthcare.graphql: INFO

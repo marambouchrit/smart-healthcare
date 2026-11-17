@@ -14,6 +14,12 @@ Modèle :
 
 ---
 
+## 2026-11-17 — P1.3
+- Fait : projet `services/graphql-dashboard` (Spring Boot 3.5.16, Spring for GraphQL, Java 21, Maven Wrapper), port 8083, `/graphql` + GraphiQL `/graphiql`. Schéma = `contracts/graphql/dashboard.graphqls` sans copie manuelle. Vue consolidée en mémoire initialisée depuis le seed (patients, médecins, services, traitements). Query `patient(id)` (profil, service, médecin traitant, traitements en cours, alertes récentes, fiches d'urgence ; `dernieresConstantes` vide jusqu'à `enregistrerConstantes`). Mutations `enregistrerAlerte` et `creerFicheUrgence` (D23).
+- Vérification : `./mvnw test` → 6 tests, 0 échec (patient minimal, patient inconnu → null, alerte → fiche → visible dans le dossier, alerte inconnue → NOT_FOUND, patient inconnu → NOT_FOUND, DateTime invalide rejeté). Service lancé + requêtes HTTP : GraphiQL HTTP 200 ; `enregistrerAlerte` ALR-0001 → OK ; `creerFicheUrgence` → FIC-000001 ; `patient(id: "TN-0012345")` renvoie l'alerte CRITIQUE et la fiche liée à RDV-000001 ; alerte ALR-9999 → erreur `NOT_FOUND`. Inspection du schéma au démarrage : champs non encore implémentés = `couverture`, `historiqueSoins`, `patients`, `services`, `enregistrerConstantes`, `mettreAJourCouverture` (phase 2).
+- Reste à faire / blocages : P1.4 (gRPC Python).
+- Contrats ou décisions modifiés : aucun contrat ; D23.
+
 ## 2026-11-17 — P1.2
 - Fait : `contracts/seed/plannings.json` (D20) + contrôle dans `check-seed.mjs` + README du seed. Projet `services/rest-portail` (Spring Boot 3.5.16, Java 21, Maven Wrapper) : `POST /api/urgences` → 201 + `Location` + RendezVous (créneau URGENCES de MED-004), 404 patient inconnu, 409 `/problemes/aucun-creneau`, 400 `/problemes/requete-invalide` (validation et JSON illisible) ; erreurs en `application/problem+json` ; horloge injectable (D22). Port 8082.
 - Vérification : `node scripts/check-seed.mjs` → OK, 4 plannings. `./mvnw test` → 5 tests, 0 échec (10h10 → créneau 10h30 puis 11h00 ; 19h45 → 409 ; TN-9999999 → 404 ; TN-12 → 400 ; niveau GRAVE → 400). Service lancé (`java -jar`) + `curl` : TN-0012345 → HTTP 201, `Location: /api/rendez-vous/RDV-000001`, créneau 16h30 MED-004 ; réponse validée contre le schéma `RendezVous` du contrat OpenAPI → conforme ; TN-9999999 → HTTP 404 Problem Details.

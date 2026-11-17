@@ -28,6 +28,7 @@ Toute décision prise avec l'utilisateur est notée ici. Une décision ne change
 | D20 | 2026-11-17 | Créneaux générés par le service REST à partir d'un fichier `contracts/seed/plannings.json` (médecin, jours, heures, durée) à créer en P1.2 (réponse à Q5) | Respecte « données uniquement dans contracts/seed » sans lister chaque créneau à la main |
 | D21 | 2026-11-17 | Build Java avec le **Maven Wrapper** (`mvnw`) inclus dans chaque projet ; pas d'installation globale de Maven | Maven n'est pas installé sur le poste ; le wrapper fixe la version pour tous |
 | D22 | 2026-11-17 | Service REST : créneaux générés au démarrage depuis `plannings.json` sur **14 jours** (heure locale **Africa/Tunis**) ; une urgence réserve le premier créneau URGENCES **d'aujourd'hui qui n'a pas commencé** ; identifiants `CRN-`/`RDV-` séquentiels ; stockage en mémoire jusqu'à la phase 2 | Comportement déterministe et testable (horloge injectable) ; un appel le soir tombe sur 409 → ambulance (P5.2) |
+| D23 | 2026-11-17 | Service GraphQL : schéma chargé directement depuis `contracts/graphql/` (copié par le pom) ; scalaires `Date`/`DateTime` codés sans dépendance, `DateTime` toujours écrit avec les secondes (`2026-11-17T10:30:00+01:00`) ; `enregistrerAlerte` livrée dès P1.3 (une fiche exige une alerte existante) ; identifiants de fiche `FIC-` + 6 chiffres ; erreurs GraphQL typées `NOT_FOUND` / `BAD_REQUEST` | Format de date identique au service REST ; `creerFicheUrgence` inutilisable sans alerte |
 
 ## Ports et routes
 
