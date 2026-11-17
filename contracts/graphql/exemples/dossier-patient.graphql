@@ -1,0 +1,10 @@
+# P2.GQL.1 : profil, dernières constantes, alertes récentes et traitement en cours en une requête
+query DossierPatient {
+  patient(id: "TN-0012345") {
+    id nom prenom niveauRisque pathologie
+    service { libelle }
+    dernieresConstantes { type valeur horodatage }
+    alertesRecentes(limite: 3) { niveau type valeur seuil message horodatage }
+    traitementsEnCours { medicament dosage posologie }
+  }
+}

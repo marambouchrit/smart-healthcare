@@ -14,6 +14,12 @@ Modèle :
 
 ---
 
+## 2026-11-17 — P0.6
+- Fait : `contracts/graphql/dashboard.graphqls` : scalaires `Date`/`DateTime` ; types Patient (profil, dernieresConstantes, alertesRecentes, traitementsEnCours, fichesUrgence, historiqueSoins agrégé), Medecin, ServiceHospitalier, Constante, Alerte, Traitement, Couverture, FicheUrgence, HistoriqueSoins ; queries `patient(id)`, `patients(filtres)`, `services` ; mutations orchestrateur `enregistrerAlerte`, `mettreAJourCouverture`, `creerFicheUrgence` ; énumérations alignées sur seed / XSD / proto. 4 fichiers d'exemple dans `contracts/graphql/exemples/`. Script `scripts/check_graphql.py`.
+- Vérification : `python scripts/check_graphql.py` (graphql-core 3.3.2) → SCHEMA OK, 4/4 exemples VALIDE, 4/4 opérations négatives REJETÉ (champ inconnu, énumération invalide, argument manquant, mutation hors contrat) (exit 0).
+- Reste à faire / blocages : Q4 (alimentation de `dernieresConstantes`) ; P0.7 (OpenAPI) ; import SoapUI du WSDL.
+- Contrats ou décisions modifiés : création de `dashboard.graphqls` ; Q4 ouverte.
+
 ## 2026-11-17 — P0.5
 - Fait : `contracts/grpc/telemetrie.proto` (proto3, package `telemetrie`) : service `Telemetrie` avec `EnvoyerMesures` (stream Mesure → RecapitulatifEnvoi) et `SuivreAlertes` (AbonnementAlertes → stream Alerte) ; énumérations `TypeMesure` (FREQUENCE_CARDIAQUE, SPO2, CHUTE) et `Niveau` (INFO, URGENT, CRITIQUE) ; horodatage `google.protobuf.Timestamp` ; options Java (D17). Script `scripts/check_proto.py`.
 - Vérification : `python scripts/check_proto.py` (grpcio-tools 1.85.1, libprotoc 35.1) → compilation OK, EnvoyerMesures client streaming, SuivreAlertes server streaming, Mesure sérialisée/relue, stubs générés (exit 0). Test négatif (type inexistant dans une copie) → `"AlerteInexistante" is not defined` (exit 1). Génération Java non testée : le protoc de grpcio-tools ne contient pas le générateur Java ; elle sera vérifiée par le build de l'orchestrateur (P1.6).

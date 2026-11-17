@@ -1,0 +1,6 @@
+# P2.GQL.2 : filtrage par service, pathologie et niveau de risque
+query PatientsARisque($service: ID, $niveaux: [NiveauRisque!]) {
+  patients(filtres: { serviceCode: $service, niveauRisque: $niveaux }) {
+    id nom prenom pathologie niveauRisque
+  }
+}

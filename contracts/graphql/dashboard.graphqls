@@ -1,0 +1,207 @@
+# Contrat GraphQL — Service « Tableau de bord médical & consolidation de santé » (P0.6)
+# Port 8083, route publique /graphql (docs/DECISIONS.md).
+# Option A (D5) : vue consolidée propre au service, alimentée par l'orchestrateur via les mutations ;
+# le service n'appelle aucun autre service. Données initiales : contracts/seed/.
+# Pas de Subscription : le temps réel passe par SSE depuis l'orchestrateur (D6).
+
+"""Date au format ISO 8601 (AAAA-MM-JJ)."""
+scalar Date
+
+"""Date et heure au format ISO 8601 avec fuseau (ex. 2026-11-17T10:30:00+01:00)."""
+scalar DateTime
+
+# ------------------------------------------------------------------
+# Énumérations (valeurs alignées sur contracts/seed, dossier.xsd et telemetrie.proto)
+# ------------------------------------------------------------------
+
+enum NiveauRisque { FAIBLE MOYEN ELEVE }
+
+"""Niveaux d'alerte de telemetrie.proto."""
+enum NiveauAlerte { INFO URGENT CRITIQUE }
+
+"""Types de mesure de telemetrie.proto."""
+enum TypeMesure { FREQUENCE_CARDIAQUE SPO2 CHUTE }
+
+enum StatutTraitement { EN_COURS TERMINE }
+
+"""Statut des droits CNAM (StatutDroits de dossier.xsd)."""
+enum StatutCouverture { OUVERTS EXPIRES NON_AFFILIE }
+
+"""Résultat de la vérification SOAP pour une urgence."""
+enum StatutPriseEnCharge {
+  PRISE_EN_CHARGE
+  "Patient non couvert : soins assurés, dossier administratif à régulariser (P5.1)."
+  A_REGULARISER
+}
+
+"""Action déclenchée par l'orchestrateur via le service REST."""
+enum ActionUrgence {
+  CONSULTATION_URGENCE
+  "Aucun créneau libre : envoi d'une ambulance (P5.2)."
+  AMBULANCE
+}
+
+# ------------------------------------------------------------------
+# Types
+# ------------------------------------------------------------------
+
+type ServiceHospitalier {
+  code: ID!
+  libelle: String!
+}
+
+type Medecin {
+  id: ID!
+  nom: String!
+  prenom: String!
+  specialite: String!
+  service: ServiceHospitalier!
+}
+
+type Patient {
+  "Identifiant commun TN- + 7 chiffres."
+  id: ID!
+  nom: String!
+  prenom: String!
+  dateNaissance: Date!
+  sexe: String!
+  telephone: String
+  service: ServiceHospitalier!
+  pathologie: String!
+  niveauRisque: NiveauRisque!
+  medecinTraitant: Medecin
+  couverture: Couverture
+  "Dernière valeur connue de chaque type de mesure."
+  dernieresConstantes: [Constante!]!
+  "Alertes les plus récentes d'abord."
+  alertesRecentes(limite: Int = 5): [Alerte!]!
+  traitementsEnCours: [Traitement!]!
+  fichesUrgence(limite: Int = 5): [FicheUrgence!]!
+  "Agrégation calculée à la demande sur la période (P2.GQL.3) ; le client ne demande que les champs utiles."
+  historiqueSoins(depuis: Date, jusqua: Date): HistoriqueSoins!
+}
+
+type Constante {
+  type: TypeMesure!
+  valeur: Float!
+  horodatage: DateTime!
+}
+
+type Alerte {
+  "Identifiant attribué par le service gRPC."
+  id: ID!
+  niveau: NiveauAlerte!
+  type: TypeMesure!
+  valeur: Float!
+  seuil: Float!
+  message: String!
+  horodatage: DateTime!
+}
+
+type Traitement {
+  id: ID!
+  medicament: String!
+  dosage: String!
+  posologie: String!
+  dateDebut: Date!
+  dateFin: Date
+  statut: StatutTraitement!
+  prescripteur: Medecin!
+}
+
+type Couverture {
+  statut: StatutCouverture!
+  codeVignette: String
+  tauxRemboursement: Int!
+  dateFin: Date
+  "Date de la dernière mise à jour par l'orchestrateur."
+  misAJourLe: DateTime!
+}
+
+type FicheUrgence {
+  id: ID!
+  patient: Patient!
+  alerte: Alerte!
+  statutPriseEnCharge: StatutPriseEnCharge!
+  action: ActionUrgence!
+  "Identifiant du rendez-vous dans le service REST (absent si ambulance)."
+  identifiantRendezVous: String
+  dateRendezVous: DateTime
+  commentaire: String
+  creeeLe: DateTime!
+}
+
+type CompteParNiveau {
+  niveau: NiveauAlerte!
+  nombre: Int!
+}
+
+type HistoriqueSoins {
+  depuis: Date
+  jusqua: Date
+  nombreAlertes: Int!
+  alertesParNiveau: [CompteParNiveau!]!
+  nombreFichesUrgence: Int!
+  nombreAmbulances: Int!
+  traitements: [Traitement!]!
+}
+
+# ------------------------------------------------------------------
+# Entrées
+# ------------------------------------------------------------------
+
+"""Tous les critères sont optionnels et se combinent (ET)."""
+input FiltresPatients {
+  serviceCode: ID
+  pathologie: String
+  niveauRisque: [NiveauRisque!]
+}
+
+input AlerteInput {
+  identifiantAlerte: ID!
+  identifiantPatient: ID!
+  niveau: NiveauAlerte!
+  type: TypeMesure!
+  valeur: Float!
+  seuil: Float!
+  message: String!
+  horodatage: DateTime!
+}
+
+input CouvertureInput {
+  identifiantPatient: ID!
+  statut: StatutCouverture!
+  codeVignette: String
+  tauxRemboursement: Int!
+  dateFin: Date
+}
+
+input FicheUrgenceInput {
+  identifiantPatient: ID!
+  identifiantAlerte: ID!
+  statutPriseEnCharge: StatutPriseEnCharge!
+  action: ActionUrgence!
+  identifiantRendezVous: String
+  dateRendezVous: DateTime
+  commentaire: String
+}
+
+# ------------------------------------------------------------------
+# Opérations
+# ------------------------------------------------------------------
+
+type Query {
+  "Dossier consolidé d'un patient en une requête (P2.GQL.1)."
+  patient(id: ID!): Patient
+  "Filtrage dynamique (P2.GQL.2) ; sans filtre : tous les patients."
+  patients(filtres: FiltresPatients): [Patient!]!
+  "Liste des services, pour les filtres du client."
+  services: [ServiceHospitalier!]!
+}
+
+"""Mutations appelées uniquement par l'orchestrateur (D5)."""
+type Mutation {
+  enregistrerAlerte(alerte: AlerteInput!): Alerte!
+  mettreAJourCouverture(couverture: CouvertureInput!): Couverture!
+  creerFicheUrgence(fiche: FicheUrgenceInput!): FicheUrgence!
+}

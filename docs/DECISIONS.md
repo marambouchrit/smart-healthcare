@@ -58,6 +58,7 @@ Toute décision prise avec l'utilisateur est notée ici. Une décision ne change
 | Node.js / Angular CLI | | |
 | PostgreSQL (image Docker) | | |
 | zeep (outil de vérification du WSDL) | 4.3.3 | 2026-11-17 |
+| graphql-core (outil de vérification du schéma GraphQL) | 3.3.2 | 2026-11-17 |
 
 ## Questions ouvertes
 
@@ -65,4 +66,5 @@ Toute décision prise avec l'utilisateur est notée ici. Une décision ne change
 |---|---|---|
 | Q1 | Qui émet le jeton JWT au login (endpoint dans la gateway, dans le service REST, ou un petit service d'authentification) ? | À décider avant P3.4 |
 | Q3 | D2 prévoit Java 17, mais le JDK installé est 21.0.9 (vérifié le 2026-11-17) : garder 17 (installer un JDK 17) ou passer la cible à 21 ? | Réglée par D15 (Java 21) |
+| Q4 | Comment alimenter `dernieresConstantes` du tableau de bord ? (a) uniquement avec les valeurs des alertes reçues ; (b) ajouter une 4ᵉ mutation `enregistrerConstantes` que l'orchestrateur appelle périodiquement | À décider avant P2.GQL.1 |
 | Q2 | Rôles exacts côté client (patient, médecin, administrateur) et ce que chacun voit | À décider avant P4.1 |

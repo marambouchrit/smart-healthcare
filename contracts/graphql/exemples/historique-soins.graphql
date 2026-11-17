@@ -1,0 +1,10 @@
+# P2.GQL.3 : agrégation à la demande (seuls les champs demandés sont calculés et renvoyés)
+query HistoriqueSoins {
+  patient(id: "TN-0012345") {
+    historiqueSoins(depuis: "2026-01-01") {
+      nombreAlertes
+      alertesParNiveau { niveau nombre }
+      nombreFichesUrgence
+    }
+  }
+}

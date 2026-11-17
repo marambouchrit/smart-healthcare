@@ -1,0 +1,23 @@
+# Mutations envoyées par l'orchestrateur pendant le workflow d'alerte
+mutation EnregistrerAlerte {
+  enregistrerAlerte(alerte: {
+    identifiantAlerte: "ALR-0001", identifiantPatient: "TN-0012345", niveau: CRITIQUE,
+    type: FREQUENCE_CARDIAQUE, valeur: 165, seuil: 140,
+    message: "Fréquence cardiaque 165 bpm > 140 bpm", horodatage: "2026-11-17T10:30:00+01:00"
+  }) { id niveau }
+}
+
+mutation MettreAJourCouverture {
+  mettreAJourCouverture(couverture: {
+    identifiantPatient: "TN-0012345", statut: OUVERTS, codeVignette: "VIG-2026-100001",
+    tauxRemboursement: 80, dateFin: "2026-12-31"
+  }) { statut tauxRemboursement misAJourLe }
+}
+
+mutation CreerFicheUrgence {
+  creerFicheUrgence(fiche: {
+    identifiantPatient: "TN-0012345", identifiantAlerte: "ALR-0001",
+    statutPriseEnCharge: PRISE_EN_CHARGE, action: CONSULTATION_URGENCE,
+    identifiantRendezVous: "RDV-0001", dateRendezVous: "2026-11-17T11:00:00+01:00"
+  }) { id action patient { nom } alerte { message } creeeLe }
+}
