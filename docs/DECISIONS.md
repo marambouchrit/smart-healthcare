@@ -80,4 +80,5 @@ Toute décision prise avec l'utilisateur est notée ici. Une décision ne change
 | Q3 | D2 prévoit Java 17, mais le JDK installé est 21.0.9 (vérifié le 2026-11-17) : garder 17 (installer un JDK 17) ou passer la cible à 21 ? | Réglée par D15 (Java 21) |
 | Q4 | Comment alimenter `dernieresConstantes` du tableau de bord ? (a) uniquement avec les valeurs des alertes reçues ; (b) ajouter une 4ᵉ mutation `enregistrerConstantes` que l'orchestrateur appelle périodiquement | Réglée par D18 |
 | Q5 | Les créneaux ne sont pas dans `contracts/seed/` : ajouter un fichier de plannings (médecin, jours, heures, durée) d'où le service REST génère ses créneaux ? | Réglée par D20 |
+| Q6 | `emettreFeuilleDeSoins` : montant d'un acte = coefficient × valeur de la lettre-clé, remboursé = total × taux (proposé). Si la vignette est expirée : refuser (SOAP Fault `VIGNETTE_INVALIDE`) ou émettre la feuille à 0 % ? | À décider avant P2.SOAP.1 |
 | Q2 | Rôles exacts côté client (patient, médecin, administrateur) et ce que chacun voit | À décider avant P4.1 |
