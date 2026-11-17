@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<d:verifierDroitsCNAMResponse xmlns:d="http://hopital.tn/dossier">
+  <d:statut>EXPIRES</d:statut>
+  <d:priseEnCharge>false</d:priseEnCharge>
+  <d:couverture>
+    <d:identifiantPatient>TN-0067890</d:identifiantPatient>
+    <d:codeVignette>VIG-2025-100006</d:codeVignette>
+    <d:filiere>PUBLIQUE</d:filiere>
+    <d:dateDebut>2025-01-01</d:dateDebut>
+    <d:dateFin>2025-12-31</d:dateFin>
+    <d:tauxRemboursement>80</d:tauxRemboursement>
+  </d:couverture>
+  <d:motif>Vignette expirée le 2025-12-31</d:motif>
+</d:verifierDroitsCNAMResponse>

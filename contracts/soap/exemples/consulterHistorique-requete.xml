@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<d:consulterHistorique xmlns:d="http://hopital.tn/dossier">
+  <d:identifiantPatient>TN-0012345</d:identifiantPatient>
+  <d:dateDebut>2026-01-01</d:dateDebut>
+</d:consulterHistorique>

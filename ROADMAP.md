@@ -28,7 +28,7 @@ Objectif : figer le domaine et les 4 contrats avant d'écrire le code des servic
 
 - [x] P0.1 Initialiser le dépôt git et l'arborescence (`contracts/`, `services/`, `orchestrator/`, `gateway/`, `iot-simulator/`, `web-client/`, `docs/`)
 - [x] P0.2 Données fictives communes dans `contracts/seed/` : patients (identifiant commun `TN-xxxxxxx`), médecins, services hospitaliers, codes de vignette CNAM, traitements
-- [ ] P0.3 `contracts/soap/dossier.xsd` : types IdentifiantPatient (pattern), LettreCle (énumération), TauxRemboursement (0–100), ActeMedical, FeuilleDeSoins, Couverture, Historique
+- [x] P0.3 `contracts/soap/dossier.xsd` : types IdentifiantPatient (pattern), LettreCle (énumération), TauxRemboursement (0–100), ActeMedical, FeuilleDeSoins, Couverture, Historique
 - [ ] P0.4 `contracts/soap/dossier.wsdl` (style document/literal) : opérations `verifierDroitsCNAM`, `emettreFeuilleDeSoins`, `consulterHistorique`, comparaison des garanties entre deux prises en charge
 - [ ] P0.5 `contracts/grpc/telemetrie.proto` : `EnvoyerMesures` (client streaming), `SuivreAlertes` (server streaming), messages Mesure / Alerte / Niveau
 - [ ] P0.6 `contracts/graphql/dashboard.graphqls` : query `patient(id)`, query `patients(filtres)`, mutations alimentées par l'orchestrateur (`enregistrerAlerte`, `mettreAJourCouverture`, `creerFicheUrgence`)

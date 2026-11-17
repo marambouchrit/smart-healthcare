@@ -73,6 +73,7 @@ Conventions :
 |---|---|---|
 | `node scripts/roadmap-status.mjs` | Résumé de l'avancement et tâche suivante | Oui |
 | `node scripts/check-seed.mjs` | Contrôle des données fictives de `contracts/seed/` | Oui |
+| `java scripts/ValidateXsd.java <xsd> <xml>...` | Valide des messages XML contre un XSD (JDK seul) | Oui |
 | `/avancement` | Point d'avancement détaillé (commande Claude) | Oui |
 | `/tache-suivante` | Prépare et démarre la prochaine tâche | Oui |
 | `/terminer-tache` | Vérifie, coche, met à jour le journal | Oui |

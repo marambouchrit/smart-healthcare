@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<d:emettreFeuilleDeSoins xmlns:d="http://hopital.tn/dossier">
+  <d:identifiantPatient>TN-0012345</d:identifiantPatient>
+  <d:codeVignette>VIG-2026-100001</d:codeVignette>
+  <d:acte>
+    <d:lettreCle>CS</d:lettreCle>
+    <d:coefficient>1</d:coefficient>
+    <d:libelle>Consultation de cardiologie</d:libelle>
+    <d:dateActe>2026-11-17</d:dateActe>
+    <d:identifiantMedecin>MED-001</d:identifiantMedecin>
+  </d:acte>
+  <d:acte>
+    <d:lettreCle>K</d:lettreCle>
+    <d:coefficient>10</d:coefficient>
+    <d:libelle>Électrocardiogramme</d:libelle>
+    <d:dateActe>2026-11-17</d:dateActe>
+    <d:identifiantMedecin>MED-001</d:identifiantMedecin>
+  </d:acte>
+</d:emettreFeuilleDeSoins>

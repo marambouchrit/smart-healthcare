@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<d:verifierDroitsCNAM xmlns:d="http://hopital.tn/dossier">
+  <d:identifiantPatient>TN-0012345</d:identifiantPatient>
+  <d:lettreCle>CS</d:lettreCle>
+  <d:datePrestation>2026-11-17</d:datePrestation>
+</d:verifierDroitsCNAM>

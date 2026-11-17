@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<d:verifierDroitsCNAMResponse xmlns:d="http://hopital.tn/dossier">
+  <d:statut>OUVERTS</d:statut>
+  <d:priseEnCharge>true</d:priseEnCharge>
+  <d:couverture>
+    <d:identifiantPatient>TN-0012345</d:identifiantPatient>
+    <d:codeVignette>VIG-2026-100001</d:codeVignette>
+    <d:filiere>PUBLIQUE</d:filiere>
+    <d:dateDebut>2026-01-01</d:dateDebut>
+    <d:dateFin>2026-12-31</d:dateFin>
+    <d:tauxRemboursement>80</d:tauxRemboursement>
+  </d:couverture>
+</d:verifierDroitsCNAMResponse>

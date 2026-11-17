@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<d:erreurMetier xmlns:d="http://hopital.tn/dossier">
+  <d:code>PATIENT_INCONNU</d:code>
+  <d:message>Aucun dossier pour l'identifiant TN-9999999</d:message>
+</d:erreurMetier>

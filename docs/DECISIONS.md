@@ -60,4 +60,5 @@ Toute décision prise avec l'utilisateur est notée ici. Une décision ne change
 | # | Question | Statut |
 |---|---|---|
 | Q1 | Qui émet le jeton JWT au login (endpoint dans la gateway, dans le service REST, ou un petit service d'authentification) ? | À décider avant P3.4 |
+| Q3 | D2 prévoit Java 17, mais le JDK installé est 21.0.9 (vérifié le 2026-11-17) : garder 17 (installer un JDK 17) ou passer la cible à 21 ? | À décider avant P1.1 |
 | Q2 | Rôles exacts côté client (patient, médecin, administrateur) et ce que chacun voit | À décider avant P4.1 |

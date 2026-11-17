@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<d:consulterHistoriqueResponse xmlns:d="http://hopital.tn/dossier">
+  <d:historique>
+    <d:identifiantPatient>TN-0012345</d:identifiantPatient>
+    <d:dateCertification>2026-11-17T10:30:00+01:00</d:dateCertification>
+    <d:entree>
+      <d:date>2026-02-10</d:date>
+      <d:type>CONSULTATION</d:type>
+      <d:description>Bilan d'insuffisance cardiaque, mise sous traitement</d:description>
+      <d:identifiantMedecin>MED-001</d:identifiantMedecin>
+    </d:entree>
+    <d:entree>
+      <d:date>2026-11-17</d:date>
+      <d:type>ACTE</d:type>
+      <d:description>Consultation de cardiologie et électrocardiogramme</d:description>
+      <d:identifiantMedecin>MED-001</d:identifiantMedecin>
+      <d:numeroFeuilleDeSoins>FS-2026-000001</d:numeroFeuilleDeSoins>
+    </d:entree>
+  </d:historique>
+</d:consulterHistoriqueResponse>

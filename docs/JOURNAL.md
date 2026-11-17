@@ -14,6 +14,12 @@ Modèle :
 
 ---
 
+## 2026-11-17 — P0.3
+- Fait : `contracts/soap/dossier.xsd` (namespace `http://hopital.tn/dossier`) : types simples IdentifiantPatient, IdentifiantMedecin, CodeVignette, NumeroFeuilleDeSoins, LettreCle, Coefficient, TauxRemboursement (0–100), Montant, Filiere, StatutDroits, TypeEvenement, CodeErreur ; types complexes Couverture, ActeMedical, FeuilleDeSoins, EntreeHistorique, Historique, ErreurMetier ; éléments wrapped pour `verifierDroitsCNAM`, `emettreFeuilleDeSoins`, `consulterHistorique` (+ `Response`) et `erreurMetier`. 8 messages d'exemple dans `contracts/soap/exemples/`. Validateur `scripts/ValidateXsd.java` (JDK seul). Hors P0.3 : `.gitattributes` (D14).
+- Vérification : `java scripts/ValidateXsd.java contracts/soap/dossier.xsd contracts/soap/exemples/*.xml` → SCHEMA OK, 8/8 VALIDE (exit 0). Tests négatifs (identifiant `TN-12345`, lettre-clé `XX`, taux 120, feuille sans acte) → 4/4 INVALIDE (exit 1).
+- Reste à faire / blocages : P0.4 (WSDL) ; les éléments de la comparaison des garanties seront ajoutés au XSD avec P0.4 (nom de l'opération à décider) ; Q3 (Java 17 ou 21).
+- Contrats ou décisions modifiés : création de `contracts/soap/dossier.xsd` ; D14.
+
 ## 2026-11-17 — P0.2
 - Fait : données fictives en JSON dans `contracts/seed/` (4 services, 4 médecins, 8 patients, 7 couvertures CNAM, 7 lettres-clés, 10 traitements) + `README.md` du dossier ; script `scripts/check-seed.mjs`. Cas de test prévus : vignette expirée (`TN-0067890`), patient sans couverture (`TN-0089012`).
 - Vérification : `node scripts/check-seed.mjs` → `OK : 4 services, 4 médecins, 8 patients, 7 couvertures, 7 lettres-clés, 10 traitements` (exit 0) ; test négatif (identifiant et médecin faussés) → 5 erreurs détectées (exit 1), puis fichier restauré et contrôle de nouveau OK.
