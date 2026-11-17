@@ -1,0 +1,9 @@
+[
+  { "patientId": "TN-0012345", "codeVignette": "VIG-2026-100001", "filiere": "PUBLIQUE",      "dateDebut": "2026-01-01", "dateFin": "2026-12-31", "tauxRemboursement": 80 },
+  { "patientId": "TN-0023456", "codeVignette": "VIG-2026-100002", "filiere": "PRIVEE",        "dateDebut": "2026-01-01", "dateFin": "2026-12-31", "tauxRemboursement": 50 },
+  { "patientId": "TN-0034567", "codeVignette": "VIG-2026-100003", "filiere": "PUBLIQUE",      "dateDebut": "2026-01-01", "dateFin": "2026-12-31", "tauxRemboursement": 80 },
+  { "patientId": "TN-0045678", "codeVignette": "VIG-2026-100004", "filiere": "REMBOURSEMENT", "dateDebut": "2026-01-01", "dateFin": "2026-12-31", "tauxRemboursement": 50 },
+  { "patientId": "TN-0056789", "codeVignette": "VIG-2026-100005", "filiere": "PUBLIQUE",      "dateDebut": "2026-01-01", "dateFin": "2026-12-31", "tauxRemboursement": 80 },
+  { "patientId": "TN-0067890", "codeVignette": "VIG-2025-100006", "filiere": "PUBLIQUE",      "dateDebut": "2025-01-01", "dateFin": "2025-12-31", "tauxRemboursement": 80 },
+  { "patientId": "TN-0078901", "codeVignette": "VIG-2026-100007", "filiere": "PRIVEE",        "dateDebut": "2026-01-01", "dateFin": "2026-12-31", "tauxRemboursement": 50 }
+]

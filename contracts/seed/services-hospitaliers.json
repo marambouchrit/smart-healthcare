@@ -1,0 +1,6 @@
+[
+  { "code": "CARDIO",   "libelle": "Cardiologie" },
+  { "code": "PNEUMO",   "libelle": "Pneumologie" },
+  { "code": "GERIA",    "libelle": "Gériatrie" },
+  { "code": "URGENCES", "libelle": "Urgences" }
+]

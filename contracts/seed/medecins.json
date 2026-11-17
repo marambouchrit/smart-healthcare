@@ -1,0 +1,6 @@
+[
+  { "id": "MED-001", "nom": "Ben Salah", "prenom": "Amine", "specialite": "Cardiologue",        "serviceCode": "CARDIO",   "telephone": "+216 71 000 101", "email": "a.bensalah@hopital.example" },
+  { "id": "MED-002", "nom": "Trabelsi",  "prenom": "Sonia", "specialite": "Pneumologue",        "serviceCode": "PNEUMO",   "telephone": "+216 71 000 102", "email": "s.trabelsi@hopital.example" },
+  { "id": "MED-003", "nom": "Gharbi",    "prenom": "Karim", "specialite": "Gériatre",           "serviceCode": "GERIA",    "telephone": "+216 71 000 103", "email": "k.gharbi@hopital.example" },
+  { "id": "MED-004", "nom": "Jaziri",    "prenom": "Leila", "specialite": "Médecin urgentiste", "serviceCode": "URGENCES", "telephone": "+216 71 000 104", "email": "l.jaziri@hopital.example" }
+]

@@ -1,0 +1,9 @@
+[
+  { "code": "C",   "libelle": "Consultation de médecine générale", "valeurUnitaireTND": 45.0 },
+  { "code": "CS",  "libelle": "Consultation de spécialiste",       "valeurUnitaireTND": 60.0 },
+  { "code": "V",   "libelle": "Visite à domicile",                 "valeurUnitaireTND": 70.0 },
+  { "code": "K",   "libelle": "Acte technique ou chirurgical",     "valeurUnitaireTND": 2.5 },
+  { "code": "B",   "libelle": "Acte de biologie",                  "valeurUnitaireTND": 0.4 },
+  { "code": "Z",   "libelle": "Acte de radiologie",                "valeurUnitaireTND": 1.8 },
+  { "code": "AMI", "libelle": "Acte infirmier",                    "valeurUnitaireTND": 6.0 }
+]

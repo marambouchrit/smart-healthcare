@@ -18,6 +18,7 @@ Toute décision prise avec l'utilisateur est notée ici. Une décision ne change
 | D10 | 2026-11-17 | Méthode : contrats d'abord, puis squelette de bout en bout, puis enrichissement | Réduit le risque d'intégration tardive |
 | D11 | 2026-11-17 | Bonus (N.B. du sujet) réalisés **après** les phases 0 à 5 | Livrer d'abord un socle complet |
 | D12 | 2026-11-17 | Roadmap **sans dates ni durées** | Choix de l'étudiante |
+| D13 | 2026-11-17 | Données fictives en **JSON** dans `contracts/seed/` ; identifiants `MED-xxx`, `TRT-xxx`, vignettes `VIG-AAAA-xxxxxx` ; lettres-clés C, CS, V, K, B, Z, AMI avec valeurs en dinars **fictives** | Lisible par Java et Python sans dépendance ; pas de nomenclature officielle disponible |
 
 ## Ports et routes
 
