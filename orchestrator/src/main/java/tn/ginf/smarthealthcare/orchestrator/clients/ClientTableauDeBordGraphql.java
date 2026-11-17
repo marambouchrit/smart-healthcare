@@ -1,0 +1,78 @@
+package tn.ginf.smarthealthcare.orchestrator.clients;
+
+import java.time.OffsetDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.MediaType;
+import org.springframework.stereotype.Component;
+import org.springframework.web.client.RestClient;
+import tn.ginf.smarthealthcare.orchestrator.workflow.Ports;
+import tn.ginf.smarthealthcare.orchestrator.workflow.Ports.AlerteRecue;
+import tn.ginf.smarthealthcare.orchestrator.workflow.Ports.RendezVousUrgence;
+
+/** Étape 4 : mutations du contrat contracts/graphql/dashboard.graphqls, envoyées en HTTP POST avec variables. */
+@Component
+public class ClientTableauDeBordGraphql implements Ports.TableauDeBord {
+
+    private static final String ENREGISTRER_ALERTE =
+            "mutation($a: AlerteInput!) { enregistrerAlerte(alerte: $a) { id } }";
+    private static final String CREER_FICHE =
+            "mutation($f: FicheUrgenceInput!) { creerFicheUrgence(fiche: $f) { id } }";
+
+    private final RestClient http;
+
+    public ClientTableauDeBordGraphql(RestClient.Builder builder, @Value("${orchestrateur.tableau-de-bord.url}") String url) {
+        this.http = builder.baseUrl(url).build();
+    }
+
+    @Override
+    public void enregistrerAlerte(AlerteRecue a) {
+        Map<String, Object> entree = new LinkedHashMap<>();
+        entree.put("identifiantAlerte", a.id());
+        entree.put("identifiantPatient", a.patientId());
+        entree.put("niveau", a.niveau());
+        entree.put("type", a.type());
+        entree.put("valeur", a.valeur());
+        entree.put("seuil", a.seuil());
+        entree.put("message", a.message());
+        entree.put("horodatage", iso(a.horodatage()));
+        executer(ENREGISTRER_ALERTE, Map.of("a", entree));
+    }
+
+    @Override
+    public String creerFicheUrgence(AlerteRecue a, boolean aRegulariser, RendezVousUrgence rdv) {
+        Map<String, Object> entree = new LinkedHashMap<>();
+        entree.put("identifiantPatient", a.patientId());
+        entree.put("identifiantAlerte", a.id());
+        entree.put("statutPriseEnCharge", aRegulariser ? "A_REGULARISER" : "PRISE_EN_CHARGE");
+        entree.put("action", "CONSULTATION_URGENCE");
+        entree.put("identifiantRendezVous", rdv.id());
+        entree.put("dateRendezVous", iso(rdv.debut()));
+        Map<String, Object> data = executer(CREER_FICHE, Map.of("f", entree));
+        @SuppressWarnings("unchecked")
+        Map<String, Object> fiche = (Map<String, Object>) data.get("creerFicheUrgence");
+        return (String) fiche.get("id");
+    }
+
+    private static String iso(OffsetDateTime d) {
+        return d.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME);
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> executer(String document, Map<String, Object> variables) {
+        Map<String, Object> reponse = http.post()
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(Map.of("query", document, "variables", variables))
+                .retrieve()
+                .body(new ParameterizedTypeReference<Map<String, Object>>() {});
+        List<Map<String, Object>> erreurs = (List<Map<String, Object>>) reponse.get("errors");
+        if (erreurs != null && !erreurs.isEmpty()) {
+            throw new IllegalStateException("GraphQL : " + erreurs.get(0).get("message"));
+        }
+        return (Map<String, Object>) reponse.get("data");
+    }
+}

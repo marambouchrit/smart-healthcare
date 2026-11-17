@@ -47,7 +47,7 @@ Objectif : le workflow complet fonctionne en version minimale avant d'enrichir q
 - [x] P1.3 Service GraphQL : mutation `creerFicheUrgence` + query `patient(id)` minimale
 - [x] P1.4 Service gRPC : `EnvoyerMesures` + `SuivreAlertes` avec un seul seuil (fréquence cardiaque)
 - [x] P1.5 Script capteurs IoT minimal (un patient, injection d'une valeur critique)
-- [ ] P1.6 Orchestrateur : abonnement au flux d'alertes gRPC → appel SOAP → appel REST → mutation GraphQL, avec logs de chaque étape
+- [x] P1.6 Orchestrateur : abonnement au flux d'alertes gRPC → appel SOAP → appel REST → mutation GraphQL, avec logs de chaque étape
 
 **Vérification phase 1** : services lancés en local, une valeur critique envoyée par le script produit une fiche d'urgence lisible par la query GraphQL `patient(id)`. Chaque service testé seul (SoapUI, Swagger UI, GraphiQL, client gRPC).
 

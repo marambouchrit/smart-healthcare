@@ -92,6 +92,8 @@ Conventions :
 | `cd services/grpc-telemetrie && .venv/Scripts/python -m telemetrie.serveur` | Lance le service gRPC sur le port 50051 | Oui |
 | `cd iot-simulator && python -m venv .venv && .venv/Scripts/pip install -r requirements.txt && .venv/Scripts/python generer.py` | Prépare le simulateur de capteurs | Oui |
 | `cd iot-simulator && .venv/Scripts/python -m capteur.simulateur --patient TN-0012345 --critique-a 5` | Envoie des mesures et injecte une valeur critique (options : `--help`) | Oui |
+| `cd orchestrator && ./mvnw test` | Tests du workflow de l'orchestrateur | Oui |
+| `cd orchestrator && ./mvnw package -DskipTests && java -jar target/orchestrator-0.1.0.jar` | Lance l'orchestrateur (port 8084) ; il s'abonne aux alertes gRPC | Oui |
 | `docker compose up --build` | Lance toute la plateforme | À partir de la phase 3 |
 
 Ajouter ici chaque nouvelle commande (build, tests) au moment où elle est créée.

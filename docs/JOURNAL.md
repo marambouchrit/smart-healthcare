@@ -14,6 +14,13 @@ Modèle :
 
 ---
 
+## 2026-11-17 — P1.6 (fin de la phase 1)
+- Fait : `orchestrator/` (Spring Boot 3.5.16, Java 21, port 8084). Code généré : client SOAP depuis `dossier.wsdl` (CXF 4.1.9), client gRPC depuis `telemetrie.proto` (grpc-java 1.85.1, protobuf-java 4.36.2). `AbonnementAlertesGrpc` (SuivreAlertes, reconnexion), `WorkflowAlerte` (gRPC → SOAP → REST → GraphQL, un log par étape, préfixé par l'identifiant d'alerte), `ClientDossierSoap`, `ClientPortailRest` (409 = aucun créneau), `ClientTableauDeBordGraphql` (`enregistrerAlerte` puis `creerFicheUrgence`, variables GraphQL). D25.
+- Vérification : `./mvnw test` → 4 tests OK (ordre SOAP→REST→GraphQL, date de prestation au fuseau de Tunis, patient non couvert → À RÉGULARISER, 409 → arrêt avant GraphQL, panne d'un service → ECHEC sans exception). Bout en bout avec les 5 composants lancés (SOAP 8081, REST 8082, GraphQL 8083, orchestrateur 8084, gRPC 50051) puis `capteur.simulateur` : TN-0012345 à 168 bpm → ALR-000001 → droits OUVERTS 80 % → RDV-000001 à 17h00 → FIC-000001 `PRISE_EN_CHARGE` ; TN-0067890 → ALR-000002 → droits EXPIRES → RDV-000002 à 17h30 → FIC-000002 `A_REGULARISER`. La query GraphQL `patient(id)` renvoie pour chacun l'alerte CRITIQUE et la fiche liée au rendez-vous. La génération Java depuis le `.proto` (en suspens depuis P0.5) est ainsi vérifiée.
+- Vérification de la phase 1 : workflow complet ✔ ; services testés seuls : SOAP (tests + curl, import SoapUI fait), REST (tests + curl ; Swagger UI arrive en P2.REST.6), GraphQL (tests + GraphiQL HTTP 200), gRPC (tests + client). Reste : un appel `verifierDroitsCNAM` exécuté depuis SoapUI par l'utilisatrice.
+- Reste à faire / blocages : phase 2.
+- Contrats ou décisions modifiés : aucun contrat ; D25.
+
 ## 2026-11-17 — P1.5
 - Fait : `iot-simulator/` (Python, grpcio 1.85.1) : `generer.py` (code gRPC depuis `contracts/grpc/telemetrie.proto` dans `capteur/gen/`, non versionné), `capteur/simulateur.py` : un patient, N mesures de fréquence cardiaque (valeurs normales 65–95 bpm), valeur critique injectée à une position donnée, intervalle et graine configurables ; options en ligne de commande ou variables d'environnement (pour Docker). Tests `tests/test_simulateur.py`.
 - Vérification : `python -m unittest discover -s tests -t . -v` → 5 tests OK. Contre le service gRPC lancé : `python -m capteur.simulateur --patient TN-0012345 --mesures 6 --critique-a 4 --valeur-critique 172 --intervalle 0.5 --graine 7` → récapitulatif « 6 mesures, 1 alerte » (exit 0) et l'abonné a reçu `ALR-000002 TN-0012345 CRITIQUE - Fréquence cardiaque 172 bpm > 140 bpm` ; patient TN-9999999 → « Refus du service : NOT_FOUND » (exit 1).

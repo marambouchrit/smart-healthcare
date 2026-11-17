@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <!-- Versions vérifiées sur Maven Central le 2026-11-17 (docs/DECISIONS.md) -->
+  <parent>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-parent</artifactId>
+    <version>3.5.16</version>
+    <relativePath/>
+  </parent>
+
+  <groupId>tn.ginf.smarthealthcare</groupId>
+  <artifactId>orchestrator</artifactId>
+  <version>0.1.0</version>
+  <name>orchestrator</name>
+  <description>Orchestrateur du workflow « alerte médicale à domicile » (gRPC → SOAP → REST → GraphQL)</description>
+
+  <properties>
+    <java.version>21</java.version>
+    <contracts.dir>${project.basedir}/../contracts</contracts.dir>
+    <cxf.version>4.1.9</cxf.version>
+    <grpc.version>1.85.1</grpc.version>
+    <!-- Même version de protobuf (36.2) que le service Python (protobuf 7.36.2) -->
+    <protobuf.version>4.36.2</protobuf.version>
+  </properties>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-web</artifactId>
+    </dependency>
+
+    <!-- Client SOAP (JAX-WS / CXF), généré depuis le WSDL du contrat -->
+    <dependency>
+      <groupId>org.apache.cxf</groupId>
+      <artifactId>cxf-rt-frontend-jaxws</artifactId>
+      <version>${cxf.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.cxf</groupId>
+      <artifactId>cxf-rt-transports-http</artifactId>
+      <version>${cxf.version}</version>
+    </dependency>
+
+    <!-- Client gRPC, généré depuis le .proto du contrat -->
+    <dependency>
+      <groupId>io.grpc</groupId>
+      <artifactId>grpc-netty-shaded</artifactId>
+      <version>${grpc.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>io.grpc</groupId>
+      <artifactId>grpc-protobuf</artifactId>
+      <version>${grpc.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>io.grpc</groupId>
+      <artifactId>grpc-stub</artifactId>
+      <version>${grpc.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.google.protobuf</groupId>
+      <artifactId>protobuf-java</artifactId>
+      <version>${protobuf.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-test</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <extensions>
+      <!-- Détecte l'OS pour télécharger le bon compilateur protoc (Windows en local, Linux dans Docker) -->
+      <extension>
+        <groupId>kr.motd.maven</groupId>
+        <artifactId>os-maven-plugin</artifactId>
+        <version>1.7.1</version>
+      </extension>
+    </extensions>
+
+    <resources>
+      <resource>
+        <directory>src/main/resources</directory>
+      </resource>
+      <resource>
+        <directory>${contracts.dir}/soap</directory>
+        <targetPath>wsdl</targetPath>
+        <includes>
+          <include>dossier.wsdl</include>
+          <include>dossier.xsd</include>
+        </includes>
+      </resource>
+    </resources>
+
+    <plugins>
+      <plugin>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-maven-plugin</artifactId>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.cxf</groupId>
+        <artifactId>cxf-codegen-plugin</artifactId>
+        <version>${cxf.version}</version>
+        <executions>
+          <execution>
+            <id>wsdl2java</id>
+            <phase>generate-sources</phase>
+            <goals>
+              <goal>wsdl2java</goal>
+            </goals>
+            <configuration>
+              <wsdlOptions>
+                <wsdlOption>
+                  <wsdl>${contracts.dir}/soap/dossier.wsdl</wsdl>
+                  <wsdlLocation>classpath:wsdl/dossier.wsdl</wsdlLocation>
+                  <bindingFiles>
+                    <bindingFile>${project.basedir}/src/main/jaxws/bindings.xml</bindingFile>
+                  </bindingFiles>
+                  <extraargs>
+                    <extraarg>-p</extraarg>
+                    <extraarg>http://hopital.tn/dossier=tn.ginf.smarthealthcare.orchestrator.soap</extraarg>
+                  </extraargs>
+                </wsdlOption>
+              </wsdlOptions>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>org.xolstice.maven.plugins</groupId>
+        <artifactId>protobuf-maven-plugin</artifactId>
+        <version>0.6.1</version>
+        <configuration>
+          <protoSourceRoot>${contracts.dir}/grpc</protoSourceRoot>
+          <protocArtifact>com.google.protobuf:protoc:${protobuf.version}:exe:${os.detected.classifier}</protocArtifact>
+          <pluginId>grpc-java</pluginId>
+          <pluginArtifact>io.grpc:protoc-gen-grpc-java:${grpc.version}:exe:${os.detected.classifier}</pluginArtifact>
+        </configuration>
+        <executions>
+          <execution>
+            <goals>
+              <goal>compile</goal>
+              <goal>compile-custom</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+</project>

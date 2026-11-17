@@ -30,6 +30,7 @@ Toute décision prise avec l'utilisateur est notée ici. Une décision ne change
 | D22 | 2026-11-17 | Service REST : créneaux générés au démarrage depuis `plannings.json` sur **14 jours** (heure locale **Africa/Tunis**) ; une urgence réserve le premier créneau URGENCES **d'aujourd'hui qui n'a pas commencé** ; identifiants `CRN-`/`RDV-` séquentiels ; stockage en mémoire jusqu'à la phase 2 | Comportement déterministe et testable (horloge injectable) ; un appel le soir tombe sur 409 → ambulance (P5.2) |
 | D23 | 2026-11-17 | Service GraphQL : schéma chargé directement depuis `contracts/graphql/` (copié par le pom) ; scalaires `Date`/`DateTime` codés sans dépendance, `DateTime` toujours écrit avec les secondes (`2026-11-17T10:30:00+01:00`) ; `enregistrerAlerte` livrée dès P1.3 (une fiche exige une alerte existante) ; identifiants de fiche `FIC-` + 6 chiffres ; erreurs GraphQL typées `NOT_FOUND` / `BAD_REQUEST` | Format de date identique au service REST ; `creerFicheUrgence` inutilisable sans alerte |
 | D24 | 2026-11-17 | Service gRPC (Python) : seuil de phase 1 = fréquence cardiaque **> 140 bpm → CRITIQUE** (variable `TELEMETRIE_SEUIL_FC`, valeur de démonstration) ; identifiants d'alerte `ALR-` + 6 chiffres ; code gRPC généré depuis le `.proto` par `generer.py` (non versionné) ; mesure d'un patient absent du seed → `NOT_FOUND` | Valeur cohérente avec les exemples des contrats ; une seule source pour le code généré |
+| D25 | 2026-11-17 | Orchestrateur : workflow indépendant des protocoles (interfaces `Ports`, testables sans réseau) ; abonnement gRPC `SuivreAlertes` au niveau minimal **URGENT**, reconnexion automatique toutes les 5 s ; droits CNAM vérifiés pour la lettre-clé **C** à la date locale (Tunis) de l'alerte ; droits non ouverts → `aRegulariser` transmis au REST et fiche `A_REGULARISER` ; HTTP 409 → workflow arrêté et journalisé (ambulance en P5.2) ; clients générés : SOAP depuis le WSDL (CXF), gRPC depuis le `.proto` (protobuf-maven-plugin) | Ordre de démarrage des services sans importance ; robustesse complète en phase 5 |
 
 ## Ports et routes
 
@@ -65,6 +66,8 @@ Toute décision prise avec l'utilisateur est notée ici. Une décision ne change
 | grpcio / grpcio-tools | 1.85.1 (protobuf 7.36.2, libprotoc 35.1) | 2026-11-17 |
 | Node.js / Angular CLI | | |
 | PostgreSQL (image Docker) | | |
+| grpc-java (orchestrateur) | 1.85.1 ; protobuf-java 4.36.2 (même protobuf 36.2 que Python) | 2026-11-17 |
+| protobuf-maven-plugin (org.xolstice) / os-maven-plugin | 0.6.1 / 1.7.1 | 2026-11-17 |
 | zeep (outil de vérification du WSDL) | 4.3.3 | 2026-11-17 |
 | graphql-core (outil de vérification du schéma GraphQL) | 3.3.2 | 2026-11-17 |
 | openapi-spec-validator (outil de vérification OpenAPI) | 0.9.0 | 2026-11-17 |

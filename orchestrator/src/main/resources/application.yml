@@ -1,0 +1,27 @@
+server:
+  port: 8084
+
+spring:
+  application:
+    name: orchestrator
+
+orchestrateur:
+  fuseau: Africa/Tunis
+  # Lettre-clé utilisée pour vérifier les droits CNAM d'une consultation d'urgence
+  lettre-cle-urgence: C
+  telemetrie:
+    hote: localhost
+    port: 50051
+    # Niveau minimal des alertes prises en charge par le workflow (INFO, URGENT, CRITIQUE)
+    niveau-minimum: URGENT
+    delai-reconnexion-secondes: 5
+  dossier:
+    url: http://localhost:8081/ws/dossier
+  portail:
+    url: http://localhost:8082
+  tableau-de-bord:
+    url: http://localhost:8083/graphql
+
+logging:
+  level:
+    tn.ginf.smarthealthcare.orchestrator: INFO
