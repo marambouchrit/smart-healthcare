@@ -14,6 +14,12 @@ Modèle :
 
 ---
 
+## 2026-11-17 — P1.1
+- Fait : projet `services/soap-dossier` (Spring Boot 3.5.16, Apache CXF 4.1.9, Java 21, Maven Wrapper). Classes JAX-WS générées par `cxf-codegen-plugin` depuis `contracts/soap/dossier.wsdl` (package `tn.ginf.smarthealthcare.soap.generated`, style bare via `src/main/jaxws/bindings.xml`). WSDL/XSD et seed copiés dans le classpath par le pom (source unique : `contracts/`). `DossierServiceImpl.verifierDroitsCNAM` : OUVERTS / EXPIRES / NON_AFFILIE selon `couvertures-cnam.json`, SOAP Fault `ErreurMetier` PATIENT_INCONNU ; validation des messages contre le XSD activée ; les 3 autres opérations lèvent « prévu en P2.SOAP.x ». Publication sur `/ws/dossier`, port 8081.
+- Vérification : `./mvnw test` → 6 tests, 0 échec (OUVERTS 80 %, EXPIRES, NON_AFFILIE, fault PATIENT_INCONNU, `TN-12` rejeté par le schéma `cvc-pattern-valid`, `?wsdl` publié). `java -jar target/soap-dossier-0.1.0.jar` puis `curl` : `?wsdl` HTTP 200 ; requête de `contracts/soap/exemples` pour TN-0012345 → OUVERTS, VIG-2026-100001, 80 % ; TN-9999999 → HTTP 500 + Fault `PATIENT_INCONNU`.
+- Reste à faire / blocages : test manuel dans SoapUI (vérification de phase 1) ; P1.2. En phase 3, le contexte de build Docker devra inclure `contracts/`. Pas de commit à la demande de l'utilisatrice tant que la phase 0 n'est pas poussée.
+- Contrats ou décisions modifiés : aucun contrat ; versions Spring Boot, CXF, Maven notées.
+
 ## 2026-11-17 — P0.7 (fin de la phase 0)
 - Fait : `contracts/rest/portail-openapi.yaml` (OpenAPI 3.0.3) : `GET /api/creneaux` (filtres médecin, service, date, disponibilité) ; CRUD `/api/rendez-vous` (GET liste, POST, GET, PUT, PATCH, DELETE) ; `GET/PATCH /api/patients/{patientId}` ; `GET /api/patients/{patientId}/ordonnances` ; `POST /api/urgences` et `POST /api/ambulances` ; réponses 200/201/204/400/404/409 en Problem Details (D19). Script `scripts/check_openapi.py`.
 - Vérification : `python scripts/check_openapi.py` (openapi-spec-validator 0.9.0) → SPEC OK, 23 références résolues, 6/6 chemins avec leurs méthodes, 8 patients du seed conformes à `ProfilPatient`, 5/5 corps invalides REJETÉ (exit 0). Test négatif (référence vers un schéma inexistant) → SPEC KO (exit 1) ; ce cas n'était pas détecté par le validateur seul, d'où le contrôle explicite des `$ref`.

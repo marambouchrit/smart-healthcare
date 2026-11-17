@@ -81,6 +81,8 @@ Conventions :
 | `/avancement` | Point d'avancement détaillé (commande Claude) | Oui |
 | `/tache-suivante` | Prépare et démarre la prochaine tâche | Oui |
 | `/terminer-tache` | Vérifie, coche, met à jour le journal | Oui |
+| `cd services/soap-dossier && ./mvnw test` | Génère le code depuis le WSDL, compile et lance les tests du service SOAP | Oui |
+| `cd services/soap-dossier && ./mvnw package -DskipTests && java -jar target/soap-dossier-0.1.0.jar` | Lance le service SOAP sur le port 8081 (`/ws/dossier?wsdl`) | Oui |
 | `docker compose up --build` | Lance toute la plateforme | À partir de la phase 3 |
 
 Ajouter ici chaque nouvelle commande (build, tests) au moment où elle est créée.

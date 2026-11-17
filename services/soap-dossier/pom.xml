@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <!-- Versions vérifiées sur Maven Central le 2026-11-17 (docs/DECISIONS.md) -->
+  <parent>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-parent</artifactId>
+    <version>3.5.16</version>
+    <relativePath/>
+  </parent>
+
+  <groupId>tn.ginf.smarthealthcare</groupId>
+  <artifactId>soap-dossier</artifactId>
+  <version>0.1.0</version>
+  <name>soap-dossier</name>
+  <description>Service SOAP — Dossier patient &amp; facturation CNAM (JAX-WS / Apache CXF, top-down)</description>
+
+  <properties>
+    <java.version>21</java.version>
+    <cxf.version>4.1.9</cxf.version>
+    <!-- Contrats et données partagés : source unique dans contracts/ -->
+    <contracts.dir>${project.basedir}/../../contracts</contracts.dir>
+  </properties>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-web</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.cxf</groupId>
+      <artifactId>cxf-spring-boot-starter-jaxws</artifactId>
+      <version>${cxf.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-test</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <resources>
+      <resource>
+        <directory>src/main/resources</directory>
+      </resource>
+      <!-- Le WSDL et le XSD du contrat sont servis tels quels par le service (?wsdl) -->
+      <resource>
+        <directory>${contracts.dir}/soap</directory>
+        <targetPath>wsdl</targetPath>
+        <includes>
+          <include>dossier.wsdl</include>
+          <include>dossier.xsd</include>
+        </includes>
+      </resource>
+      <!-- Données fictives communes (contracts/seed) -->
+      <resource>
+        <directory>${contracts.dir}/seed</directory>
+        <targetPath>seed</targetPath>
+        <includes>
+          <include>*.json</include>
+        </includes>
+      </resource>
+    </resources>
+
+    <plugins>
+      <plugin>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-maven-plugin</artifactId>
+      </plugin>
+
+      <!-- Approche top-down (D4) : classes Java générées depuis le WSDL du contrat -->
+      <plugin>
+        <groupId>org.apache.cxf</groupId>
+        <artifactId>cxf-codegen-plugin</artifactId>
+        <version>${cxf.version}</version>
+        <executions>
+          <execution>
+            <id>wsdl2java</id>
+            <phase>generate-sources</phase>
+            <goals>
+              <goal>wsdl2java</goal>
+            </goals>
+            <configuration>
+              <wsdlOptions>
+                <wsdlOption>
+                  <wsdl>${contracts.dir}/soap/dossier.wsdl</wsdl>
+                  <wsdlLocation>classpath:wsdl/dossier.wsdl</wsdlLocation>
+                  <bindingFiles>
+                    <bindingFile>${project.basedir}/src/main/jaxws/bindings.xml</bindingFile>
+                  </bindingFiles>
+                  <extraargs>
+                    <extraarg>-p</extraarg>
+                    <extraarg>http://hopital.tn/dossier=tn.ginf.smarthealthcare.soap.generated</extraarg>
+                  </extraargs>
+                </wsdlOption>
+              </wsdlOptions>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+</project>

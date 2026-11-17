@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Personnalisation de la génération wsdl2java :
+  style « bare » (non wrapped) → chaque méthode reçoit l'élément de requête et renvoie l'élément de réponse,
+  au lieu d'éclater la réponse en paramètres Holder.
+  Le contrat (WSDL) n'est pas modifié : seuls les noms de méthodes Java changent de forme.
+-->
+<jaxws:bindings xmlns:jaxws="https://jakarta.ee/xml/ns/jaxws"
+                wsdlLocation="../../../../../contracts/soap/dossier.wsdl">
+  <jaxws:enableWrapperStyle>false</jaxws:enableWrapperStyle>
+</jaxws:bindings>

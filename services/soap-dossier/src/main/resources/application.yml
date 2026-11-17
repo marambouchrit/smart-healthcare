@@ -1,0 +1,14 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: soap-dossier
+
+# Les endpoints CXF sont publiés sous /ws (route gateway /ws/dossier/**, docs/DECISIONS.md)
+cxf:
+  path: /ws
+
+logging:
+  level:
+    tn.ginf.smarthealthcare.soap: INFO

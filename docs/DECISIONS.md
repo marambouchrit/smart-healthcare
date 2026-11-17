@@ -55,8 +55,9 @@ Toute décision prise avec l'utilisateur est notée ici. Une décision ne change
 | Outil / librairie | Version | Vérifiée le |
 |---|---|---|
 | Java (JDK) | 21.0.9 (installé) | 2026-11-17 |
-| Spring Boot | | |
-| Apache CXF | | |
+| Spring Boot | 3.5.16 (dernière 3.x publiée ; la branche 4.x existe, non retenue : D2) | 2026-11-17 |
+| Apache CXF | 4.1.9 (branche 4.1 = Spring 6.2 / Boot 3 ; la 4.2 cible Boot 4) | 2026-11-17 |
+| Maven (via Maven Wrapper 3.3.4) | 3.9.16 | 2026-11-17 |
 | Python | | |
 | grpcio / grpcio-tools | 1.85.1 (protobuf 7.36.2, libprotoc 35.1) | 2026-11-17 |
 | Node.js / Angular CLI | | |
