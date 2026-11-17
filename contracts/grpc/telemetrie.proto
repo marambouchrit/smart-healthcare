@@ -1,0 +1,68 @@
+// Contrat gRPC — Service « Télémétrie médicale & alertes temps réel » (P0.5)
+// Serveur : Python + grpcio, port 50051 (docs/DECISIONS.md), non exposé par la gateway.
+// Clients : capteurs IoT virtuels (EnvoyerMesures) et orchestrateur Java (SuivreAlertes, D6).
+// Les seuils et la priorisation sont implémentés en P2.GRPC.1 et P2.GRPC.2 ; ce fichier fixe seulement l'interface.
+syntax = "proto3";
+
+package telemetrie;
+
+import "google/protobuf/timestamp.proto";
+
+option java_multiple_files = true;
+option java_package = "tn.ginf.smarthealthcare.telemetrie";
+option java_outer_classname = "TelemetrieProto";
+
+service Telemetrie {
+  // Client streaming : un capteur envoie un flux continu de mesures ;
+  // le serveur répond une seule fois, à la fin du flux, avec un récapitulatif.
+  rpc EnvoyerMesures (stream Mesure) returns (RecapitulatifEnvoi);
+
+  // Server streaming : un abonné (l'orchestrateur) reçoit les alertes au fil de l'eau,
+  // éventuellement filtrées par niveau minimal et par patient.
+  rpc SuivreAlertes (AbonnementAlertes) returns (stream Alerte);
+}
+
+// Type de constante mesurée par un capteur.
+enum TypeMesure {
+  TYPE_MESURE_NON_SPECIFIE = 0;
+  FREQUENCE_CARDIAQUE = 1;   // battements par minute
+  SPO2 = 2;                  // saturation en oxygène, en %
+  CHUTE = 3;                 // détection de chute : valeur 1 = chute détectée, 0 = aucune
+}
+
+// Niveau d'une alerte, du moins au plus grave (P2.GRPC.2).
+enum Niveau {
+  NIVEAU_NON_SPECIFIE = 0;
+  INFO = 1;
+  URGENT = 2;
+  CRITIQUE = 3;
+}
+
+message Mesure {
+  string identifiant_patient = 1;             // format TN- + 7 chiffres (contracts/seed/patients.json)
+  string identifiant_capteur = 2;             // libre, ex. "capteur-TN-0012345-cardio"
+  TypeMesure type = 3;
+  double valeur = 4;
+  google.protobuf.Timestamp horodatage = 5;
+}
+
+message RecapitulatifEnvoi {
+  int32 mesures_recues = 1;
+  int32 alertes_declenchees = 2;
+}
+
+message AbonnementAlertes {
+  Niveau niveau_minimum = 1;                  // NIVEAU_NON_SPECIFIE = toutes les alertes
+  string identifiant_patient = 2;             // vide = tous les patients
+}
+
+message Alerte {
+  string identifiant_alerte = 1;
+  string identifiant_patient = 2;
+  Niveau niveau = 3;
+  TypeMesure type = 4;
+  double valeur = 5;                          // valeur mesurée qui a déclenché l'alerte
+  double seuil = 6;                           // seuil franchi
+  string message = 7;                         // ex. "Fréquence cardiaque 165 bpm > 140 bpm"
+  google.protobuf.Timestamp horodatage = 8;
+}

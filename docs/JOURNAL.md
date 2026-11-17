@@ -14,6 +14,12 @@ Modèle :
 
 ---
 
+## 2026-11-17 — P0.5
+- Fait : `contracts/grpc/telemetrie.proto` (proto3, package `telemetrie`) : service `Telemetrie` avec `EnvoyerMesures` (stream Mesure → RecapitulatifEnvoi) et `SuivreAlertes` (AbonnementAlertes → stream Alerte) ; énumérations `TypeMesure` (FREQUENCE_CARDIAQUE, SPO2, CHUTE) et `Niveau` (INFO, URGENT, CRITIQUE) ; horodatage `google.protobuf.Timestamp` ; options Java (D17). Script `scripts/check_proto.py`.
+- Vérification : `python scripts/check_proto.py` (grpcio-tools 1.85.1, libprotoc 35.1) → compilation OK, EnvoyerMesures client streaming, SuivreAlertes server streaming, Mesure sérialisée/relue, stubs générés (exit 0). Test négatif (type inexistant dans une copie) → `"AlerteInexistante" is not defined` (exit 1). Génération Java non testée : le protoc de grpcio-tools ne contient pas le générateur Java ; elle sera vérifiée par le build de l'orchestrateur (P1.6).
+- Reste à faire / blocages : P0.6 (schéma GraphQL) ; import SoapUI du WSDL (en cours côté utilisatrice).
+- Contrats ou décisions modifiés : création de `telemetrie.proto` ; D17.
+
 ## 2026-11-17 — P0.4
 - Fait : `contracts/soap/dossier.wsdl` (WSDL 1.1, SOAP 1.1, document/literal wrapped) important `dossier.xsd` ; 4 opérations `verifierDroitsCNAM`, `emettreFeuilleDeSoins`, `consulterHistorique`, `comparerGaranties` (D16), chacune avec le fault `ErreurMetier` ; adresse `http://localhost:8081/ws/dossier`. XSD complété (PriseEnCharge, Garantie, EcartMontant, Avantage, éléments `comparerGaranties`/`Response`) + 2 exemples. Script `scripts/check_wsdl.py`.
 - Vérification : SoapUI non installé, remplacé par zeep 4.3.3 (client SOAP Python). `python scripts/check_wsdl.py contracts/soap/dossier.wsdl contracts/soap/dossier.xsd` → service DossierService/DossierPort chargé, 4 opérations, 4 enveloppes construites avec leur soapAction et corps conformes au XSD (exit 0). Test négatif (élément inexistant dans une copie du WSDL) → échec (exit 1). `java scripts/ValidateXsd.java ...` → 10/10 exemples VALIDE.

@@ -75,6 +75,7 @@ Conventions :
 | `node scripts/check-seed.mjs` | Contrôle des données fictives de `contracts/seed/` | Oui |
 | `java scripts/ValidateXsd.java <xsd> <xml>...` | Valide des messages XML contre un XSD (JDK seul) | Oui |
 | `python scripts/check_wsdl.py <wsdl> <xsd>` | Charge le WSDL avec zeep et vérifie chaque opération (prérequis : `pip install zeep==4.3.3`) | Oui |
+| `python scripts/check_proto.py` | Compile `telemetrie.proto` et vérifie le contrat gRPC (prérequis : `pip install grpcio-tools==1.85.1`) | Oui |
 | `/avancement` | Point d'avancement détaillé (commande Claude) | Oui |
 | `/tache-suivante` | Prépare et démarre la prochaine tâche | Oui |
 | `/terminer-tache` | Vérifie, coche, met à jour le journal | Oui |

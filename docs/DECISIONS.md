@@ -22,6 +22,7 @@ Toute décision prise avec l'utilisateur est notée ici. Une décision ne change
 | D14 | 2026-11-17 | Fins de ligne **LF** imposées par `.gitattributes` (CRLF seulement pour `.bat`, `.cmd`, `.ps1`) | Les scripts exécutés dans les conteneurs Linux cassent avec des fins de ligne CRLF |
 | D15 | 2026-11-17 | **Java 21** pour tous les composants Java (remplace « Java 17 » de D2 ; le reste de D2 est inchangé) | JDK 21.0.9 déjà installé ; compatible Spring Boot 3 (réponse à Q3) |
 | D16 | 2026-11-17 | Opération SOAP de comparaison nommée **`comparerGaranties`** : deux prises en charge (patient, lettre-clé, coefficient, date) → taux, montant remboursé de chacune et écart | Le sujet ne nomme pas l'opération |
+| D17 | 2026-11-17 | Code Java généré depuis `telemetrie.proto` dans le package `tn.ginf.smarthealthcare.telemetrie` (`java_multiple_files = true`) | Suit la convention `tn.ginf.smarthealthcare.<...>` sans lier le contrat à un consommateur |
 
 ## Ports et routes
 
@@ -53,7 +54,7 @@ Toute décision prise avec l'utilisateur est notée ici. Une décision ne change
 | Spring Boot | | |
 | Apache CXF | | |
 | Python | | |
-| grpcio / grpcio-tools | | |
+| grpcio / grpcio-tools | 1.85.1 (protobuf 7.36.2, libprotoc 35.1) | 2026-11-17 |
 | Node.js / Angular CLI | | |
 | PostgreSQL (image Docker) | | |
 | zeep (outil de vérification du WSDL) | 4.3.3 | 2026-11-17 |
