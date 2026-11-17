@@ -1,0 +1,10 @@
+node_modules/
+target/
+__pycache__/
+*.pyc
+.venv/
+dist/
+.angular/
+.env
+.idea/
+.claude/settings.local.json
