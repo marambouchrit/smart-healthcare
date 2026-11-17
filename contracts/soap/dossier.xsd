@@ -103,6 +103,21 @@
     </xs:restriction>
   </xs:simpleType>
 
+  <xs:simpleType name="EcartMontant">
+    <xs:annotation><xs:documentation>Différence de montants en dinars (peut être négative).</xs:documentation></xs:annotation>
+    <xs:restriction base="xs:decimal">
+      <xs:fractionDigits value="3"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="Avantage">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="A"/>
+      <xs:enumeration value="B"/>
+      <xs:enumeration value="EGALE"/>
+    </xs:restriction>
+  </xs:simpleType>
+
   <xs:simpleType name="CodeErreur">
     <xs:restriction base="xs:string">
       <xs:enumeration value="PATIENT_INCONNU"/>
@@ -169,6 +184,27 @@
       <xs:element name="identifiantPatient" type="tns:IdentifiantPatient"/>
       <xs:element name="dateCertification" type="xs:dateTime"/>
       <xs:element name="entree" type="tns:EntreeHistorique" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="PriseEnCharge">
+    <xs:annotation><xs:documentation>Prestation envisagée pour un patient (entrée de comparerGaranties, D16).</xs:documentation></xs:annotation>
+    <xs:sequence>
+      <xs:element name="identifiantPatient" type="tns:IdentifiantPatient"/>
+      <xs:element name="lettreCle" type="tns:LettreCle"/>
+      <xs:element name="coefficient" type="tns:Coefficient"/>
+      <xs:element name="datePrestation" type="xs:date"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="Garantie">
+    <xs:annotation><xs:documentation>Garantie calculée pour une prise en charge. Taux 0 si les droits ne sont pas ouverts.</xs:documentation></xs:annotation>
+    <xs:sequence>
+      <xs:element name="priseEnCharge" type="tns:PriseEnCharge"/>
+      <xs:element name="statut" type="tns:StatutDroits"/>
+      <xs:element name="tauxRemboursement" type="tns:TauxRemboursement"/>
+      <xs:element name="montantActe" type="tns:Montant"/>
+      <xs:element name="montantRembourse" type="tns:Montant"/>
     </xs:sequence>
   </xs:complexType>
 
@@ -239,6 +275,28 @@
     <xs:complexType>
       <xs:sequence>
         <xs:element name="historique" type="tns:Historique"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="comparerGaranties">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="priseEnChargeA" type="tns:PriseEnCharge"/>
+        <xs:element name="priseEnChargeB" type="tns:PriseEnCharge"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="comparerGarantiesResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="garantieA" type="tns:Garantie"/>
+        <xs:element name="garantieB" type="tns:Garantie"/>
+        <xs:element name="ecartMontantRembourse" type="tns:EcartMontant">
+          <xs:annotation><xs:documentation>montantRembourse(A) − montantRembourse(B).</xs:documentation></xs:annotation>
+        </xs:element>
+        <xs:element name="plusAvantageuse" type="tns:Avantage"/>
       </xs:sequence>
     </xs:complexType>
   </xs:element>

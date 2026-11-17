@@ -20,6 +20,8 @@ Toute décision prise avec l'utilisateur est notée ici. Une décision ne change
 | D12 | 2026-11-17 | Roadmap **sans dates ni durées** | Choix de l'étudiante |
 | D13 | 2026-11-17 | Données fictives en **JSON** dans `contracts/seed/` ; identifiants `MED-xxx`, `TRT-xxx`, vignettes `VIG-AAAA-xxxxxx` ; lettres-clés C, CS, V, K, B, Z, AMI avec valeurs en dinars **fictives** | Lisible par Java et Python sans dépendance ; pas de nomenclature officielle disponible |
 | D14 | 2026-11-17 | Fins de ligne **LF** imposées par `.gitattributes` (CRLF seulement pour `.bat`, `.cmd`, `.ps1`) | Les scripts exécutés dans les conteneurs Linux cassent avec des fins de ligne CRLF |
+| D15 | 2026-11-17 | **Java 21** pour tous les composants Java (remplace « Java 17 » de D2 ; le reste de D2 est inchangé) | JDK 21.0.9 déjà installé ; compatible Spring Boot 3 (réponse à Q3) |
+| D16 | 2026-11-17 | Opération SOAP de comparaison nommée **`comparerGaranties`** : deux prises en charge (patient, lettre-clé, coefficient, date) → taux, montant remboursé de chacune et écart | Le sujet ne nomme pas l'opération |
 
 ## Ports et routes
 
@@ -47,18 +49,19 @@ Toute décision prise avec l'utilisateur est notée ici. Une décision ne change
 
 | Outil / librairie | Version | Vérifiée le |
 |---|---|---|
-| Java (JDK) | | |
+| Java (JDK) | 21.0.9 (installé) | 2026-11-17 |
 | Spring Boot | | |
 | Apache CXF | | |
 | Python | | |
 | grpcio / grpcio-tools | | |
 | Node.js / Angular CLI | | |
 | PostgreSQL (image Docker) | | |
+| zeep (outil de vérification du WSDL) | 4.3.3 | 2026-11-17 |
 
 ## Questions ouvertes
 
 | # | Question | Statut |
 |---|---|---|
 | Q1 | Qui émet le jeton JWT au login (endpoint dans la gateway, dans le service REST, ou un petit service d'authentification) ? | À décider avant P3.4 |
-| Q3 | D2 prévoit Java 17, mais le JDK installé est 21.0.9 (vérifié le 2026-11-17) : garder 17 (installer un JDK 17) ou passer la cible à 21 ? | À décider avant P1.1 |
+| Q3 | D2 prévoit Java 17, mais le JDK installé est 21.0.9 (vérifié le 2026-11-17) : garder 17 (installer un JDK 17) ou passer la cible à 21 ? | Réglée par D15 (Java 21) |
 | Q2 | Rôles exacts côté client (patient, médecin, administrateur) et ce que chacun voit | À décider avant P4.1 |

@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Contrat SOAP — Service « Dossier patient & facturation CNAM » (P0.4)
+  WSDL 1.1, SOAP 1.1, style document/literal wrapped (D4 : approche top-down, Apache CXF).
+  Les types et éléments sont définis dans dossier.xsd (importé, non recopié).
+  Adresse interne : port 8081 (docs/DECISIONS.md) ; route publique via la gateway : /ws/dossier/**
+-->
+<wsdl:definitions xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
+                  xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
+                  xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+                  xmlns:tns="http://hopital.tn/dossier"
+                  name="DossierService"
+                  targetNamespace="http://hopital.tn/dossier">
+
+  <wsdl:documentation>
+    Dossier patient informatisé et facturation CNAM : vérification des droits, émission de feuilles de soins
+    certifiées, historique médical certifié et comparaison des garanties entre deux prises en charge.
+  </wsdl:documentation>
+
+  <wsdl:types>
+    <xsd:schema>
+      <xsd:import namespace="http://hopital.tn/dossier" schemaLocation="dossier.xsd"/>
+    </xsd:schema>
+  </wsdl:types>
+
+  <!-- Messages -->
+  <wsdl:message name="verifierDroitsCNAMRequest">
+    <wsdl:part name="parameters" element="tns:verifierDroitsCNAM"/>
+  </wsdl:message>
+  <wsdl:message name="verifierDroitsCNAMResponse">
+    <wsdl:part name="parameters" element="tns:verifierDroitsCNAMResponse"/>
+  </wsdl:message>
+
+  <wsdl:message name="emettreFeuilleDeSoinsRequest">
+    <wsdl:part name="parameters" element="tns:emettreFeuilleDeSoins"/>
+  </wsdl:message>
+  <wsdl:message name="emettreFeuilleDeSoinsResponse">
+    <wsdl:part name="parameters" element="tns:emettreFeuilleDeSoinsResponse"/>
+  </wsdl:message>
+
+  <wsdl:message name="consulterHistoriqueRequest">
+    <wsdl:part name="parameters" element="tns:consulterHistorique"/>
+  </wsdl:message>
+  <wsdl:message name="consulterHistoriqueResponse">
+    <wsdl:part name="parameters" element="tns:consulterHistoriqueResponse"/>
+  </wsdl:message>
+
+  <wsdl:message name="comparerGarantiesRequest">
+    <wsdl:part name="parameters" element="tns:comparerGaranties"/>
+  </wsdl:message>
+  <wsdl:message name="comparerGarantiesResponse">
+    <wsdl:part name="parameters" element="tns:comparerGarantiesResponse"/>
+  </wsdl:message>
+
+  <wsdl:message name="ErreurMetierFault">
+    <wsdl:part name="fault" element="tns:erreurMetier"/>
+  </wsdl:message>
+
+  <!-- Interface abstraite -->
+  <wsdl:portType name="DossierPortType">
+    <wsdl:operation name="verifierDroitsCNAM">
+      <wsdl:documentation>Vérifie les droits CNAM d'un patient pour une prestation à une date donnée.</wsdl:documentation>
+      <wsdl:input message="tns:verifierDroitsCNAMRequest"/>
+      <wsdl:output message="tns:verifierDroitsCNAMResponse"/>
+      <wsdl:fault name="ErreurMetier" message="tns:ErreurMetierFault"/>
+    </wsdl:operation>
+    <wsdl:operation name="emettreFeuilleDeSoins">
+      <wsdl:documentation>Enregistre des actes cotés en lettres-clés et émet une feuille de soins certifiée.</wsdl:documentation>
+      <wsdl:input message="tns:emettreFeuilleDeSoinsRequest"/>
+      <wsdl:output message="tns:emettreFeuilleDeSoinsResponse"/>
+      <wsdl:fault name="ErreurMetier" message="tns:ErreurMetierFault"/>
+    </wsdl:operation>
+    <wsdl:operation name="consulterHistorique">
+      <wsdl:documentation>Retourne l'historique médical certifié d'un patient, éventuellement sur une période.</wsdl:documentation>
+      <wsdl:input message="tns:consulterHistoriqueRequest"/>
+      <wsdl:output message="tns:consulterHistoriqueResponse"/>
+      <wsdl:fault name="ErreurMetier" message="tns:ErreurMetierFault"/>
+    </wsdl:operation>
+    <wsdl:operation name="comparerGaranties">
+      <wsdl:documentation>Compare les garanties (taux, montant remboursé) de deux prises en charge.</wsdl:documentation>
+      <wsdl:input message="tns:comparerGarantiesRequest"/>
+      <wsdl:output message="tns:comparerGarantiesResponse"/>
+      <wsdl:fault name="ErreurMetier" message="tns:ErreurMetierFault"/>
+    </wsdl:operation>
+  </wsdl:portType>
+
+  <!-- Liaison SOAP 1.1 document/literal -->
+  <wsdl:binding name="DossierSoapBinding" type="tns:DossierPortType">
+    <soap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+    <wsdl:operation name="verifierDroitsCNAM">
+      <soap:operation soapAction="http://hopital.tn/dossier/verifierDroitsCNAM"/>
+      <wsdl:input><soap:body use="literal"/></wsdl:input>
+      <wsdl:output><soap:body use="literal"/></wsdl:output>
+      <wsdl:fault name="ErreurMetier"><soap:fault name="ErreurMetier" use="literal"/></wsdl:fault>
+    </wsdl:operation>
+    <wsdl:operation name="emettreFeuilleDeSoins">
+      <soap:operation soapAction="http://hopital.tn/dossier/emettreFeuilleDeSoins"/>
+      <wsdl:input><soap:body use="literal"/></wsdl:input>
+      <wsdl:output><soap:body use="literal"/></wsdl:output>
+      <wsdl:fault name="ErreurMetier"><soap:fault name="ErreurMetier" use="literal"/></wsdl:fault>
+    </wsdl:operation>
+    <wsdl:operation name="consulterHistorique">
+      <soap:operation soapAction="http://hopital.tn/dossier/consulterHistorique"/>
+      <wsdl:input><soap:body use="literal"/></wsdl:input>
+      <wsdl:output><soap:body use="literal"/></wsdl:output>
+      <wsdl:fault name="ErreurMetier"><soap:fault name="ErreurMetier" use="literal"/></wsdl:fault>
+    </wsdl:operation>
+    <wsdl:operation name="comparerGaranties">
+      <soap:operation soapAction="http://hopital.tn/dossier/comparerGaranties"/>
+      <wsdl:input><soap:body use="literal"/></wsdl:input>
+      <wsdl:output><soap:body use="literal"/></wsdl:output>
+      <wsdl:fault name="ErreurMetier"><soap:fault name="ErreurMetier" use="literal"/></wsdl:fault>
+    </wsdl:operation>
+  </wsdl:binding>
+
+  <!-- Point d'accès -->
+  <wsdl:service name="DossierService">
+    <wsdl:port name="DossierPort" binding="tns:DossierSoapBinding">
+      <soap:address location="http://localhost:8081/ws/dossier"/>
+    </wsdl:port>
+  </wsdl:service>
+
+</wsdl:definitions>

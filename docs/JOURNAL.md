@@ -14,6 +14,12 @@ Modèle :
 
 ---
 
+## 2026-11-17 — P0.4
+- Fait : `contracts/soap/dossier.wsdl` (WSDL 1.1, SOAP 1.1, document/literal wrapped) important `dossier.xsd` ; 4 opérations `verifierDroitsCNAM`, `emettreFeuilleDeSoins`, `consulterHistorique`, `comparerGaranties` (D16), chacune avec le fault `ErreurMetier` ; adresse `http://localhost:8081/ws/dossier`. XSD complété (PriseEnCharge, Garantie, EcartMontant, Avantage, éléments `comparerGaranties`/`Response`) + 2 exemples. Script `scripts/check_wsdl.py`.
+- Vérification : SoapUI non installé, remplacé par zeep 4.3.3 (client SOAP Python). `python scripts/check_wsdl.py contracts/soap/dossier.wsdl contracts/soap/dossier.xsd` → service DossierService/DossierPort chargé, 4 opérations, 4 enveloppes construites avec leur soapAction et corps conformes au XSD (exit 0). Test négatif (élément inexistant dans une copie du WSDL) → échec (exit 1). `java scripts/ValidateXsd.java ...` → 10/10 exemples VALIDE.
+- Reste à faire / blocages : import dans SoapUI à faire quand l'outil sera installé (critère de la phase 0) ; P0.5 (`.proto`).
+- Contrats ou décisions modifiés : `dossier.xsd` complété pour `comparerGaranties` ; D15 (Java 21), D16.
+
 ## 2026-11-17 — P0.3
 - Fait : `contracts/soap/dossier.xsd` (namespace `http://hopital.tn/dossier`) : types simples IdentifiantPatient, IdentifiantMedecin, CodeVignette, NumeroFeuilleDeSoins, LettreCle, Coefficient, TauxRemboursement (0–100), Montant, Filiere, StatutDroits, TypeEvenement, CodeErreur ; types complexes Couverture, ActeMedical, FeuilleDeSoins, EntreeHistorique, Historique, ErreurMetier ; éléments wrapped pour `verifierDroitsCNAM`, `emettreFeuilleDeSoins`, `consulterHistorique` (+ `Response`) et `erreurMetier`. 8 messages d'exemple dans `contracts/soap/exemples/`. Validateur `scripts/ValidateXsd.java` (JDK seul). Hors P0.3 : `.gitattributes` (D14).
 - Vérification : `java scripts/ValidateXsd.java contracts/soap/dossier.xsd contracts/soap/exemples/*.xml` → SCHEMA OK, 8/8 VALIDE (exit 0). Tests négatifs (identifiant `TN-12345`, lettre-clé `XX`, taux 120, feuille sans acte) → 4/4 INVALIDE (exit 1).

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<d:comparerGaranties xmlns:d="http://hopital.tn/dossier">
+  <d:priseEnChargeA>
+    <d:identifiantPatient>TN-0012345</d:identifiantPatient>
+    <d:lettreCle>CS</d:lettreCle>
+    <d:coefficient>1</d:coefficient>
+    <d:datePrestation>2026-11-17</d:datePrestation>
+  </d:priseEnChargeA>
+  <d:priseEnChargeB>
+    <d:identifiantPatient>TN-0023456</d:identifiantPatient>
+    <d:lettreCle>CS</d:lettreCle>
+    <d:coefficient>1</d:coefficient>
+    <d:datePrestation>2026-11-17</d:datePrestation>
+  </d:priseEnChargeB>
+</d:comparerGaranties>

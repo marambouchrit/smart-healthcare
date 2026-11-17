@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<d:comparerGarantiesResponse xmlns:d="http://hopital.tn/dossier">
+  <d:garantieA>
+    <d:priseEnCharge>
+      <d:identifiantPatient>TN-0012345</d:identifiantPatient>
+      <d:lettreCle>CS</d:lettreCle>
+      <d:coefficient>1</d:coefficient>
+      <d:datePrestation>2026-11-17</d:datePrestation>
+    </d:priseEnCharge>
+    <d:statut>OUVERTS</d:statut>
+    <d:tauxRemboursement>80</d:tauxRemboursement>
+    <d:montantActe>60.000</d:montantActe>
+    <d:montantRembourse>48.000</d:montantRembourse>
+  </d:garantieA>
+  <d:garantieB>
+    <d:priseEnCharge>
+      <d:identifiantPatient>TN-0023456</d:identifiantPatient>
+      <d:lettreCle>CS</d:lettreCle>
+      <d:coefficient>1</d:coefficient>
+      <d:datePrestation>2026-11-17</d:datePrestation>
+    </d:priseEnCharge>
+    <d:statut>OUVERTS</d:statut>
+    <d:tauxRemboursement>50</d:tauxRemboursement>
+    <d:montantActe>60.000</d:montantActe>
+    <d:montantRembourse>30.000</d:montantRembourse>
+  </d:garantieB>
+  <d:ecartMontantRembourse>18.000</d:ecartMontantRembourse>
+  <d:plusAvantageuse>A</d:plusAvantageuse>
+</d:comparerGarantiesResponse>
