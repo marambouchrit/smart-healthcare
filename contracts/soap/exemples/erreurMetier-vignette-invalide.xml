@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<d:erreurMetier xmlns:d="http://hopital.tn/dossier">
+  <d:code>VIGNETTE_INVALIDE</d:code>
+  <d:message>Vignette VIG-2025-100006 valide du 2025-01-01 au 2025-12-31 : acte du 2026-11-17 non couvert</d:message>
+</d:erreurMetier>

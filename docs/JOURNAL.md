@@ -14,6 +14,12 @@ Modèle :
 
 ---
 
+## 2026-11-21 — P2.SOAP.4
+- Fait : catalogue des SOAP Faults vérifié sur les 4 opérations (`FautesSoapTest`, requêtes HTTP brutes) ; exemple `contracts/soap/exemples/erreurMetier-vignette-invalide.xml` ; `contracts/soap/README.md` (opérations, format des Faults, codes `PATIENT_INCONNU` / `VIGNETTE_INVALIDE` / `DONNEES_INVALIDES`, rejet `soap:Client` des messages non conformes au XSD).
+- Vérification : `./mvnw test` → 36 tests, 0 échec (10 nouveaux : 8 Faults métier → HTTP 500, `soap:Server`, `<detail><erreurMetier>` avec le bon code ; `TN-12` et identifiant vide → `soap:Client` `cvc-…`). 12/12 exemples valides contre le XSD. Appel réel `emettreFeuilleDeSoins` TN-0067890 / VIG-2025-100006 → Fault `VIGNETTE_INVALIDE` « acte du 2026-11-17 non couvert ».
+- Reste à faire / blocages : P2.SOAP.5 (PostgreSQL) attend Docker Desktop ; les tâches REST, GraphQL (sauf P2.GQL.4) et gRPC (sauf P2.GRPC.3) sont faites avant.
+- Contrats ou décisions modifiés : ajout d'un exemple et d'un README dans `contracts/soap/` (pas de changement du WSDL/XSD).
+
 ## 2026-11-21 — P2.SOAP.3
 - Fait : `comparerGaranties` (`GarantiesService`, D16) ; règle des droits extraite dans `DroitsService` (partagée avec `verifierDroitsCNAM`) ; `FacturationService.montantActe` / `rembourse` partagés avec la facturation. Taux 0 si droits non ouverts ; écart = remboursé(A) − remboursé(B) ; plus avantageuse = remboursement le plus élevé (EGALE si écart nul).
 - Vérification : `./mvnw test` → 26 tests, 0 échec (6 nouveaux : CS à 80 % vs 50 % → 48 / 30, écart 18, A ; K 20 vignette expirée vs couvert → 0 / 40, écart −40, B ; même patient avant / après le début de vignette ; égalité ; non affilié ; patient inconnu → `PATIENT_INCONNU`). Service lancé + requête `contracts/soap/exemples/comparerGaranties-requete.xml` → réponse identique à `comparerGaranties-reponse.xml` (48.000 / 30.000 / 18.000 / A), validée contre `dossier.xsd`.
