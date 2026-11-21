@@ -14,6 +14,12 @@ Modèle :
 
 ---
 
+## 2026-11-21 — P2.REST.2
+- Fait : CRUD `/api/rendez-vous` (`RendezVousController`, `RendezVousService`, D28) : GET liste (filtres patient, médecin, date), POST (201 + Location), GET /{id}, PUT, PATCH, DELETE (204) ; `POST /api/urgences` passe par le même service (un rendez-vous d'urgence se gère ensuite par le CRUD) ; `RendezVous` déplacé dans le paquet `rendezvous` ; nouvelles erreurs 409 typées et 400 métier dans `Problemes`.
+- Vérification : `./mvnw test` → 17 tests, 0 échec (7 nouveaux : cycle complet POST → GET → PUT (créneau libéré/repris) → PATCH motif → PATCH ANNULE (créneau libéré) → DELETE 204 → 404 ; créneau déjà réservé / déjà commencé → 409 ; ressources inconnues → 404 ; changement de patient, PATCH vide → 400 ; HONORE → ANNULE → 409 ; annulé non modifiable → 409 ; validations → 400 ; urgence gérable par le CRUD). Service lancé : POST → 201 RDV-000001 ; PUT CRN-000051 → CRN-000053 ; PATCH ANNULE ; PATCH sur annulé → 409 ; CRN-000053 repris par TN-0023456 → 201 ; même créneau par TN-0034567 → 409 ; DELETE → 204 ; GET → 404 — toutes les réponses validées contre les schémas `RendezVous` / `Probleme` du contrat.
+- Reste à faire / blocages : P2.REST.3.
+- Contrats ou décisions modifiés : aucun contrat ; D28.
+
 ## 2026-11-21 — P2.REST.1
 - Fait : `GET /api/creneaux` (`CreneauController`) avec filtres `medecinId` (format `MED-xxx`), `serviceCode`, `date` (ISO), `disponible` (défaut true = libres et non commencés ; false = réservés) ; `CreneauService` : `lister`, `trouver`, `reserver`, `liberer`. Horloge de test partagée `HorlogeTest`. P2.SOAP.5 reportée : Docker Desktop non démarré (choix « Docker » de l'utilisatrice pour PostgreSQL).
 - Vérification : `./mvnw test` → 10 tests, 0 échec (5 nouveaux : MED-002 mardi 10h10 → 5 créneaux libres dès 10h30 ; MED-001 aucun le mardi, 6 le mercredi ; filtre CARDIO ; créneau réservé par une urgence visible avec `disponible=false` ; `medecinId=DR-1` et date `17/11/2026` → 400). Service lancé : `GET /api/creneaux?medecinId=MED-002&date=2026-11-24` → 200, validé contre `Creneau[]` du contrat ; URGENCES le 22 → 24 créneaux 08:00…19:30 ; `date=2026-13-45` → 400 Problem Details conforme.

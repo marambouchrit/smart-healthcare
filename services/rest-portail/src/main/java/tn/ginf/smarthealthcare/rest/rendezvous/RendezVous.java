@@ -1,4 +1,4 @@
-package tn.ginf.smarthealthcare.rest.urgence;
+package tn.ginf.smarthealthcare.rest.rendezvous;
 
 import java.time.OffsetDateTime;
 import tn.ginf.smarthealthcare.rest.creneau.Creneau;
