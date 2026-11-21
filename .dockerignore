@@ -1,0 +1,9 @@
+# Contexte de build = racine du dépôt (chaque image a besoin de contracts/)
+.git
+**/target
+**/.venv
+**/__pycache__
+**/gen
+**/node_modules
+**/.angular
+docs

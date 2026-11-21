@@ -45,6 +45,8 @@ Toute décision prise avec l'utilisateur est notée ici. Une décision ne change
 | D37 | 2026-11-21 | Persistance du service gRPC (Python) : psycopg 3.3.9, schéma `telemetrie/schema.sql` exécuté au démarrage (`CREATE … IF NOT EXISTS`), toutes les mesures conservées, alerte reliée à sa mesure et écrite dans la même transaction ; identifiant `ALR-xxxxxx` généré par la base (séquence) donc unique après redémarrage ; variable `TELEMETRIE_DB_URL` (« memoire » = sans base, pour les tests unitaires) ; tests de persistance dans un schéma temporaire de la base Docker, ignorés si elle est absente | Corrige les identifiants d'alerte en double constatés en P2.GRPC.1 ; pas d'outil de migration supplémentaire côté Python |
 | D38 | 2026-11-21 | Persistance du portail REST (base `rest_portail`) en **Spring Data JPA** + Flyway, comme prévu au référentiel technique : tables medecin, patient (coordonnées modifiables), traitement, creneau (`CRN-` = identifiant de la base, unique par médecin et heure, générés au démarrage s'ils manquent), rendez_vous (`RDV-` = identifiant de la base) ; la disponibilité d'un créneau n'est pas stockée, elle se déduit de l'absence de rendez-vous non annulé, garantie par un **index unique partiel** (double réservation refusée par la base même en cas de requêtes simultanées) ; ordonnances recalculées depuis la table traitement | Une seule source de vérité pour la disponibilité ; protection contre la concurrence au niveau de la base |
 | D39 | 2026-11-21 | Contrat gRPC étendu (réponse à Q7) : `rpc SuivreMesures (AbonnementMesures) returns (stream Mesure)`, filtre optionnel par patient ; le service diffuse chaque mesure acceptée ; l'orchestrateur s'y abonne (reconnexion comme pour les alertes), garde la dernière valeur de chaque type par patient et l'envoie par lots à `enregistrerConstantes` toutes les `orchestrateur.constantes.periode-ms` (10 s), en conservant les valeurs non transmises en cas d'échec ; horodatages gRPC tronqués à la seconde par l'orchestrateur | Les constantes normales atteignent le tableau de bord sans appel GraphQL par mesure ; dates homogènes dans tout le projet |
+| D40 | 2026-11-21 | P3.1 couvre les Dockerfiles des composants existants (SOAP, REST, GraphQL, gRPC, orchestrateur, capteurs IoT) ; le Dockerfile de la gateway est écrit et vérifié avec P3.3, celui du client web en phase 4 | Choix de l'utilisatrice : chaque Dockerfile est vérifié quand son composant existe |
+| D41 | 2026-11-21 | JWT émis **et** vérifié par la gateway : point `/auth/login` avec des comptes de démonstration (patient, médecin, administrateur) (réponse à Q1) | Choix de l'utilisatrice : un seul composant gère la sécurité |
 
 ## Ports et routes
 
@@ -81,6 +83,7 @@ Toute décision prise avec l'utilisateur est notée ici. Une décision ne change
 | psycopg (service gRPC) | 3.3.9 (`psycopg[binary]`) | 2026-11-21 |
 | Node.js / Angular CLI | | |
 | PostgreSQL (image Docker) | postgres:18.7-alpine (Docker Engine 29.8.0) | 2026-11-21 |
+| Images de base Docker | eclipse-temurin:21.0.9_10-jdk-noble / 21.0.9_10-jre-noble ; python:3.12.16-slim-bookworm | 2026-11-21 |
 | grpc-java (orchestrateur) | 1.85.1 ; protobuf-java 4.36.2 (même protobuf 36.2 que Python) | 2026-11-17 |
 | protobuf-maven-plugin (org.xolstice) / os-maven-plugin | 0.6.1 / 1.7.1 | 2026-11-17 |
 | zeep (outil de vérification du WSDL) | 4.3.3 | 2026-11-17 |
@@ -93,7 +96,7 @@ Toute décision prise avec l'utilisateur est notée ici. Une décision ne change
 
 | # | Question | Statut |
 |---|---|---|
-| Q1 | Qui émet le jeton JWT au login (endpoint dans la gateway, dans le service REST, ou un petit service d'authentification) ? | À décider avant P3.4 |
+| Q1 | Qui émet le jeton JWT au login (endpoint dans la gateway, dans le service REST, ou un petit service d'authentification) ? | Réglée par D41 (la gateway émet et vérifie) |
 | Q3 | D2 prévoit Java 17, mais le JDK installé est 21.0.9 (vérifié le 2026-11-17) : garder 17 (installer un JDK 17) ou passer la cible à 21 ? | Réglée par D15 (Java 21) |
 | Q4 | Comment alimenter `dernieresConstantes` du tableau de bord ? (a) uniquement avec les valeurs des alertes reçues ; (b) ajouter une 4ᵉ mutation `enregistrerConstantes` que l'orchestrateur appelle périodiquement | Réglée par D18 |
 | Q5 | Les créneaux ne sont pas dans `contracts/seed/` : ajouter un fichier de plannings (médecin, jours, heures, durée) d'où le service REST génère ses créneaux ? | Réglée par D20 |
