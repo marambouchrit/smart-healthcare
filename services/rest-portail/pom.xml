@@ -32,6 +32,12 @@
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-validation</artifactId>
     </dependency>
+    <!-- Swagger UI + description générée depuis le code (/v3/api-docs) ; 2.10.1 cible Spring Boot 3.5.16 -->
+    <dependency>
+      <groupId>org.springdoc</groupId>
+      <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+      <version>2.10.1</version>
+    </dependency>
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-test</artifactId>
@@ -50,6 +56,14 @@
         <targetPath>seed</targetPath>
         <includes>
           <include>*.json</include>
+        </includes>
+      </resource>
+      <!-- Le contrat OpenAPI est servi tel quel (/openapi/portail-openapi.yaml) et affiché par Swagger UI -->
+      <resource>
+        <directory>${contracts.dir}/rest</directory>
+        <targetPath>static/openapi</targetPath>
+        <includes>
+          <include>portail-openapi.yaml</include>
         </includes>
       </resource>
     </resources>

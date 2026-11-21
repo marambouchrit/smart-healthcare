@@ -13,6 +13,15 @@ spring:
     locale: fr
     locale-resolver: fixed
 
+# Swagger UI (http://localhost:8082/swagger-ui.html) affiche le CONTRAT, pas une description régénérée ;
+# /v3/api-docs (généré depuis le code) sert à vérifier l'alignement code ↔ contrat (AlignementContratTest).
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    url: /openapi/portail-openapi.yaml
+  api-docs:
+    path: /v3/api-docs
+
 portail:
   # Les plannings de contracts/seed sont en heure locale tunisienne
   fuseau: Africa/Tunis

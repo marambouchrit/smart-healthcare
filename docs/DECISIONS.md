@@ -34,6 +34,7 @@ Toute décision prise avec l'utilisateur est notée ici. Une décision ne change
 | D26 | 2026-11-21 | `emettreFeuilleDeSoins` : montant d'un acte = coefficient × valeur de la lettre-clé (`lettres-cles.json`), remboursé = total × taux de la couverture, arrondis au millime ; la vignette doit appartenir au patient et couvrir la date de **chaque** acte, sinon SOAP Fault **`VIGNETTE_INVALIDE`** (réponse (a) à Q6) ; médecin inconnu → `DONNEES_INVALIDES` ; numéro `FS-<année d'émission>-<6 chiffres>` ; certification simulée = empreinte SHA-256 du contenu de la feuille | Comportement d'un vrai système d'assurance ; empreinte vérifiable plutôt qu'une valeur arbitraire |
 | D27 | 2026-11-21 | `consulterHistorique` (choix proposé par Claude, validé par délégation de l'utilisatrice) : entrées `CONSULTATION` = prescriptions de `traitements.json` regroupées par (médecin, date) ; entrées `ACTE` = un acte de chaque feuille de soins émise, avec son numéro de feuille ; tri chronologique ; filtre `dateDebut`/`dateFin` inclusif (début > fin → `DONNEES_INVALIDES`) ; `dateCertification` = instant de la consultation | Seules sources disponibles sans inventer de données ; le lien acte → feuille certifiée justifie le mot « certifié » |
 | D28 | 2026-11-21 | Règles des rendez-vous REST : un créneau porte au plus un rendez-vous confirmé ; un créneau déjà commencé ne se réserve plus ; PUT = remplacement complet, le patient ne change pas (400), changer de créneau libère l'ancien ; PATCH (motif et/ou statut, au moins un champ) ; transitions CONFIRME → ANNULE (libère le créneau) ou HONORE ; un rendez-vous ANNULE n'est plus modifiable (409 `rendez-vous-annule`), un HONORE ne s'annule plus (409 `transition-interdite`) ; DELETE libère le créneau ; 409 `creneau-indisponible` | Comportement cohérent d'un agenda ; codes 409 distincts et explicites pour le client |
+| D29 | 2026-11-21 | Swagger UI du service REST affiche **le contrat** (`contracts/rest/portail-openapi.yaml`, copié par le pom et servi sur `/openapi/portail-openapi.yaml`) et non une description régénérée ; la description générée par springdoc (`/v3/api-docs`) sert uniquement au test d'alignement (mêmes chemins, méthodes et operationId) | Une seule documentation, celle du contrat (contract first) ; l'alignement code ↔ contrat est vérifié automatiquement |
 
 ## Ports et routes
 
@@ -73,6 +74,7 @@ Toute décision prise avec l'utilisateur est notée ici. Une décision ne change
 | protobuf-maven-plugin (org.xolstice) / os-maven-plugin | 0.6.1 / 1.7.1 | 2026-11-17 |
 | zeep (outil de vérification du WSDL) | 4.3.3 | 2026-11-17 |
 | graphql-core (outil de vérification du schéma GraphQL) | 3.3.2 | 2026-11-17 |
+| springdoc-openapi-starter-webmvc-ui (service REST) | 2.10.1 (cible Spring Boot 3.5.16) | 2026-11-21 |
 | openapi-spec-validator (outil de vérification OpenAPI) | 0.9.0 | 2026-11-17 |
 
 ## Questions ouvertes

@@ -14,6 +14,12 @@ Modèle :
 
 ---
 
+## 2026-11-21 — P2.REST.6 (fin de la partie REST)
+- Fait : springdoc 2.10.1 ; Swagger UI (`/swagger-ui.html`) configuré sur le contrat servi tel quel (`/openapi/portail-openapi.yaml`, D29) ; test `AlignementContratTest` : opérations générées depuis le code (`/v3/api-docs`) = opérations du contrat (chemins, méthodes, operationId), seule différence admise `POST /api/ambulances` (P5.2) ; contrat servi identique au fichier.
+- Vérification : `./mvnw test` → 56 tests, 0 échec. Service lancé : `/swagger-ui.html`, `/swagger-ui/index.html`, `/v3/api-docs/swagger-config` (url = `/openapi/portail-openapi.yaml`) et le contrat → HTTP 200 ; fichier servi identique (`diff`) ; `python scripts/check_openapi.py <fichier servi>` → SPEC OK, 23 références.
+- Reste à faire / blocages : partie GraphQL (P2.GQL.1). Dans Swagger UI, choisir le serveur `http://localhost:8082` pour « Try it out » (8080 = gateway, phase 3).
+- Contrats ou décisions modifiés : aucun contrat ; D29.
+
 ## 2026-11-21 — P2.REST.5
 - Fait : erreurs 400 détaillées (propriété `erreurs` [{champ, message}] et `detail` lisible) pour la validation des corps, des paramètres (y compris corps validé avec un paramètre d'URL), les types invalides et les énumérations inconnues ; JSON illisible → « Corps JSON absent ou illisible. » ; route inconnue → 404 `/problemes/non-trouve` ; messages de validation forcés en français (`spring.web.locale: fr`, résolveur fixe). Test `CodesHttpContratTest` : 24 scénarios (un par code et par opération) dont le statut doit être celui attendu ET déclaré dans `contracts/rest/portail-openapi.yaml`, erreurs en `application/problem+json`.
 - Vérification : `./mvnw test` → 53 tests, 0 échec (27 nouveaux). Service lancé : PATCH profil `telephone: abc` → 400 « telephone : valeur 'abc' refusée (doit correspondre à …) » ; POST rendez-vous `TN-12` / `CRN-1` → 400 avec les 2 champs ; `/api/inexistant` → 404 « Aucune route /api/inexistant dans le portail. » ; service relancé avec `-Duser.language=en` → message toujours en français ; réponses conformes au schéma `Probleme`.

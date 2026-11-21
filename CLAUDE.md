@@ -94,6 +94,7 @@ Conventions :
 | `cd iot-simulator && .venv/Scripts/python -m capteur.simulateur --patient TN-0012345 --critique-a 5` | Envoie des mesures et injecte une valeur critique (options : `--help`) | Oui |
 | `cd orchestrator && ./mvnw test` | Tests du workflow de l'orchestrateur | Oui |
 | `cd orchestrator && ./mvnw package -DskipTests && java -jar target/orchestrator-0.1.0.jar` | Lance l'orchestrateur (port 8084) ; il s'abonne aux alertes gRPC | Oui |
+| `http://localhost:8082/swagger-ui.html` | Swagger UI du service REST (affiche le contrat ; choisir le serveur 8082 pour « Try it out ») | Oui |
 | `docker compose up --build` | Lance toute la plateforme | À partir de la phase 3 |
 
 Ajouter ici chaque nouvelle commande (build, tests) au moment où elle est créée.
