@@ -14,6 +14,12 @@ Modèle :
 
 ---
 
+## 2026-11-21 — P2.REST.3
+- Fait : `GET /api/patients/{patientId}/ordonnances` (`OrdonnanceController`, `OrdonnanceService`) : ordonnance = traitements de `traitements.json` prescrits le même jour par le même médecin au même patient (D19), identifiants `ORD-xxxxxx` stables (ordre date, médecin, patient), plus récentes d'abord, filtre `statut` (EN_COURS / TERMINE) ; `SeedRepository` charge les traitements et le profil complet des patients.
+- Vérification : `./mvnw test` → 21 tests, 0 échec (4 nouveaux : Bisoprolol + Furosémide → 1 ordonnance du 2026-02-10 ; TN-0045678 → 2 ordonnances, la plus récente d'abord, filtre TERMINE → Prednisolone ; ORD-000001 = Metformine du 2025-06-01 ; patient inconnu → 404, `TN-12` et statut inconnu → 400). Service lancé : TN-0012345 → ORD-000004 avec 2 lignes ; TN-0045678 `statut=EN_COURS` → Salbutamol ; TN-9999999 → 404 ; réponses validées contre `Ordonnance[]` / `Probleme`.
+- Reste à faire / blocages : P2.REST.4.
+- Contrats ou décisions modifiés : aucun.
+
 ## 2026-11-21 — P2.REST.2
 - Fait : CRUD `/api/rendez-vous` (`RendezVousController`, `RendezVousService`, D28) : GET liste (filtres patient, médecin, date), POST (201 + Location), GET /{id}, PUT, PATCH, DELETE (204) ; `POST /api/urgences` passe par le même service (un rendez-vous d'urgence se gère ensuite par le CRUD) ; `RendezVous` déplacé dans le paquet `rendezvous` ; nouvelles erreurs 409 typées et 400 métier dans `Problemes`.
 - Vérification : `./mvnw test` → 17 tests, 0 échec (7 nouveaux : cycle complet POST → GET → PUT (créneau libéré/repris) → PATCH motif → PATCH ANNULE (créneau libéré) → DELETE 204 → 404 ; créneau déjà réservé / déjà commencé → 409 ; ressources inconnues → 404 ; changement de patient, PATCH vide → 400 ; HONORE → ANNULE → 409 ; annulé non modifiable → 409 ; validations → 400 ; urgence gérable par le CRUD). Service lancé : POST → 201 RDV-000001 ; PUT CRN-000051 → CRN-000053 ; PATCH ANNULE ; PATCH sur annulé → 409 ; CRN-000053 repris par TN-0023456 → 201 ; même créneau par TN-0034567 → 409 ; DELETE → 204 ; GET → 404 — toutes les réponses validées contre les schémas `RendezVous` / `Probleme` du contrat.
