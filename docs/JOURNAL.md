@@ -14,6 +14,12 @@ Modèle :
 
 ---
 
+## 2026-11-21 — P2.GRPC.4
+- Fait : `iot-simulator/capteur/scenario.py` (chargement et validation des scénarios, séries avec événements, capteurs en parallèle) ; option `--scenario` (ou variable `SCENARIO`) dans `capteur.simulateur` ; scénarios `normal.json` (8 patients × FC + SpO2, sans alerte), `demo-alertes.json` (pic cardiaque, désaturation progressive, chute, tachycardie modérée, patient témoin), `afflux.json` (5 alertes critiques simultanées) (D34).
+- Vérification : `python -m unittest discover -s tests -t .` → 10 tests OK (5 nouveaux : scénarios fournis valides ; normal = 8 patients ; valeurs par défaut et surcharges ; événements aux bonnes positions ; 4 erreurs de scénario détectées). Plateforme lancée : `--scenario scenarios/demo-alertes.json` → 60 mesures, 7 alertes (2 INFO, 2 URGENT, 3 CRITIQUE), témoin sans alerte ; l'orchestrateur a terminé 3 workflows puis signalé « aucun créneau d'urgence libre » pour les 2 dernières (urgences saturées par les essais : cas d'ambulance de P5.2).
+- Reste à faire / blocages : P2.SOAP.5, P2.GQL.4, P2.GRPC.3 (PostgreSQL) attendent Docker ; Q7.
+- Contrats ou décisions modifiés : aucun contrat ; D34.
+
 ## 2026-11-21 — P2.GRPC.2
 - Fait : paliers INFO / URGENT / CRITIQUE dans `seuils.json` (10 règles, D33) ; `FileAlertes` : file priorisée par abonné (CRITIQUE → URGENT → INFO, puis ordre d'arrivée) ; tests adaptés (140 bpm est désormais URGENT).
 - Vérification : `python -m unittest discover -s tests -t .` → 14 tests OK (4 nouveaux : paliers FC et SpO2 avec leurs limites, ordre de délivrance 3-5-2-1-4 pour INFO/URGENT/CRITIQUE/INFO/CRITIQUE, filtrage par niveau minimal, 4 mesures → INFO/URGENT/URGENT/INFO via le réseau). Service relancé : FC 110 / 130 / 160 → ALR-000001 INFO, ALR-000002 URGENT, ALR-000003 CRITIQUE ; l'orchestrateur (niveau minimal URGENT) n'a lancé le workflow que pour ALR-000002 et ALR-000003.

@@ -80,7 +80,7 @@ Objectif : le workflow complet fonctionne en version minimale avant d'enrichir q
 - [x] P2.GRPC.1 Seuils critiques : fréquence cardiaque haute/basse, SpO2, chute
 - [x] P2.GRPC.2 Niveaux d'alerte (INFO / URGENT / CRITIQUE) et priorisation
 - [ ] P2.GRPC.3 Persistance des mesures
-- [ ] P2.GRPC.4 Script capteurs multi-patients, fréquence et scénarios configurables
+- [x] P2.GRPC.4 Script capteurs multi-patients, fréquence et scénarios configurables
 
 **Vérification phase 2** : chaque opération listée ci-dessus est testée (collection SoapUI, collection Postman/Swagger, requêtes GraphiQL, client gRPC) et les tests automatisés du service passent.
 

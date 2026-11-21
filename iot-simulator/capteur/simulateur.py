@@ -1,11 +1,12 @@
-"""Capteur IoT virtuel (P1.5) : envoie en streaming la fréquence cardiaque d'un patient au service gRPC
-de télémétrie, et injecte une valeur critique à une position donnée du flux.
+"""Capteurs IoT virtuels : envoient en streaming des mesures au service gRPC de télémétrie.
 
-Exemple :
+Mode simple (P1.5) : un patient, fréquence cardiaque, une valeur critique injectée à une position donnée.
     python -m capteur.simulateur --patient TN-0012345 --mesures 10 --critique-a 5 --valeur-critique 165
+Mode scénario (P2.GRPC.4) : plusieurs patients et types de mesure en parallèle, décrits dans un fichier JSON.
+    python -m capteur.simulateur --scenario scenarios/demo-alertes.json
 
-Variables d'environnement équivalentes (pour Docker) : TELEMETRIE_ADRESSE, PATIENT, NB_MESURES, INTERVALLE,
-CRITIQUE_A, VALEUR_CRITIQUE. Version multi-patients et scénarios configurables : P2.GRPC.4.
+Variables d'environnement équivalentes (pour Docker) : TELEMETRIE_ADRESSE, SCENARIO, PATIENT, NB_MESURES,
+INTERVALLE, CRITIQUE_A, VALEUR_CRITIQUE.
 """
 import argparse
 import logging
@@ -16,6 +17,7 @@ import time
 import grpc
 from google.protobuf.timestamp_pb2 import Timestamp
 
+from . import scenario
 from .gen import telemetrie_pb2 as pb
 from .gen import telemetrie_pb2_grpc as pb_grpc
 
@@ -47,8 +49,10 @@ def flux_mesures(patient: str, suite: list[float], intervalle: float):
 
 def main(argv=None):
     env = os.environ.get
-    p = argparse.ArgumentParser(description="Capteur IoT virtuel (fréquence cardiaque)")
+    p = argparse.ArgumentParser(description="Capteurs IoT virtuels : un patient (mode simple) ou un scénario multi-patients")
     p.add_argument("--adresse", default=env("TELEMETRIE_ADRESSE", "localhost:50051"), help="hôte:port du service gRPC")
+    p.add_argument("--scenario", default=env("SCENARIO"),
+                   help="fichier de scénario multi-patients (ex. scenarios/demo-alertes.json) ; ignore les options du mode simple")
     p.add_argument("--patient", default=env("PATIENT", "TN-0012345"), help="identifiant TN-xxxxxxx (contracts/seed)")
     p.add_argument("--mesures", type=int, default=int(env("NB_MESURES", "10")), help="nombre de mesures envoyées")
     p.add_argument("--intervalle", type=float, default=float(env("INTERVALLE", "1.0")), help="secondes entre deux mesures")
@@ -59,6 +63,8 @@ def main(argv=None):
     a = p.parse_args(argv)
 
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s : %(message)s")
+    if a.scenario:
+        return executer_scenario(a.scenario, a.adresse)
     suite = valeurs(a.mesures, a.critique_a or None, a.valeur_critique, a.graine)
     log.info("Connexion à %s, patient %s, %d mesures toutes les %gs, valeur critique %s",
              a.adresse, a.patient, a.mesures, a.intervalle,
@@ -74,6 +80,27 @@ def main(argv=None):
     log.info("Récapitulatif du service : %d mesure(s) reçue(s), %d alerte(s) déclenchée(s)",
              recap.mesures_recues, recap.alertes_declenchees)
     return 0
+
+
+def executer_scenario(fichier: str, adresse: str) -> int:
+    try:
+        s = scenario.charger(fichier)
+    except (ValueError, OSError) as e:
+        log.error("Scénario invalide (%s) : %s", fichier, e)
+        return 2
+    log.info("Scénario %s : %s (%d capteurs en parallèle)", fichier, s.description, len(s.capteurs))
+    resultats = scenario.executer(s, adresse)
+    erreurs = 0
+    for nom, r in sorted(resultats.items()):
+        if isinstance(r, str):
+            erreurs += 1
+            log.error("%s : refus du service — %s", nom, r)
+        else:
+            log.info("%s : %d mesure(s), %d alerte(s)", nom, *r)
+    total = [r for r in resultats.values() if not isinstance(r, str)]
+    log.info("Total : %d mesure(s), %d alerte(s), %d capteur(s) en erreur",
+             sum(r[0] for r in total), sum(r[1] for r in total), erreurs)
+    return 1 if erreurs else 0
 
 
 if __name__ == "__main__":

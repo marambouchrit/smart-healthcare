@@ -1,0 +1,72 @@
+{
+  "description": "Journée calme : les 8 patients du seed envoient fréquence cardiaque et SpO2 dans les plages normales (aucune alerte attendue).",
+  "intervalle": 1.0,
+  "mesures": 10,
+  "graine": 1,
+  "capteurs": [
+    {
+      "patient": "TN-0012345",
+      "type": "FREQUENCE_CARDIAQUE"
+    },
+    {
+      "patient": "TN-0012345",
+      "type": "SPO2"
+    },
+    {
+      "patient": "TN-0023456",
+      "type": "FREQUENCE_CARDIAQUE"
+    },
+    {
+      "patient": "TN-0023456",
+      "type": "SPO2"
+    },
+    {
+      "patient": "TN-0034567",
+      "type": "FREQUENCE_CARDIAQUE"
+    },
+    {
+      "patient": "TN-0034567",
+      "type": "SPO2"
+    },
+    {
+      "patient": "TN-0045678",
+      "type": "FREQUENCE_CARDIAQUE"
+    },
+    {
+      "patient": "TN-0045678",
+      "type": "SPO2"
+    },
+    {
+      "patient": "TN-0056789",
+      "type": "FREQUENCE_CARDIAQUE"
+    },
+    {
+      "patient": "TN-0056789",
+      "type": "SPO2"
+    },
+    {
+      "patient": "TN-0067890",
+      "type": "FREQUENCE_CARDIAQUE"
+    },
+    {
+      "patient": "TN-0067890",
+      "type": "SPO2"
+    },
+    {
+      "patient": "TN-0078901",
+      "type": "FREQUENCE_CARDIAQUE"
+    },
+    {
+      "patient": "TN-0078901",
+      "type": "SPO2"
+    },
+    {
+      "patient": "TN-0089012",
+      "type": "FREQUENCE_CARDIAQUE"
+    },
+    {
+      "patient": "TN-0089012",
+      "type": "SPO2"
+    }
+  ]
+}

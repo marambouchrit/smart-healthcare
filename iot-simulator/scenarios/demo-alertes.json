@@ -1,0 +1,66 @@
+{
+  "description": "Démonstration : un pic cardiaque critique, une désaturation progressive (INFO, URGENT puis CRITIQUE), une chute, une tachycardie modérée (INFO puis URGENT) et un patient sans incident.",
+  "intervalle": 1.0,
+  "mesures": 10,
+  "graine": 7,
+  "capteurs": [
+    {
+      "patient": "TN-0012345",
+      "type": "FREQUENCE_CARDIAQUE",
+      "evenements": [
+        {
+          "a": 5,
+          "valeur": 165
+        }
+      ]
+    },
+    {
+      "patient": "TN-0034567",
+      "type": "SPO2",
+      "evenements": [
+        {
+          "a": 4,
+          "valeur": 91
+        },
+        {
+          "a": 6,
+          "valeur": 88
+        },
+        {
+          "a": 8,
+          "valeur": 82
+        }
+      ]
+    },
+    {
+      "patient": "TN-0056789",
+      "type": "CHUTE",
+      "evenements": [
+        {
+          "a": 7,
+          "valeur": 1
+        }
+      ]
+    },
+    {
+      "patient": "TN-0023456",
+      "type": "FREQUENCE_CARDIAQUE",
+      "intervalle": 0.5,
+      "mesures": 20,
+      "evenements": [
+        {
+          "a": 8,
+          "valeur": 112
+        },
+        {
+          "a": 14,
+          "valeur": 128
+        }
+      ]
+    },
+    {
+      "patient": "TN-0078901",
+      "type": "FREQUENCE_CARDIAQUE"
+    }
+  ]
+}
