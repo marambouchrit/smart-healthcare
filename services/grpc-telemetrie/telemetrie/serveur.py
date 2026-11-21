@@ -82,13 +82,40 @@ class Diffuseur:
             return len(self._abonnes)
 
 
+class DiffuseurMesures:
+    """Distribue chaque mesure acceptée aux abonnés de SuivreMesures (P2.GRPC.5), dans l'ordre d'arrivée."""
+
+    def __init__(self):
+        self._verrou = threading.Lock()
+        self._abonnes: list[tuple[queue.Queue, pb.AbonnementMesures]] = []
+
+    def abonner(self, abonnement):
+        file = queue.Queue()
+        with self._verrou:
+            self._abonnes.append((file, abonnement))
+        return file
+
+    def desabonner(self, file):
+        with self._verrou:
+            self._abonnes = [(f, a) for f, a in self._abonnes if f is not file]
+
+    def publier(self, mesure):
+        with self._verrou:
+            abonnes = list(self._abonnes)
+        for file, abonnement in abonnes:
+            if not abonnement.identifiant_patient or abonnement.identifiant_patient == mesure.identifiant_patient:
+                file.put(mesure)
+
+
 class TelemetrieService(pb_grpc.TelemetrieServicer):
 
-    def __init__(self, patients: set[str], regles: list[seuils.Regle], diffuseur: Diffuseur, depot):
+    def __init__(self, patients: set[str], regles: list[seuils.Regle], diffuseur: Diffuseur, depot,
+                 diffuseur_mesures: DiffuseurMesures | None = None):
         self.patients = patients
         self.regles = regles
         self.diffuseur = diffuseur
         self.depot = depot
+        self.mesures = diffuseur_mesures or DiffuseurMesures()
 
     def detecter(self, mesure):
         """Alerte (sans identifiant) si la mesure franchit un seuil, la règle la plus grave l'emportant ; sinon None.
@@ -113,6 +140,7 @@ class TelemetrieService(pb_grpc.TelemetrieServicer):
                 context.abort(grpc.StatusCode.NOT_FOUND, f"Patient inconnu : {mesure.identifiant_patient}")
             recues += 1
             alerte = self.depot.enregistrer(mesure, self.detecter(mesure))
+            self.mesures.publier(mesure)
             log.info("Mesure patient=%s type=%s valeur=%g%s", mesure.identifiant_patient,
                      pb.TypeMesure.Name(mesure.type), mesure.valeur, " -> ALERTE" if alerte else "")
             if alerte:
@@ -137,6 +165,19 @@ class TelemetrieService(pb_grpc.TelemetrieServicer):
         finally:
             self.diffuseur.desabonner(file)
             log.info("Abonné déconnecté")
+
+    def SuivreMesures(self, request, context):
+        file = self.mesures.abonner(request)
+        log.info("Nouvel abonné aux mesures (patient=%s)", request.identifiant_patient or "tous")
+        try:
+            while context.is_active():
+                try:
+                    yield file.get(timeout=0.5)
+                except queue.Empty:
+                    continue
+        finally:
+            self.mesures.desabonner(file)
+            log.info("Abonné aux mesures déconnecté")
 
 
 def demarrer(port: int = 50051, fichier_seuils: Path = seuils.FICHIER_DEFAUT, seed_dir: Path = SEED_DIR_DEFAUT,

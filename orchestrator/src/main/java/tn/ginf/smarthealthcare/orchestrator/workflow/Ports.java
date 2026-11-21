@@ -22,6 +22,9 @@ public final class Ports {
 
     public record RendezVousUrgence(String id, OffsetDateTime debut) {}
 
+    /** Dernière valeur d'un type de mesure, relayée vers le tableau de bord (P2.GRPC.5, D18). */
+    public record ConstanteMesuree(String type, double valeur, OffsetDateTime horodatage) {}
+
     /** Étape 2 — SOAP : droits CNAM du patient. */
     public interface Dossier {
         Droits verifierDroits(String patientId, LocalDate datePrestation);
@@ -40,5 +43,8 @@ public final class Ports {
         void mettreAJourCouverture(String patientId, Droits droits);
 
         String creerFicheUrgence(AlerteRecue alerte, boolean aRegulariser, RendezVousUrgence rendezVous);
+
+        /** Dernières constantes d'un patient (mutation enregistrerConstantes). */
+        void enregistrerConstantes(String patientId, java.util.List<ConstanteMesuree> constantes);
     }
 }

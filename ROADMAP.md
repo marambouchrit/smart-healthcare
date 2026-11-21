@@ -82,7 +82,7 @@ Objectif : le workflow complet fonctionne en version minimale avant d'enrichir q
 - [x] P2.GRPC.2 Niveaux d'alerte (INFO / URGENT / CRITIQUE) et priorisation
 - [x] P2.GRPC.3 Persistance des mesures
 - [x] P2.GRPC.4 Script capteurs multi-patients, fréquence et scénarios configurables
-- [ ] P2.GRPC.5 Flux des mesures `SuivreMesures` (ajout au contrat `.proto`) relayé par l'orchestrateur vers `enregistrerConstantes` — ajoutée le 2026-11-21 (Q7)
+- [x] P2.GRPC.5 Flux des mesures `SuivreMesures` (ajout au contrat `.proto`) relayé par l'orchestrateur vers `enregistrerConstantes` — ajoutée le 2026-11-21 (Q7)
 
 **Vérification phase 2** : chaque opération listée ci-dessus est testée (collection SoapUI, collection Postman/Swagger, requêtes GraphiQL, client gRPC) et les tests automatisés du service passent.
 

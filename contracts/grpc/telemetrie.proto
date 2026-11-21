@@ -20,6 +20,10 @@ service Telemetrie {
   // Server streaming : un abonné (l'orchestrateur) reçoit les alertes au fil de l'eau,
   // éventuellement filtrées par niveau minimal et par patient.
   rpc SuivreAlertes (AbonnementAlertes) returns (stream Alerte);
+
+  // Server streaming (ajout P2.GRPC.5, Q7) : un abonné (l'orchestrateur) reçoit chaque mesure acceptée, au fil de
+  // l'eau, pour alimenter les « dernières constantes » du tableau de bord, éventuellement filtrées par patient.
+  rpc SuivreMesures (AbonnementMesures) returns (stream Mesure);
 }
 
 // Type de constante mesurée par un capteur.
@@ -54,6 +58,10 @@ message RecapitulatifEnvoi {
 message AbonnementAlertes {
   Niveau niveau_minimum = 1;                  // NIVEAU_NON_SPECIFIE = toutes les alertes
   string identifiant_patient = 2;             // vide = tous les patients
+}
+
+message AbonnementMesures {
+  string identifiant_patient = 1;             // vide = tous les patients
 }
 
 message Alerte {

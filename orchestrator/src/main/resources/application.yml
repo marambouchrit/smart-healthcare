@@ -15,6 +15,9 @@ orchestrateur:
     # Niveau minimal des alertes prises en charge par le workflow (INFO, URGENT, CRITIQUE)
     niveau-minimum: URGENT
     delai-reconnexion-secondes: 5
+  # Relais des mesures (SuivreMesures) vers enregistrerConstantes, par lots (P2.GRPC.5, D18)
+  constantes:
+    periode-ms: 10000
   dossier:
     url: http://localhost:8081/ws/dossier
   portail:

@@ -29,8 +29,11 @@ with tempfile.TemporaryDirectory() as out:
         print(f"  {m.name:15s} client_streaming={m.client_streaming} server_streaming={m.server_streaming} "
               f"{m.input_type.name} -> {m.output_type.name}")
     em, sa = svc.methods_by_name["EnvoyerMesures"], svc.methods_by_name["SuivreAlertes"]
+    sm = svc.methods_by_name["SuivreMesures"]
     assert em.client_streaming and not em.server_streaming, "EnvoyerMesures doit être client streaming"
     assert sa.server_streaming and not sa.client_streaming, "SuivreAlertes doit être server streaming"
+    assert sm.server_streaming and not sm.client_streaming and sm.output_type.name == "Mesure", \
+        "SuivreMesures doit être server streaming et renvoyer des Mesure"
     assert list(pb.Niveau.keys()) == ["NIVEAU_NON_SPECIFIE", "INFO", "URGENT", "CRITIQUE"]
     assert hasattr(g, "TelemetrieStub") and hasattr(g, "TelemetrieServicer")
 

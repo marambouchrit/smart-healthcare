@@ -31,6 +31,7 @@ class WorkflowAlerteTest {
         Ports.TableauDeBord tdb = new Ports.TableauDeBord() {
             public void enregistrerAlerte(AlerteRecue a) { appels.add("GraphQL alerte " + a.id()); }
             public void mettreAJourCouverture(String p, Droits d) { appels.add("GraphQL couverture " + p + " " + d.statut()); }
+            public void enregistrerConstantes(String p, List<Ports.ConstanteMesuree> c) { appels.add("GraphQL constantes " + p); }
             public String creerFicheUrgence(AlerteRecue a, boolean aReg, RendezVousUrgence r) {
                 appels.add("GraphQL fiche " + r.id()); ficheARegulariser = aReg; return "FIC-000001";
             }

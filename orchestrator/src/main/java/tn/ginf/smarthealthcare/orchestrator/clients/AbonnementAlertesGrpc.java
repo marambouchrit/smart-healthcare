@@ -101,7 +101,7 @@ public class AbonnementAlertesGrpc implements SmartLifecycle {
 
     private AlerteRecue convertir(Alerte a) {
         Timestamp t = a.getHorodatage();
-        OffsetDateTime horodatage = Instant.ofEpochSecond(t.getSeconds(), t.getNanos()).atZone(fuseau).toOffsetDateTime();
+        OffsetDateTime horodatage = Instant.ofEpochSecond(t.getSeconds()).atZone(fuseau).toOffsetDateTime(); // à la seconde, comme les autres dates
         return new AlerteRecue(a.getIdentifiantAlerte(), a.getIdentifiantPatient(), a.getNiveau().name(),
                 a.getType().name(), a.getValeur(), a.getSeuil(), a.getMessage(), horodatage);
     }

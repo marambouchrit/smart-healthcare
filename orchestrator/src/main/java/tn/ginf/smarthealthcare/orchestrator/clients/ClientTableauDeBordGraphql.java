@@ -22,6 +22,8 @@ public class ClientTableauDeBordGraphql implements Ports.TableauDeBord {
             "mutation($a: AlerteInput!) { enregistrerAlerte(alerte: $a) { id } }";
     private static final String METTRE_A_JOUR_COUVERTURE =
             "mutation($c: CouvertureInput!) { mettreAJourCouverture(couverture: $c) { statut } }";
+    private static final String ENREGISTRER_CONSTANTES =
+            "mutation($p: ID!, $c: [ConstanteInput!]!) { enregistrerConstantes(identifiantPatient: $p, constantes: $c) { type } }";
     private static final String CREER_FICHE =
             "mutation($f: FicheUrgenceInput!) { creerFicheUrgence(fiche: $f) { id } }";
 
@@ -69,6 +71,18 @@ public class ClientTableauDeBordGraphql implements Ports.TableauDeBord {
         @SuppressWarnings("unchecked")
         Map<String, Object> fiche = (Map<String, Object>) data.get("creerFicheUrgence");
         return (String) fiche.get("id");
+    }
+
+    @Override
+    public void enregistrerConstantes(String patientId, List<Ports.ConstanteMesuree> constantes) {
+        List<Map<String, Object>> entrees = constantes.stream().map(c -> {
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("type", c.type());
+            m.put("valeur", c.valeur());
+            m.put("horodatage", iso(c.horodatage()));
+            return m;
+        }).toList();
+        executer(ENREGISTRER_CONSTANTES, Map.of("p", patientId, "c", entrees));
     }
 
     private static String iso(OffsetDateTime d) {
