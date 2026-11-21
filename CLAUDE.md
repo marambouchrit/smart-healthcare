@@ -89,7 +89,7 @@ Conventions :
 | `cd services/graphql-dashboard && ./mvnw test` | Tests du service GraphQL | Oui |
 | `cd services/graphql-dashboard && ./mvnw package -DskipTests && java -jar target/graphql-dashboard-0.1.0.jar` | Lance le service GraphQL sur le port 8083 (GraphiQL : `/graphiql`) | Oui |
 | `cd services/grpc-telemetrie && python -m venv .venv && .venv/Scripts/pip install -r requirements.txt && .venv/Scripts/python generer.py` | Prépare le service gRPC (environnement + code généré depuis le `.proto`) | Oui |
-| `cd services/grpc-telemetrie && .venv/Scripts/python -m unittest discover -s tests -t . -v` | Tests du service gRPC | Oui |
+| `cd services/grpc-telemetrie && .venv/Scripts/python -m unittest discover -s tests -t . -v` | Tests du service gRPC (ceux de persistance demandent `docker compose up -d postgres`) | Oui |
 | `cd services/grpc-telemetrie && .venv/Scripts/python -m telemetrie.serveur` | Lance le service gRPC sur le port 50051 | Oui |
 | `cd iot-simulator && python -m venv .venv && .venv/Scripts/pip install -r requirements.txt && .venv/Scripts/python generer.py` | Prépare le simulateur de capteurs | Oui |
 | `cd iot-simulator && .venv/Scripts/python -m capteur.simulateur --patient TN-0012345 --critique-a 5` | Envoie des mesures et injecte une valeur critique (options : `--help`) | Oui |

@@ -42,6 +42,7 @@ Toute décision prise avec l'utilisateur est notée ici. Une décision ne change
 | D34 | 2026-11-21 | Simulateur multi-patients : scénarios JSON dans `iot-simulator/scenarios/` (intervalle et nombre de mesures globaux ou par capteur, plage normale par type, événements « valeur v à la mesure n », graine), un flux gRPC par capteur, capteurs en parallèle ; scénarios fournis : `normal`, `demo-alertes`, `afflux` ; mode simple de P1.5 conservé ; variable `SCENARIO` pour Docker | Démonstrations reproductibles sans modifier le code |
 | D35 | 2026-11-21 | PostgreSQL : image `postgres:18.7-alpine`, conteneur `smart-healthcare-postgres` défini dans `docker-compose.yml`, port hôte **5433** (5432 occupé par le PostgreSQL du poste), une base + un utilisateur par service créés par `infra/postgres/init/01-bases.sql` (CONNECT retiré à PUBLIC), mots de passe de développement surchargeables par variables d'environnement ; schémas versionnés par **Flyway** (`db/migration`), Hibernate en `validate` ; seed chargé au démarrage en n'insérant que les lignes absentes ; tests sur un PostgreSQL jetable (Testcontainers, même image) | Choix « Docker » de l'utilisatrice ; schéma documenté en SQL ; tests sur la même base qu'en production |
 | D36 | 2026-11-21 | Persistance du tableau de bord GraphQL en **Spring JDBC** (`JdbcTemplate`) + Flyway (pas de JPA) : requêtes SQL lues directement dans les `record` du modèle ; `enregistrerAlerte` idempotente (même identifiant → l'alerte existante est renvoyée, ni doublon ni écrasement) ; identifiant de fiche `FIC-xxxxxx` = identifiant attribué par la base ; dates `TIMESTAMPTZ` rendues dans le fuseau du service | Vue de lecture et d'agrégats : SQL direct plus simple que des entités ; un renvoi de l'orchestrateur (P5.3) ne crée pas de doublon |
+| D37 | 2026-11-21 | Persistance du service gRPC (Python) : psycopg 3.3.9, schéma `telemetrie/schema.sql` exécuté au démarrage (`CREATE … IF NOT EXISTS`), toutes les mesures conservées, alerte reliée à sa mesure et écrite dans la même transaction ; identifiant `ALR-xxxxxx` généré par la base (séquence) donc unique après redémarrage ; variable `TELEMETRIE_DB_URL` (« memoire » = sans base, pour les tests unitaires) ; tests de persistance dans un schéma temporaire de la base Docker, ignorés si elle est absente | Corrige les identifiants d'alerte en double constatés en P2.GRPC.1 ; pas d'outil de migration supplémentaire côté Python |
 
 ## Ports et routes
 
@@ -75,6 +76,7 @@ Toute décision prise avec l'utilisateur est notée ici. Une décision ne change
 | Maven (via Maven Wrapper 3.3.4) | 3.9.16 | 2026-11-17 |
 | Python | 3.12.4 (installé) | 2026-11-17 |
 | grpcio / grpcio-tools | 1.85.1 (protobuf 7.36.2, libprotoc 35.1) | 2026-11-17 |
+| psycopg (service gRPC) | 3.3.9 (`psycopg[binary]`) | 2026-11-21 |
 | Node.js / Angular CLI | | |
 | PostgreSQL (image Docker) | postgres:18.7-alpine (Docker Engine 29.8.0) | 2026-11-21 |
 | grpc-java (orchestrateur) | 1.85.1 ; protobuf-java 4.36.2 (même protobuf 36.2 que Python) | 2026-11-17 |

@@ -3,7 +3,9 @@
 Seuils lus dans seuils.json (P2.GRPC.1, D32) : fréquence cardiaque haute/basse, SpO2, chute.
 
 Lancement : python -m telemetrie.serveur
-Variables : TELEMETRIE_PORT (50051), TELEMETRIE_SEUILS (seuils.json), SEED_DIR (../../contracts/seed).
+Mesures et alertes enregistrées dans PostgreSQL (P2.GRPC.3, D37).
+Variables : TELEMETRIE_PORT (50051), TELEMETRIE_SEUILS (seuils.json), SEED_DIR (../../contracts/seed),
+TELEMETRIE_DB_URL (base PostgreSQL, ou « memoire »).
 """
 import itertools
 import json
@@ -17,6 +19,7 @@ from pathlib import Path
 import grpc
 
 from . import seuils
+from .depot import DepotMemoire, DepotPostgres
 from .gen import telemetrie_pb2 as pb
 from .gen import telemetrie_pb2_grpc as pb_grpc
 
@@ -24,6 +27,8 @@ log = logging.getLogger("telemetrie")
 
 ICI = Path(__file__).resolve().parent
 SEED_DIR_DEFAUT = ICI.parent.parent.parent / "contracts" / "seed"
+# Base du service (D35) : conteneur « postgres » de docker-compose.yml ; TELEMETRIE_DB_URL=memoire pour s'en passer
+DB_URL_DEFAUT = "postgresql://grpc_telemetrie:grpc_telemetrie_dev@localhost:5433/grpc_telemetrie"
 
 
 def charger_patients(seed_dir: Path) -> set[str]:
@@ -79,22 +84,19 @@ class Diffuseur:
 
 class TelemetrieService(pb_grpc.TelemetrieServicer):
 
-    def __init__(self, patients: set[str], regles: list[seuils.Regle], diffuseur: Diffuseur):
+    def __init__(self, patients: set[str], regles: list[seuils.Regle], diffuseur: Diffuseur, depot):
         self.patients = patients
         self.regles = regles
         self.diffuseur = diffuseur
-        self._compteur = itertools.count(1)
-        self._verrou = threading.Lock()
+        self.depot = depot
 
     def detecter(self, mesure):
-        """Retourne une Alerte si la mesure franchit un seuil (la règle la plus grave l'emporte), sinon None."""
+        """Alerte (sans identifiant) si la mesure franchit un seuil, la règle la plus grave l'emportant ; sinon None.
+        L'identifiant ALR-xxxxxx est attribué par le dépôt au moment de l'enregistrement (D37)."""
         regle = seuils.evaluer(self.regles, mesure.type, mesure.valeur)
         if regle is None:
             return None
-        with self._verrou:
-            numero = next(self._compteur)
         return pb.Alerte(
-            identifiant_alerte=f"ALR-{numero:06d}",
             identifiant_patient=mesure.identifiant_patient,
             niveau=regle.niveau,
             type=mesure.type,
@@ -110,7 +112,7 @@ class TelemetrieService(pb_grpc.TelemetrieServicer):
             if mesure.identifiant_patient not in self.patients:
                 context.abort(grpc.StatusCode.NOT_FOUND, f"Patient inconnu : {mesure.identifiant_patient}")
             recues += 1
-            alerte = self.detecter(mesure)
+            alerte = self.depot.enregistrer(mesure, self.detecter(mesure))
             log.info("Mesure patient=%s type=%s valeur=%g%s", mesure.identifiant_patient,
                      pb.TypeMesure.Name(mesure.type), mesure.valeur, " -> ALERTE" if alerte else "")
             if alerte:
@@ -137,21 +139,26 @@ class TelemetrieService(pb_grpc.TelemetrieServicer):
             log.info("Abonné déconnecté")
 
 
-def demarrer(port: int = 50051, fichier_seuils: Path = seuils.FICHIER_DEFAUT, seed_dir: Path = SEED_DIR_DEFAUT):
-    """Démarre le serveur et le retourne (port 0 = port libre choisi par le système)."""
-    service = TelemetrieService(charger_patients(seed_dir), seuils.charger(fichier_seuils), Diffuseur())
+def demarrer(port: int = 50051, fichier_seuils: Path = seuils.FICHIER_DEFAUT, seed_dir: Path = SEED_DIR_DEFAUT,
+             depot=None):
+    """Démarre le serveur et le retourne (port 0 = port libre choisi par le système).
+    depot : DepotPostgres en fonctionnement normal ; DepotMemoire par défaut (tests sans base)."""
+    depot = depot if depot is not None else DepotMemoire()
+    service = TelemetrieService(charger_patients(seed_dir), seuils.charger(fichier_seuils), Diffuseur(), depot)
     serveur = grpc.server(futures.ThreadPoolExecutor(max_workers=16))
     pb_grpc.add_TelemetrieServicer_to_server(service, serveur)
     port_reel = serveur.add_insecure_port(f"[::]:{port}")
     serveur.start()
-    log.info("Service Télémétrie gRPC sur le port %d (%d règles de seuils, %d patients)",
-             port_reel, len(service.regles), len(service.patients))
+    log.info("Service Télémétrie gRPC sur le port %d (%d règles de seuils, %d patients, stockage %s)",
+             port_reel, len(service.regles), len(service.patients), type(depot).__name__)
     return serveur, port_reel
 
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s : %(message)s")
+    url = os.environ.get("TELEMETRIE_DB_URL", DB_URL_DEFAUT)
     srv, _ = demarrer(
+        depot=DepotMemoire() if url == "memoire" else DepotPostgres(url),
         port=int(os.environ.get("TELEMETRIE_PORT", "50051")),
         fichier_seuils=Path(os.environ.get("TELEMETRIE_SEUILS", seuils.FICHIER_DEFAUT)),
         seed_dir=Path(os.environ.get("SEED_DIR", SEED_DIR_DEFAUT)),

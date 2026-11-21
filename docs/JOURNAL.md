@@ -14,6 +14,12 @@ Modèle :
 
 ---
 
+## 2026-11-21 — P2.GRPC.3
+- Fait : `telemetrie/depot.py` (`DepotPostgres`, `DepotMemoire`) + `telemetrie/schema.sql` (tables `mesure`, `alerte` avec identifiant généré), le serveur enregistre chaque mesure et attribue l'identifiant d'alerte via la base (D37) ; `requirements.txt` : psycopg[binary] 3.3.9 ; tests `tests/test_depot.py`.
+- Vérification : `python -m unittest discover -s tests -t . -v` → 18 tests OK (4 nouveaux sur la base Docker, schéma temporaire : mesure + alerte reliées, ALR-000001 ; numérotation continue après reconnexion (ALR-000002) ; flux complet via le réseau → 4 mesures, 2 alertes identiques en base et chez l'abonné ; `TN-12` refusé par la contrainte CHECK) ; 0 schéma de test restant. Service lancé : scénario `afflux.json` → 20 mesures, 5 alertes en base (dernière ALR-000005) → service redémarré → nouvelle alerte **ALR-000006** (le problème d'identifiants en double de P2.GRPC.1 est corrigé) ; base : 23 mesures, 6 alertes.
+- Reste à faire / blocages : vérification de fin de phase 2.
+- Contrats ou décisions modifiés : aucun contrat ; D37.
+
 ## 2026-11-21 — P2.GQL.4
 - Fait : service GraphQL sur PostgreSQL (base `graphql_dashboard`) : `V1__schema_tableau_de_bord.sql` (service_hospitalier, medecin, patient, traitement, alerte, fiche_urgence, constante, couverture, contraintes CHECK, index) ; `VueConsolidee` réécrite en JDBC avec la même API (D36) : seed inséré si absent, alerte idempotente, fiche numérotée par la base, constantes en « upsert » qui ignore une mesure plus ancienne ; tests sur Testcontainers avec effacement des données de l'orchestrateur avant chaque test (`PostgresTest.BaseVide`).
 - Vérification : `./mvnw test` → 28 tests, 0 échec (4 nouveaux : version Flyway 1 et seed 4/4/8/10 ; les 4 mutations écrivent en base ; horodatage relu `2026-11-17T10:30:00+01:00` ; alerte envoyée deux fois → 1 ligne, valeur d'origine conservée). Service lancé sur la base Docker : ALR-900001 + FIC-000001 → service redémarré (« Schema is up to date », seed : 0 ajout) → ALR-900002 + FIC-000002 ; `patient(id: "TN-0045678")` renvoie les 2 alertes, les 2 fiches et `historiqueSoins` (2 alertes, 1 ambulance).
