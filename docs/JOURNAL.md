@@ -14,6 +14,12 @@ Modèle :
 
 ---
 
+## 2026-11-21 — P2.GQL.3
+- Fait : `HistoriqueSoinsController` (D31) : `Patient.historiqueSoins` + un résolveur par agrégat. Plus aucun champ du contrat GraphQL non implémenté (`Unmapped fields: {}` au démarrage).
+- Vérification : `./mvnw test` → 24 tests, 0 échec (5 nouveaux : 3 alertes → [INFO 0, URGENT 1, CRITIQUE 2], 2 fiches dont 1 ambulance, traitements ; filtres de période ; traitement terminé hors période exclu ; seul le champ demandé est renvoyé ; période inversée → BAD_REQUEST). Bout en bout : 2 pics (152 et 171 bpm) envoyés par le capteur → workflow → GraphQL ; exemple `contracts/graphql/exemples/historique-soins.graphql` → 2 alertes CRITIQUE, 2 fiches ; réponse minimale (`nombreAlertes`) = 60 octets contre 731 octets pour l'historique complet.
+- Reste à faire / blocages : P2.GQL.4 (PostgreSQL) attend Docker ; partie gRPC (P2.GRPC.1).
+- Contrats ou décisions modifiés : aucun contrat ; D31.
+
 ## 2026-11-21 — P2.GQL.2
 - Fait : `FiltrageController` : query `patients(filtres)` (service, pathologie, niveaux de risque, D30) et query `services` ; les champs du dossier (service, traitements, alertes…) se résolvent aussi dans la liste.
 - Vérification : `./mvnw test` → 19 tests, 0 échec (9 nouveaux : 8 patients triés ELEVE → FAIBLE ; CARDIO → 3 ; « diabete » → TN-0067890 ; « CARDIAQUE » → TN-0012345 ; [ELEVE] → 3, [MOYEN, FAIBLE] → 5 ; PNEUMO + [ELEVE, MOYEN] → 2 ; service inconnu → [] ; champs imbriqués ; `services` ; `TRES_ELEVE` rejeté par le schéma). Service lancé : exemple `contracts/graphql/exemples/patients-filtres.graphql` avec `{service: PNEUMO, niveaux: [ELEVE, MOYEN]}` → Chaabane (ELEVE), Hammami (MOYEN) ; « diabete » → Dridi ; `services` → 4 services.
