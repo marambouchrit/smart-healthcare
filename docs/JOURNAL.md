@@ -14,6 +14,12 @@ Modèle :
 
 ---
 
+## 2026-11-21 — P2.REST.4
+- Fait : `GET` / `PATCH /api/patients/{patientId}` (`ProfilController`, `ProfilService`) : profil initial du seed ; seules les coordonnées (téléphone, email, adresse complète) sont modifiables, champs absents inchangés ; PATCH sans coordonnée → 400 ; validation (téléphone, email, code postal à 4 chiffres, adresse complète).
+- Vérification : `./mvnw test` → 26 tests, 0 échec (5 nouveaux : profil du seed ; modifications partielles successives conservées ; `{"nom":…}` → 400 et nom inchangé ; formats invalides → 400 ; patient inconnu → 404). Service lancé : GET TN-0034567 → profil conforme ; PATCH email + adresse → 200, téléphone inchangé ; téléphone `abc` → 400 ; réponses validées contre `ProfilPatient` / `Probleme`. À améliorer en P2.REST.5 : le détail des 400 de validation (« Validation failure ») ne nomme pas le champ.
+- Reste à faire / blocages : P2.REST.5.
+- Contrats ou décisions modifiés : aucun.
+
 ## 2026-11-21 — P2.REST.3
 - Fait : `GET /api/patients/{patientId}/ordonnances` (`OrdonnanceController`, `OrdonnanceService`) : ordonnance = traitements de `traitements.json` prescrits le même jour par le même médecin au même patient (D19), identifiants `ORD-xxxxxx` stables (ordre date, médecin, patient), plus récentes d'abord, filtre `statut` (EN_COURS / TERMINE) ; `SeedRepository` charge les traitements et le profil complet des patients.
 - Vérification : `./mvnw test` → 21 tests, 0 échec (4 nouveaux : Bisoprolol + Furosémide → 1 ordonnance du 2026-02-10 ; TN-0045678 → 2 ordonnances, la plus récente d'abord, filtre TERMINE → Prednisolone ; ORD-000001 = Metformine du 2025-06-01 ; patient inconnu → 404, `TN-12` et statut inconnu → 400). Service lancé : TN-0012345 → ORD-000004 avec 2 lignes ; TN-0045678 `statut=EN_COURS` → Salbutamol ; TN-9999999 → 404 ; réponses validées contre `Ordonnance[]` / `Probleme`.
