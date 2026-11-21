@@ -15,6 +15,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.web.servlet.MockMvc;
 import org.yaml.snakeyaml.Yaml;
 
@@ -24,8 +25,9 @@ import org.yaml.snakeyaml.Yaml;
  * Seule différence admise : POST /api/ambulances, prévu au contrat pour P5.2.
  */
 @SpringBootTest
+@Import({HorlogeTest.Config.class, PostgresTest.class})
 @AutoConfigureMockMvc
-class AlignementContratTest {
+class AlignementContratTest extends PostgresTest.BaseVide {
 
     static final Set<String> PREVU_PLUS_TARD = Set.of("POST /api/ambulances envoyerAmbulance");
     static final Set<String> METHODES = Set.of("get", "post", "put", "patch", "delete");

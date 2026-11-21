@@ -4,15 +4,17 @@ import java.time.Clock;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.Comparator;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import tn.ginf.smarthealthcare.rest.creneau.Creneau;
 import tn.ginf.smarthealthcare.rest.creneau.CreneauService;
+import tn.ginf.smarthealthcare.rest.persistance.Depots;
+import tn.ginf.smarthealthcare.rest.persistance.Entites.RendezVousEntite;
 import tn.ginf.smarthealthcare.rest.rendezvous.RendezVous.Statut;
 import tn.ginf.smarthealthcare.rest.seed.SeedRepository;
 import tn.ginf.smarthealthcare.rest.web.Problemes.AucunCreneauException;
@@ -21,10 +23,9 @@ import tn.ginf.smarthealthcare.rest.web.Problemes.NonTrouveException;
 import tn.ginf.smarthealthcare.rest.web.Problemes.RequeteInvalideException;
 
 /**
- * Rendez-vous (P2.REST.2) : création, lecture, remplacement, modification partielle, suppression.
- * Règles (D28) : un créneau ne porte qu'un rendez-vous confirmé ; annuler ou supprimer libère le créneau ;
- * un rendez-vous annulé ne se modifie plus ; transitions de statut CONFIRME → ANNULE | HONORE uniquement.
- * Stockage en mémoire (méthodes synchronisées : réservation atomique).
+ * Rendez-vous (P2.REST.2, D28) enregistrés dans PostgreSQL (P2.REST.7, D38).
+ * Un créneau ne porte qu'un rendez-vous non annulé : vérifié ici et garanti par un index unique partiel en base ;
+ * annuler ou supprimer un rendez-vous rend donc son créneau à nouveau disponible.
  */
 @Service
 public class RendezVousService {
@@ -33,127 +34,142 @@ public class RendezVousService {
 
     private final SeedRepository seed;
     private final CreneauService creneaux;
+    private final Depots.RendezVous depot;
     private final Clock horloge;
-    private final Map<String, RendezVous> stock = new LinkedHashMap<>();
-    private final AtomicInteger sequence = new AtomicInteger();
 
-    public RendezVousService(SeedRepository seed, CreneauService creneaux, Clock horloge) {
+    public RendezVousService(SeedRepository seed, CreneauService creneaux, Depots.RendezVous depot, Clock horloge) {
         this.seed = seed;
         this.creneaux = creneaux;
+        this.depot = depot;
         this.horloge = horloge;
     }
 
-    public synchronized List<RendezVous> lister(String patientId, String medecinId, LocalDate date) {
-        return stock.values().stream()
+    @Transactional(readOnly = true)
+    public List<RendezVous> lister(String patientId, String medecinId, LocalDate date) {
+        return depot.findAllByOrderByIdAsc().stream().map(this::versRecord)
                 .filter(r -> patientId == null || r.patientId().equals(patientId))
                 .filter(r -> medecinId == null || r.creneau().medecinId().equals(medecinId))
-                .filter(r -> date == null || r.creneau().debut().atZoneSameInstant(horloge.getZone()).toLocalDate().equals(date))
+                .filter(r -> date == null || r.creneau().debut().toLocalDate().equals(date))
                 .sorted(Comparator.comparing((RendezVous r) -> r.creneau().debut()))
                 .toList();
     }
 
-    public synchronized RendezVous obtenir(String id) {
-        RendezVous r = stock.get(id);
-        if (r == null) {
-            throw new NonTrouveException("Aucun rendez-vous " + id + ".");
-        }
-        return r;
+    @Transactional(readOnly = true)
+    public RendezVous obtenir(String id) {
+        return versRecord(entite(id));
     }
 
+    @Transactional
     public synchronized RendezVous creer(String patientId, String creneauId, String motif) {
         exigerPatient(patientId);
-        Creneau c = reserverOuConflit(creneauId);
-        return enregistrer(nouveau(patientId, c, motif, false));
+        exigerReservable(creneauId);
+        return enregistrer(patientId, creneauId, motif, false);
     }
 
-    /** Réservation d'urgence : premier créneau libre du service aujourd'hui (utilisé par POST /api/urgences). */
+    /** Réservation d'urgence : premier créneau libre du service aujourd'hui (POST /api/urgences). */
+    @Transactional
     public synchronized RendezVous creerUrgence(String patientId, String serviceCode, String motif) {
         exigerPatient(patientId);
-        Creneau c = creneaux.reserverPremierLibreAujourdhui(serviceCode)
+        Creneau c = creneaux.premierLibreAujourdhui(serviceCode)
                 .orElseThrow(() -> new AucunCreneauException("Aucun créneau libre aux urgences aujourd'hui."));
-        return enregistrer(nouveau(patientId, c, motif, true));
+        return enregistrer(patientId, c.id(), motif, true);
     }
 
     /** PUT : remplacement complet ; changer de créneau libère l'ancien. Le patient ne change pas. */
+    @Transactional
     public synchronized RendezVous remplacer(String id, String patientId, String creneauId, String motif) {
-        RendezVous actuel = obtenir(id);
-        exigerModifiable(actuel);
-        if (!actuel.patientId().equals(patientId)) {
-            throw new RequeteInvalideException("Un rendez-vous ne change pas de patient (" + actuel.patientId() + ").");
+        RendezVousEntite e = entite(id);
+        exigerModifiable(e);
+        if (!e.patientId.equals(patientId)) {
+            throw new RequeteInvalideException("Un rendez-vous ne change pas de patient (" + e.patientId + ").");
         }
-        Creneau c = actuel.creneau();
-        if (!c.id().equals(creneauId)) {
-            c = reserverOuConflit(creneauId);
-            creneaux.liberer(actuel.creneau().id());
+        Long nouveau = CreneauService.numero(creneauId);
+        if (!e.creneauId.equals(nouveau)) {
+            exigerReservable(creneauId);
+            log.info("Rendez-vous {} : créneau {} -> {}", id, CreneauService.identifiant(e.creneauId), creneauId);
+            e.creneauId = nouveau;
         }
-        RendezVous r = new RendezVous(id, patientId, c, motif, actuel.statut(), actuel.urgence(), actuel.creeLe());
-        stock.put(id, r);
-        log.info("Rendez-vous {} remplacé : créneau {} -> {}", id, actuel.creneau().id(), c.id());
-        return r;
+        e.motif = motif;
+        return versRecord(depot.saveAndFlush(e));
     }
 
-    /** PATCH : motif et/ou statut. */
+    /** PATCH : motif et/ou statut ; transitions CONFIRME → ANNULE | HONORE. */
+    @Transactional
     public synchronized RendezVous modifier(String id, String motif, Statut statut) {
         if (motif == null && statut == null) {
             throw new RequeteInvalideException("Indiquer au moins un champ à modifier (motif, statut).");
         }
-        RendezVous actuel = obtenir(id);
-        exigerModifiable(actuel);
-        Statut nouveau = statut == null ? actuel.statut() : statut;
-        if (actuel.statut() == Statut.HONORE && nouveau != Statut.HONORE) {
-            throw new ConflitException("transition-interdite", "Transition interdite",
-                    "Le rendez-vous " + id + " a déjà été honoré.");
+        RendezVousEntite e = entite(id);
+        exigerModifiable(e);
+        if (Statut.valueOf(e.statut) == Statut.HONORE && statut != null && statut != Statut.HONORE) {
+            throw new ConflitException("transition-interdite", "Transition interdite", "Le rendez-vous " + id + " a déjà été honoré.");
         }
-        if (nouveau == Statut.ANNULE) {
-            creneaux.liberer(actuel.creneau().id());
+        if (statut != null) {
+            log.info("Rendez-vous {} : statut {} -> {}", id, e.statut, statut);
+            e.statut = statut.name();
         }
-        RendezVous r = new RendezVous(id, actuel.patientId(), nouveau == Statut.ANNULE ? libre(actuel.creneau()) : actuel.creneau(),
-                motif == null ? actuel.motif() : motif, nouveau, actuel.urgence(), actuel.creeLe());
-        stock.put(id, r);
-        log.info("Rendez-vous {} modifié : statut {} -> {}", id, actuel.statut(), nouveau);
-        return r;
+        if (motif != null) {
+            e.motif = motif;
+        }
+        return versRecord(depot.saveAndFlush(e));
     }
 
-    /** DELETE : supprime le rendez-vous et libère son créneau s'il était confirmé. */
+    /** DELETE : supprime le rendez-vous (son créneau redevient disponible). */
+    @Transactional
     public synchronized void supprimer(String id) {
-        RendezVous r = obtenir(id);
-        if (r.statut() == Statut.CONFIRME) {
-            creneaux.liberer(r.creneau().id());
-        }
-        stock.remove(id);
+        depot.delete(entite(id));
         log.info("Rendez-vous {} supprimé", id);
+    }
+
+    private RendezVous enregistrer(String patientId, String creneauId, String motif, boolean urgence) {
+        try {
+            RendezVousEntite e = depot.saveAndFlush(new RendezVousEntite(patientId, CreneauService.numero(creneauId), motif,
+                    Statut.CONFIRME.name(), urgence, OffsetDateTime.now(horloge).withNano(0)));
+            RendezVous r = versRecord(e);
+            log.info("Rendez-vous {} créé : patient={} créneau {} ({}) à {}{}", r.id(), patientId, creneauId,
+                    r.creneau().medecinId(), r.creneau().debut(), urgence ? " [urgence]" : "");
+            return r;
+        } catch (DataIntegrityViolationException ex) {
+            // double réservation simultanée : l'index unique partiel de la base a refusé la seconde
+            throw creneauIndisponible(creneauId);
+        }
+    }
+
+    private RendezVous versRecord(RendezVousEntite e) {
+        Set<Long> reserves = depot.creneauxReserves();
+        Creneau c = creneaux.trouver(CreneauService.identifiant(e.creneauId)).orElseThrow();
+        return new RendezVous("RDV-%06d".formatted(e.id), e.patientId,
+                new Creneau(c.id(), c.medecinId(), c.serviceCode(), c.debut(), c.fin(), !reserves.contains(e.creneauId)),
+                e.motif, Statut.valueOf(e.statut), e.urgence,
+                e.creeLe.atZoneSameInstant(horloge.getZone()).toOffsetDateTime());
+    }
+
+    private RendezVousEntite entite(String id) {
+        Long n = id != null && id.matches("RDV-\\d{6}") ? Long.valueOf(id.substring(4)) : null;
+        return (n == null ? java.util.Optional.<RendezVousEntite>empty() : depot.findById(n))
+                .orElseThrow(() -> new NonTrouveException("Aucun rendez-vous " + id + "."));
     }
 
     private void exigerPatient(String patientId) {
         seed.patient(patientId).orElseThrow(() -> new NonTrouveException("Aucun patient " + patientId + "."));
     }
 
-    private static void exigerModifiable(RendezVous r) {
-        if (r.statut() == Statut.ANNULE) {
-            throw new ConflitException("rendez-vous-annule", "Rendez-vous annulé",
-                    "Le rendez-vous " + r.id() + " est annulé et ne peut plus être modifié.");
+    private void exigerReservable(String creneauId) {
+        creneaux.trouver(creneauId).orElseThrow(() -> new NonTrouveException("Aucun créneau " + creneauId + "."));
+        if (!creneaux.reservable(creneauId)) {
+            throw creneauIndisponible(creneauId);
         }
     }
 
-    private Creneau reserverOuConflit(String creneauId) {
-        creneaux.trouver(creneauId).orElseThrow(() -> new NonTrouveException("Aucun créneau " + creneauId + "."));
-        return creneaux.reserver(creneauId).orElseThrow(() -> new ConflitException("creneau-indisponible",
-                "Créneau indisponible", "Le créneau " + creneauId + " est déjà réservé ou déjà commencé."));
+    private static ConflitException creneauIndisponible(String creneauId) {
+        return new ConflitException("creneau-indisponible", "Créneau indisponible",
+                "Le créneau " + creneauId + " est déjà réservé ou déjà commencé.");
     }
 
-    private static Creneau libre(Creneau c) {
-        return new Creneau(c.id(), c.medecinId(), c.serviceCode(), c.debut(), c.fin(), true);
-    }
-
-    private RendezVous nouveau(String patientId, Creneau c, String motif, boolean urgence) {
-        return new RendezVous("RDV-%06d".formatted(sequence.incrementAndGet()), patientId, c, motif,
-                Statut.CONFIRME, urgence, OffsetDateTime.now(horloge).withNano(0));
-    }
-
-    private RendezVous enregistrer(RendezVous r) {
-        stock.put(r.id(), r);
-        log.info("Rendez-vous {} créé : patient={} créneau {} ({}) à {}{}", r.id(), r.patientId(), r.creneau().id(),
-                r.creneau().medecinId(), r.creneau().debut(), r.urgence() ? " [urgence]" : "");
-        return r;
+    private static void exigerModifiable(RendezVousEntite e) {
+        if (Statut.valueOf(e.statut) == Statut.ANNULE) {
+            throw new ConflitException("rendez-vous-annule", "Rendez-vous annulé",
+                    "Le rendez-vous RDV-%06d est annulé et ne peut plus être modifié.".formatted(e.id));
+        }
     }
 }

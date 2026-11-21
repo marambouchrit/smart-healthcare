@@ -18,7 +18,6 @@ import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockHttpServletResponse;
-import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.web.servlet.MockMvc;
 import org.yaml.snakeyaml.Yaml;
 
@@ -30,9 +29,8 @@ import org.yaml.snakeyaml.Yaml;
  */
 @SpringBootTest
 @AutoConfigureMockMvc
-@Import(HorlogeTest.Config.class)
-@DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_EACH_TEST_METHOD)
-class CodesHttpContratTest {
+@Import({HorlogeTest.Config.class, PostgresTest.class})
+class CodesHttpContratTest extends PostgresTest.BaseVide {
 
     @Autowired MockMvc mvc;
 

@@ -13,7 +13,7 @@ public class HorlogeTest extends Clock {
 
     public static final ZoneId TUNIS = ZoneId.of("Africa/Tunis");
 
-    public Instant instant = ZonedDateTime.of(2026, 11, 17, 10, 10, 0, 0, TUNIS).toInstant();
+    public Instant instant = ZonedDateTime.of(2026, 11, 17, 10, 10, 0, 0, TUNIS).toInstant();  // mardi 17, 10h10
 
     public void regler(int jour, int heure, int minute) {
         instant = ZonedDateTime.of(2026, 11, jour, heure, minute, 0, 0, TUNIS).toInstant();

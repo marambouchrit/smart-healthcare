@@ -9,20 +9,23 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import tn.ginf.smarthealthcare.rest.persistance.Depots;
+import tn.ginf.smarthealthcare.rest.persistance.Entites.CreneauEntite;
 import tn.ginf.smarthealthcare.rest.seed.SeedRepository;
 import tn.ginf.smarthealthcare.rest.seed.SeedRepository.Planning;
 
 /**
- * Génère les créneaux à partir de contracts/seed/plannings.json (D20) sur un horizon de N jours,
- * et gère leur réservation. En mémoire pour la phase 1.
+ * Créneaux (D20, D22, D38) : générés au démarrage depuis contracts/seed/plannings.json sur un horizon de N jours et
+ * enregistrés en base (seulement ceux qui manquent : un redémarrage garde les identifiants CRN-xxxxxx).
+ * Un créneau est indisponible s'il porte un rendez-vous non annulé (pas d'indicateur stocké).
  */
 @Service
 public class CreneauService {
@@ -33,86 +36,96 @@ public class CreneauService {
 
     private final Clock horloge;
     private final SeedRepository seed;
-    private final Map<String, Creneau> creneaux = new LinkedHashMap<>();
+    private final Depots.Creneaux creneaux;
+    private final Depots.RendezVous rendezVous;
 
-    public CreneauService(Clock horloge, SeedRepository seed, @Value("${portail.horizon-jours}") int horizonJours) {
+    public CreneauService(Clock horloge, SeedRepository seed, Depots.Creneaux creneaux, Depots.RendezVous rendezVous,
+                          @Value("${portail.horizon-jours}") int horizonJours) {
         this.horloge = horloge;
         this.seed = seed;
+        this.creneaux = creneaux;
+        this.rendezVous = rendezVous;
         generer(LocalDate.now(horloge), horizonJours);
     }
 
     private void generer(LocalDate debut, int horizonJours) {
         ZoneId zone = horloge.getZone();
-        List<Creneau> liste = new ArrayList<>();
+        List<CreneauEntite> liste = new ArrayList<>();
         for (int j = 0; j < horizonJours; j++) {
             LocalDate jour = debut.plusDays(j);
             for (Planning p : seed.plannings()) {
-                if (!p.jours().contains(nomJour(jour.getDayOfWeek()))) {
+                if (!p.jours().contains(JOURS.get(jour.getDayOfWeek().getValue() - 1))) {
                     continue;
                 }
                 String service = seed.medecin(p.medecinId()).orElseThrow().serviceCode();
                 for (LocalTime h = p.debut(); !h.plusMinutes(p.dureeMinutes()).isAfter(p.fin()); h = h.plusMinutes(p.dureeMinutes())) {
                     OffsetDateTime d = ZonedDateTime.of(jour, h, zone).toOffsetDateTime();
-                    liste.add(new Creneau(null, p.medecinId(), service, d, d.plusMinutes(p.dureeMinutes()), true));
+                    liste.add(new CreneauEntite(p.medecinId(), service, d, d.plusMinutes(p.dureeMinutes())));
                 }
             }
         }
-        liste.sort(Comparator.comparing(Creneau::debut).thenComparing(Creneau::medecinId));
-        int n = 1;
-        for (Creneau c : liste) {
-            String id = "CRN-%06d".formatted(n++);
-            creneaux.put(id, new Creneau(id, c.medecinId(), c.serviceCode(), c.debut(), c.fin(), true));
-        }
-        log.info("{} créneaux générés du {} sur {} jours", creneaux.size(), debut, horizonJours);
+        liste.sort(Comparator.comparing((CreneauEntite c) -> c.debut).thenComparing(c -> c.medecinId));
+        List<CreneauEntite> nouveaux = liste.stream().filter(c -> !creneaux.existsByMedecinIdAndDebut(c.medecinId, c.debut)).toList();
+        creneaux.saveAll(nouveaux);
+        log.info("Créneaux du {} sur {} jours : {} ajoutés, {} en base", debut, horizonJours, nouveaux.size(), creneaux.count());
     }
 
-    private static String nomJour(DayOfWeek d) {
-        return JOURS.get(d.getValue() - 1);
+    Creneau versRecord(CreneauEntite e, Set<Long> reserves) {
+        return new Creneau(identifiant(e.id), e.medecinId, e.serviceCode, local(e.debut), local(e.fin), !reserves.contains(e.id));
     }
 
-    /** Réserve le premier créneau libre du service, aujourd'hui, qui n'a pas encore commencé. */
-    public synchronized Optional<Creneau> reserverPremierLibreAujourdhui(String serviceCode) {
-        OffsetDateTime maintenant = OffsetDateTime.now(horloge);
-        LocalDate aujourdhui = LocalDate.now(horloge);
-        Optional<Creneau> libre = creneaux.values().stream()
-                .filter(c -> c.disponible() && c.serviceCode().equals(serviceCode))
-                .filter(c -> c.debut().isAfter(maintenant))
-                .filter(c -> c.debut().atZoneSameInstant(horloge.getZone()).toLocalDate().equals(aujourdhui))
-                .findFirst();
-        libre.ifPresent(c -> creneaux.put(c.id(), c.reserve()));
-        return libre.map(Creneau::reserve);
+    private OffsetDateTime local(OffsetDateTime d) {
+        return d.atZoneSameInstant(horloge.getZone()).toOffsetDateTime();
+    }
+
+    public static String identifiant(Long id) {
+        return "CRN-%06d".formatted(id);
+    }
+
+    /** CRN-000042 → 42 ; null si le format est inattendu. */
+    public static Long numero(String identifiant) {
+        return identifiant != null && identifiant.matches("CRN-\\d{6}") ? Long.valueOf(identifiant.substring(4)) : null;
     }
 
     /**
      * Créneaux filtrés (P2.REST.1). disponible = true : libres et pas encore commencés ;
      * disponible = false : déjà réservés. Filtres optionnels médecin, service, jour (heure locale).
      */
-    public synchronized List<Creneau> lister(String medecinId, String serviceCode, LocalDate date, boolean disponible) {
+    @Transactional(readOnly = true)
+    public List<Creneau> lister(String medecinId, String serviceCode, LocalDate date, boolean disponible) {
         OffsetDateTime maintenant = OffsetDateTime.now(horloge);
-        return creneaux.values().stream()
-                .filter(c -> medecinId == null || c.medecinId().equals(medecinId))
-                .filter(c -> serviceCode == null || c.serviceCode().equals(serviceCode))
-                .filter(c -> date == null || c.debut().atZoneSameInstant(horloge.getZone()).toLocalDate().equals(date))
-                .filter(c -> disponible ? c.disponible() && c.debut().isAfter(maintenant) : !c.disponible())
+        Set<Long> reserves = rendezVous.creneauxReserves();
+        List<CreneauEntite> source = date == null ? creneaux.findAllByOrderByDebutAscMedecinIdAsc()
+                : creneaux.findByDebutGreaterThanEqualAndDebutLessThanOrderByDebutAscMedecinIdAsc(
+                        date.atStartOfDay(horloge.getZone()).toOffsetDateTime(),
+                        date.plusDays(1).atStartOfDay(horloge.getZone()).toOffsetDateTime());
+        return source.stream()
+                .filter(c -> medecinId == null || c.medecinId.equals(medecinId))
+                .filter(c -> serviceCode == null || c.serviceCode.equals(serviceCode))
+                .filter(c -> disponible ? !reserves.contains(c.id) && c.debut.isAfter(maintenant) : reserves.contains(c.id))
+                .map(c -> versRecord(c, reserves))
                 .toList();
     }
 
-    public synchronized Optional<Creneau> trouver(String id) {
-        return Optional.ofNullable(creneaux.get(id));
+    @Transactional(readOnly = true)
+    public Optional<Creneau> trouver(String id) {
+        Long n = numero(id);
+        return n == null ? Optional.empty() : creneaux.findById(n).map(c -> versRecord(c, rendezVous.creneauxReserves()));
     }
 
-    /** Réserve un créneau précis s'il est libre et pas encore commencé ; vide sinon. */
-    public synchronized Optional<Creneau> reserver(String id) {
-        Creneau c = creneaux.get(id);
-        if (c == null || !c.disponible() || !c.debut().isAfter(OffsetDateTime.now(horloge))) {
-            return Optional.empty();
-        }
-        Creneau reserve = c.reserve();
-        creneaux.put(id, reserve);
-        return Optional.of(reserve);
+    /** Vrai si le créneau existe, n'a pas commencé et ne porte aucun rendez-vous non annulé. */
+    @Transactional(readOnly = true)
+    public boolean reservable(String id) {
+        Long n = numero(id);
+        return n != null && creneaux.findById(n)
+                .filter(c -> c.debut.isAfter(OffsetDateTime.now(horloge)))
+                .filter(c -> !rendezVous.existsByCreneauIdAndStatutNot(c.id, "ANNULE"))
+                .isPresent();
     }
 
-    public synchronized void liberer(String id) {
-        creneaux.computeIfPresent(id, (k, c) -> new Creneau(c.id(), c.medecinId(), c.serviceCode(), c.debut(), c.fin(), true));
+    /** Premier créneau libre du service aujourd'hui qui n'a pas encore commencé (P1.2, D22). */
+    @Transactional(readOnly = true)
+    public Optional<Creneau> premierLibreAujourdhui(String serviceCode) {
+        return lister(null, serviceCode, LocalDate.now(horloge), true).stream().findFirst();
     }
 }

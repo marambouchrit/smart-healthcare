@@ -6,19 +6,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import java.time.Clock;
-import java.time.Instant;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Primary;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
-import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.web.servlet.MockMvc;
 
 /**
@@ -26,28 +19,11 @@ import org.springframework.test.web.servlet.MockMvc;
  * Horloge fixée au mardi 2026-11-17 à 10h10 (Tunis) : les créneaux URGENCES (MED-004) vont de 08:00 à 20:00.
  */
 @SpringBootTest
+@Import({HorlogeTest.Config.class, PostgresTest.class})
 @AutoConfigureMockMvc
-@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
-class UrgenceControllerTest {
-
-    static final ZoneId TUNIS = ZoneId.of("Africa/Tunis");
-
-    /** Horloge dont on peut changer l'heure pendant un test. */
-    static class HorlogeReglable extends Clock {
-        Instant instant = ZonedDateTime.of(2026, 11, 17, 10, 10, 0, 0, TUNIS).toInstant();
-        @Override public ZoneId getZone() { return TUNIS; }
-        @Override public Clock withZone(ZoneId zone) { return this; }
-        @Override public Instant instant() { return instant; }
-    }
-
-    @TestConfiguration
-    static class Config {
-        @Bean @Primary
-        HorlogeReglable horlogeTest() { return new HorlogeReglable(); }
-    }
+class UrgenceControllerTest extends PostgresTest.BaseVide {
 
     @Autowired MockMvc mvc;
-    @Autowired HorlogeReglable horloge;
 
     static final String DEMANDE = """
             {"patientId":"%s","identifiantAlerte":"ALR-0001","niveau":"CRITIQUE",
@@ -76,7 +52,7 @@ class UrgenceControllerTest {
 
     @Test
     void aucunCreneauLibreRenvoie409() throws Exception {
-        horloge.instant = ZonedDateTime.of(2026, 11, 17, 19, 45, 0, 0, TUNIS).toInstant();
+        horloge.regler(17, 19, 45);
         mvc.perform(post("/api/urgences").contentType(MediaType.APPLICATION_JSON).content(DEMANDE.formatted("TN-0012345")))
                 .andExpect(status().isConflict())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))

@@ -18,19 +18,16 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
-import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 
 /** CRUD /api/rendez-vous. Horloge : mardi 2026-11-17 10h10 (Tunis). */
 @SpringBootTest
 @AutoConfigureMockMvc
-@Import(HorlogeTest.Config.class)
-@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
-class RendezVousControllerTest {
+@Import({HorlogeTest.Config.class, PostgresTest.class})
+class RendezVousControllerTest extends PostgresTest.BaseVide {
 
     @Autowired MockMvc mvc;
-    @Autowired HorlogeTest horloge;
 
     /** Identifiant du n-ième créneau libre (0 = premier) d'un médecin un jour donné. */
     String creneau(String medecin, String date, int n) throws Exception {

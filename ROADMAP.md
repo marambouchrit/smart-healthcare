@@ -69,6 +69,7 @@ Objectif : le workflow complet fonctionne en version minimale avant d'enrichir q
 - [x] P2.REST.4 Mise à jour du profil et des coordonnées (`PATCH`)
 - [x] P2.REST.5 Codes HTTP corrects (201, 204, 400, 404, 409) et validation des entrées
 - [x] P2.REST.6 Documentation OpenAPI exposée (Swagger UI) et alignée sur `contracts/rest/`
+- [x] P2.REST.7 Persistance PostgreSQL du portail (créneaux, rendez-vous, profils, ordonnances) — ajoutée le 2026-11-21 à la demande de l'utilisatrice (D8)
 
 ### GraphQL — Tableau de bord médical
 - [x] P2.GQL.1 Extraction personnalisée d'un dossier (profil, dernières constantes, alertes récentes, traitement en cours) en une requête
@@ -81,6 +82,7 @@ Objectif : le workflow complet fonctionne en version minimale avant d'enrichir q
 - [x] P2.GRPC.2 Niveaux d'alerte (INFO / URGENT / CRITIQUE) et priorisation
 - [x] P2.GRPC.3 Persistance des mesures
 - [x] P2.GRPC.4 Script capteurs multi-patients, fréquence et scénarios configurables
+- [ ] P2.GRPC.5 Flux des mesures `SuivreMesures` (ajout au contrat `.proto`) relayé par l'orchestrateur vers `enregistrerConstantes` — ajoutée le 2026-11-21 (Q7)
 
 **Vérification phase 2** : chaque opération listée ci-dessus est testée (collection SoapUI, collection Postman/Swagger, requêtes GraphiQL, client gRPC) et les tests automatisés du service passent.
 

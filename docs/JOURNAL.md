@@ -14,6 +14,12 @@ Modèle :
 
 ---
 
+## 2026-11-21 — P2.REST.7 (tâche ajoutée)
+- Fait : tâches P2.REST.7 et P2.GRPC.5 ajoutées à la roadmap à la demande de l'utilisatrice (Q7 réglée). Service REST sur PostgreSQL (D38) : `V1__schema_portail.sql`, entités et dépôts JPA, `SeedRepository` (seed inséré si absent, `restaurerProfils`), `CreneauService` (créneaux générés en base, disponibilité calculée), `RendezVousService` et `ProfilService` réécrits sur la base (règles D28 inchangées). Tests : Testcontainers, horloge commune fixée au mardi 17, base remise à zéro avant chaque test (`PostgresTest.BaseVide`) ; `UrgenceControllerTest` utilise l'horloge commune.
+- Vérification : `./mvnw test` → 59 tests, 0 échec (les 56 existants inchangés + 3 nouveaux : version Flyway 1, seed 4/8/10, 464 créneaux dont CRN-000001 = MED-004 le 17 à 08:00 ; rendez-vous et téléphone écrits en base ; deux rendez-vous actifs sur le même créneau refusés par l'index `rendez_vous_un_seul_actif_par_creneau`, un annulé accepté). Service lancé sur la base Docker : RDV-000001 sur CRN-000087 + téléphone modifié → redémarrage (« Schema is up to date », 0 seed et 0 créneau ajoutés) → RDV-000001 relu (conforme au contrat), téléphone conservé, CRN-000087 refusé à un autre patient (409), CRN-000089 accepté (201). Données d'essai remises à l'état initial ensuite.
+- Reste à faire / blocages : P2.GRPC.5.
+- Contrats ou décisions modifiés : aucun contrat ; D38.
+
 ## 2026-11-21 — Vérification de fin de phase 2
 - Fait : 19/19 tâches de la phase 2 ; données d'essai effacées des bases de développement (référentiels conservés) avant le test final.
 - Vérification : suites complètes → SOAP 40 tests, REST 56, GraphQL 28, orchestrateur 4 (0 échec) ; gRPC 18 OK ; simulateur 10 OK ; `check-seed` OK ; 11/11 exemples SOAP valides. Bout en bout, 5 composants sur PostgreSQL (REST en fuseau America/New_York, 21h à Tunis) + `--scenario scenarios/demo-alertes.json` → 60 mesures, 7 alertes (base `grpc_telemetrie`) → 5 workflows terminés (RDV-000001…000005, FIC-000001…000005) → base `graphql_dashboard` : 5 alertes, 5 fiches, 4 couvertures. Opérations testées une à une : SOAP (tests + SoapUI + curl), REST (tests + Postman + Swagger UI), GraphQL (tests + GraphiQL), gRPC (tests + clients).

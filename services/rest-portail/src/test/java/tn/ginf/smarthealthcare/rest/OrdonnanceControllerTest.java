@@ -12,12 +12,14 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.web.servlet.MockMvc;
 
 /** GET /api/patients/{id}/ordonnances, à partir de contracts/seed/traitements.json. */
 @SpringBootTest
+@Import({HorlogeTest.Config.class, PostgresTest.class})
 @AutoConfigureMockMvc
-class OrdonnanceControllerTest {
+class OrdonnanceControllerTest extends PostgresTest.BaseVide {
 
     @Autowired MockMvc mvc;
 
