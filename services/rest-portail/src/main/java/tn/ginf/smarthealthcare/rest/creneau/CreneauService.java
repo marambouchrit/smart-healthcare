@@ -82,4 +82,37 @@ public class CreneauService {
         libre.ifPresent(c -> creneaux.put(c.id(), c.reserve()));
         return libre.map(Creneau::reserve);
     }
+
+    /**
+     * Créneaux filtrés (P2.REST.1). disponible = true : libres et pas encore commencés ;
+     * disponible = false : déjà réservés. Filtres optionnels médecin, service, jour (heure locale).
+     */
+    public synchronized List<Creneau> lister(String medecinId, String serviceCode, LocalDate date, boolean disponible) {
+        OffsetDateTime maintenant = OffsetDateTime.now(horloge);
+        return creneaux.values().stream()
+                .filter(c -> medecinId == null || c.medecinId().equals(medecinId))
+                .filter(c -> serviceCode == null || c.serviceCode().equals(serviceCode))
+                .filter(c -> date == null || c.debut().atZoneSameInstant(horloge.getZone()).toLocalDate().equals(date))
+                .filter(c -> disponible ? c.disponible() && c.debut().isAfter(maintenant) : !c.disponible())
+                .toList();
+    }
+
+    public synchronized Optional<Creneau> trouver(String id) {
+        return Optional.ofNullable(creneaux.get(id));
+    }
+
+    /** Réserve un créneau précis s'il est libre et pas encore commencé ; vide sinon. */
+    public synchronized Optional<Creneau> reserver(String id) {
+        Creneau c = creneaux.get(id);
+        if (c == null || !c.disponible() || !c.debut().isAfter(OffsetDateTime.now(horloge))) {
+            return Optional.empty();
+        }
+        Creneau reserve = c.reserve();
+        creneaux.put(id, reserve);
+        return Optional.of(reserve);
+    }
+
+    public synchronized void liberer(String id) {
+        creneaux.computeIfPresent(id, (k, c) -> new Creneau(c.id(), c.medecinId(), c.serviceCode(), c.debut(), c.fin(), true));
+    }
 }

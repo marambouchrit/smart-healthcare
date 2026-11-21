@@ -14,6 +14,12 @@ Modèle :
 
 ---
 
+## 2026-11-21 — P2.REST.1
+- Fait : `GET /api/creneaux` (`CreneauController`) avec filtres `medecinId` (format `MED-xxx`), `serviceCode`, `date` (ISO), `disponible` (défaut true = libres et non commencés ; false = réservés) ; `CreneauService` : `lister`, `trouver`, `reserver`, `liberer`. Horloge de test partagée `HorlogeTest`. P2.SOAP.5 reportée : Docker Desktop non démarré (choix « Docker » de l'utilisatrice pour PostgreSQL).
+- Vérification : `./mvnw test` → 10 tests, 0 échec (5 nouveaux : MED-002 mardi 10h10 → 5 créneaux libres dès 10h30 ; MED-001 aucun le mardi, 6 le mercredi ; filtre CARDIO ; créneau réservé par une urgence visible avec `disponible=false` ; `medecinId=DR-1` et date `17/11/2026` → 400). Service lancé : `GET /api/creneaux?medecinId=MED-002&date=2026-11-24` → 200, validé contre `Creneau[]` du contrat ; URGENCES le 22 → 24 créneaux 08:00…19:30 ; `date=2026-13-45` → 400 Problem Details conforme.
+- Reste à faire / blocages : P2.REST.2.
+- Contrats ou décisions modifiés : aucun.
+
 ## 2026-11-21 — P2.SOAP.4
 - Fait : catalogue des SOAP Faults vérifié sur les 4 opérations (`FautesSoapTest`, requêtes HTTP brutes) ; exemple `contracts/soap/exemples/erreurMetier-vignette-invalide.xml` ; `contracts/soap/README.md` (opérations, format des Faults, codes `PATIENT_INCONNU` / `VIGNETTE_INVALIDE` / `DONNEES_INVALIDES`, rejet `soap:Client` des messages non conformes au XSD).
 - Vérification : `./mvnw test` → 36 tests, 0 échec (10 nouveaux : 8 Faults métier → HTTP 500, `soap:Server`, `<detail><erreurMetier>` avec le bon code ; `TN-12` et identifiant vide → `soap:Client` `cvc-…`). 12/12 exemples valides contre le XSD. Appel réel `emettreFeuilleDeSoins` TN-0067890 / VIG-2025-100006 → Fault `VIGNETTE_INVALIDE` « acte du 2026-11-17 non couvert ».

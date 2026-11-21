@@ -63,7 +63,7 @@ Objectif : le workflow complet fonctionne en version minimale avant d'enrichir q
 - [ ] P2.SOAP.5 Persistance PostgreSQL + chargement des données de `contracts/seed/`
 
 ### REST — Portail patient & rendez-vous
-- [ ] P2.REST.1 `GET` des créneaux disponibles (filtres médecin / date)
+- [x] P2.REST.1 `GET` des créneaux disponibles (filtres médecin / date)
 - [ ] P2.REST.2 CRUD complet des rendez-vous (`POST`, `GET`, `PUT`, `PATCH`, `DELETE`)
 - [ ] P2.REST.3 Historique des prescriptions et ordonnances
 - [ ] P2.REST.4 Mise à jour du profil et des coordonnées (`PATCH`)
