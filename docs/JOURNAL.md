@@ -14,6 +14,12 @@ Modèle :
 
 ---
 
+## 2026-11-21 — P2.GRPC.2
+- Fait : paliers INFO / URGENT / CRITIQUE dans `seuils.json` (10 règles, D33) ; `FileAlertes` : file priorisée par abonné (CRITIQUE → URGENT → INFO, puis ordre d'arrivée) ; tests adaptés (140 bpm est désormais URGENT).
+- Vérification : `python -m unittest discover -s tests -t .` → 14 tests OK (4 nouveaux : paliers FC et SpO2 avec leurs limites, ordre de délivrance 3-5-2-1-4 pour INFO/URGENT/CRITIQUE/INFO/CRITIQUE, filtrage par niveau minimal, 4 mesures → INFO/URGENT/URGENT/INFO via le réseau). Service relancé : FC 110 / 130 / 160 → ALR-000001 INFO, ALR-000002 URGENT, ALR-000003 CRITIQUE ; l'orchestrateur (niveau minimal URGENT) n'a lancé le workflow que pour ALR-000002 et ALR-000003.
+- Reste à faire / blocages : P2.GRPC.3 (persistance, attend Docker) ; P2.GRPC.4.
+- Contrats ou décisions modifiés : aucun contrat ; D33.
+
 ## 2026-11-21 — P2.GRPC.1
 - Fait : `telemetrie/seuils.py` + `seuils.json` (D32) : fréquence cardiaque haute et basse, SpO2, chute ; le serveur évalue toutes les règles du type et retient la plus grave ; numérotation des alertes protégée par un verrou.
 - Vérification : `python -m unittest discover -s tests -t . -v` → 10 tests OK (5 nouveaux : limites 140/40/85 exclues, chute 1/0, messages, 5 mesures → 4 alertes diffusées avec les bons seuils). Service relancé : l'orchestrateur affiche « Service de télémétrie indisponible (UNAVAILABLE) : nouvelle tentative dans 5 s » puis se réabonne seul ; SpO2 82 (TN-0034567) et chute (TN-0056789) → 2 alertes CRITIQUE → 2 workflows complets (RDV-000005 / FIC-000004, RDV-000004 / FIC-000003).

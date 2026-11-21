@@ -47,7 +47,7 @@ class TestTelemetrie(unittest.TestCase):
         return recues, appel
 
     def test_valeur_normale_aucune_alerte(self):
-        recap = self.stub.EnvoyerMesures(iter([mesure("TN-0012345", 80), mesure("TN-0012345", 140)]))
+        recap = self.stub.EnvoyerMesures(iter([mesure("TN-0012345", 80), mesure("TN-0012345", 100)]))  # 100 : limite INFO exclue
         self.assertEqual(recap.mesures_recues, 2)
         self.assertEqual(recap.alertes_declenchees, 0)
 

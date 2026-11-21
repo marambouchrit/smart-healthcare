@@ -31,15 +31,29 @@ def charger_patients(seed_dir: Path) -> set[str]:
         return {p["id"] for p in json.load(f)}
 
 
+class FileAlertes:
+    """File d'un abonné, priorisée (P2.GRPC.2) : CRITIQUE avant URGENT avant INFO, ordre d'arrivée à niveau égal."""
+
+    def __init__(self):
+        self._file = queue.PriorityQueue()
+        self._ordre = itertools.count()
+
+    def put(self, alerte):
+        self._file.put((-alerte.niveau, next(self._ordre), alerte))
+
+    def get(self, timeout=None):
+        return self._file.get(timeout=timeout)[2]
+
+
 class Diffuseur:
-    """Distribue chaque alerte à tous les abonnés de SuivreAlertes (une file par abonné)."""
+    """Distribue chaque alerte à tous les abonnés de SuivreAlertes (une file priorisée par abonné)."""
 
     def __init__(self):
         self._verrou = threading.Lock()
-        self._abonnes: list[tuple[queue.Queue, pb.AbonnementAlertes]] = []
+        self._abonnes: list[tuple[FileAlertes, pb.AbonnementAlertes]] = []
 
     def abonner(self, abonnement):
-        file = queue.Queue()
+        file = FileAlertes()
         with self._verrou:
             self._abonnes.append((file, abonnement))
         return file

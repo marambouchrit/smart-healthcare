@@ -78,7 +78,7 @@ Objectif : le workflow complet fonctionne en version minimale avant d'enrichir q
 
 ### gRPC — Télémétrie & alertes temps réel
 - [x] P2.GRPC.1 Seuils critiques : fréquence cardiaque haute/basse, SpO2, chute
-- [ ] P2.GRPC.2 Niveaux d'alerte (INFO / URGENT / CRITIQUE) et priorisation
+- [x] P2.GRPC.2 Niveaux d'alerte (INFO / URGENT / CRITIQUE) et priorisation
 - [ ] P2.GRPC.3 Persistance des mesures
 - [ ] P2.GRPC.4 Script capteurs multi-patients, fréquence et scénarios configurables
 
