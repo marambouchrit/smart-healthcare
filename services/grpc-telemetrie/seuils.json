@@ -1,0 +1,9 @@
+{
+  "_commentaire": "Seuils de détection (valeurs de DÉMONSTRATION, pas des références médicales). sens = haut : alerte si valeur > seuil ; bas : alerte si valeur < seuil ; egal : alerte si valeur == seuil. Voir D32 dans docs/DECISIONS.md.",
+  "regles": [
+    { "type": "FREQUENCE_CARDIAQUE", "sens": "haut", "seuil": 140, "niveau": "CRITIQUE", "libelle": "Fréquence cardiaque {valeur} bpm > {seuil} bpm" },
+    { "type": "FREQUENCE_CARDIAQUE", "sens": "bas",  "seuil": 40,  "niveau": "CRITIQUE", "libelle": "Fréquence cardiaque {valeur} bpm < {seuil} bpm" },
+    { "type": "SPO2",                "sens": "bas",  "seuil": 85,  "niveau": "CRITIQUE", "libelle": "SpO2 {valeur} % < {seuil} %" },
+    { "type": "CHUTE",               "sens": "egal", "seuil": 1,   "niveau": "CRITIQUE", "libelle": "Chute détectée" }
+  ]
+}

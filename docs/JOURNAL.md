@@ -14,6 +14,13 @@ Modèle :
 
 ---
 
+## 2026-11-21 — P2.GRPC.1
+- Fait : `telemetrie/seuils.py` + `seuils.json` (D32) : fréquence cardiaque haute et basse, SpO2, chute ; le serveur évalue toutes les règles du type et retient la plus grave ; numérotation des alertes protégée par un verrou.
+- Vérification : `python -m unittest discover -s tests -t . -v` → 10 tests OK (5 nouveaux : limites 140/40/85 exclues, chute 1/0, messages, 5 mesures → 4 alertes diffusées avec les bons seuils). Service relancé : l'orchestrateur affiche « Service de télémétrie indisponible (UNAVAILABLE) : nouvelle tentative dans 5 s » puis se réabonne seul ; SpO2 82 (TN-0034567) et chute (TN-0056789) → 2 alertes CRITIQUE → 2 workflows complets (RDV-000005 / FIC-000004, RDV-000004 / FIC-000003).
+- Problème constaté : au redémarrage du service gRPC, la numérotation repart à ALR-000001, d'où des identifiants en double dans le tableau de bord ; à corriger avec la persistance (P2.GRPC.3 : numérotation reprise depuis la base).
+- Reste à faire / blocages : P2.GRPC.2.
+- Contrats ou décisions modifiés : aucun contrat ; D32 (remplace la variable de D24).
+
 ## 2026-11-21 — P2.GQL.3
 - Fait : `HistoriqueSoinsController` (D31) : `Patient.historiqueSoins` + un résolveur par agrégat. Plus aucun champ du contrat GraphQL non implémenté (`Unmapped fields: {}` au démarrage).
 - Vérification : `./mvnw test` → 24 tests, 0 échec (5 nouveaux : 3 alertes → [INFO 0, URGENT 1, CRITIQUE 2], 2 fiches dont 1 ambulance, traitements ; filtres de période ; traitement terminé hors période exclu ; seul le champ demandé est renvoyé ; période inversée → BAD_REQUEST). Bout en bout : 2 pics (152 et 171 bpm) envoyés par le capteur → workflow → GraphQL ; exemple `contracts/graphql/exemples/historique-soins.graphql` → 2 alertes CRITIQUE, 2 fiches ; réponse minimale (`nombreAlertes`) = 60 octets contre 731 octets pour l'historique complet.

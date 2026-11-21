@@ -77,7 +77,7 @@ Objectif : le workflow complet fonctionne en version minimale avant d'enrichir q
 - [ ] P2.GQL.4 Persistance de la vue consolidée (PostgreSQL) + données initiales
 
 ### gRPC — Télémétrie & alertes temps réel
-- [ ] P2.GRPC.1 Seuils critiques : fréquence cardiaque haute/basse, SpO2, chute
+- [x] P2.GRPC.1 Seuils critiques : fréquence cardiaque haute/basse, SpO2, chute
 - [ ] P2.GRPC.2 Niveaux d'alerte (INFO / URGENT / CRITIQUE) et priorisation
 - [ ] P2.GRPC.3 Persistance des mesures
 - [ ] P2.GRPC.4 Script capteurs multi-patients, fréquence et scénarios configurables

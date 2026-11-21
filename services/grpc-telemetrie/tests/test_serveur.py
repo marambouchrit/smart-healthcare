@@ -24,7 +24,7 @@ def mesure(patient, valeur, type_=pb.FREQUENCE_CARDIAQUE):
 class TestTelemetrie(unittest.TestCase):
 
     def setUp(self):
-        self.serveur, port = demarrer(port=0, seuil_fc=140)
+        self.serveur, port = demarrer(port=0)
         self.canal = grpc.insecure_channel(f"localhost:{port}")
         self.stub = pb_grpc.TelemetrieStub(self.canal)
 
@@ -76,8 +76,8 @@ class TestTelemetrie(unittest.TestCase):
         self.assertEqual(len(lui), 1)
         self.assertEqual(len(autre), 0)
 
-    def test_autres_types_de_mesure_ignores_en_phase_1(self):
-        recap = self.stub.EnvoyerMesures(iter([mesure("TN-0056789", 1, pb.CHUTE), mesure("TN-0034567", 85, pb.SPO2)]))
+    def test_valeurs_normales_des_autres_types_sans_alerte(self):
+        recap = self.stub.EnvoyerMesures(iter([mesure("TN-0056789", 0, pb.CHUTE), mesure("TN-0034567", 96, pb.SPO2)]))
         self.assertEqual((recap.mesures_recues, recap.alertes_declenchees), (2, 0))
 
     def test_patient_inconnu_refuse(self):
