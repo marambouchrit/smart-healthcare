@@ -57,7 +57,7 @@ Objectif : le workflow complet fonctionne en version minimale avant d'enrichir q
 
 ### SOAP — Dossier patient & facturation CNAM
 - [x] P2.SOAP.1 `emettreFeuilleDeSoins` (enregistrement des actes cotés en lettres-clés)
-- [ ] P2.SOAP.2 `consulterHistorique` (historique médical certifié)
+- [x] P2.SOAP.2 `consulterHistorique` (historique médical certifié)
 - [ ] P2.SOAP.3 Comparaison des garanties entre deux prises en charge
 - [ ] P2.SOAP.4 Erreurs métier renvoyées en SOAP Fault (patient inconnu, vignette invalide)
 - [ ] P2.SOAP.5 Persistance PostgreSQL + chargement des données de `contracts/seed/`

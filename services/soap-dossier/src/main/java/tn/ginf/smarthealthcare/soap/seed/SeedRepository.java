@@ -39,8 +39,13 @@ public class SeedRepository {
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record LettreCleSeed(String code, BigDecimal valeurUnitaireTND) {}
 
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record TraitementSeed(String id, String patientId, String medecinId, String medicament, String dosage,
+                                 LocalDate dateDebut) {}
+
     private final Set<String> patients;
     private final Set<String> medecins;
+    private final List<TraitementSeed> traitements;
     private final Map<String, CouvertureSeed> couvertures;
     private final Map<String, BigDecimal> valeursLettresCles;
 
@@ -53,8 +58,9 @@ public class SeedRepository {
                 .stream().collect(Collectors.toUnmodifiableMap(CouvertureSeed::patientId, Function.identity()));
         this.valeursLettresCles = lire(mapper, "seed/lettres-cles.json", new TypeReference<List<LettreCleSeed>>() {})
                 .stream().collect(Collectors.toUnmodifiableMap(LettreCleSeed::code, LettreCleSeed::valeurUnitaireTND));
-        log.info("Seed chargé : {} patients, {} médecins, {} couvertures CNAM, {} lettres-clés",
-                patients.size(), medecins.size(), couvertures.size(), valeursLettresCles.size());
+        this.traitements = List.copyOf(lire(mapper, "seed/traitements.json", new TypeReference<List<TraitementSeed>>() {}));
+        log.info("Seed chargé : {} patients, {} médecins, {} couvertures CNAM, {} lettres-clés, {} traitements",
+                patients.size(), medecins.size(), couvertures.size(), valeursLettresCles.size(), traitements.size());
     }
 
     private static <T> T lire(ObjectMapper mapper, String chemin, TypeReference<T> type) throws IOException {
@@ -69,6 +75,10 @@ public class SeedRepository {
 
     public Optional<CouvertureSeed> couverture(String identifiantPatient) {
         return Optional.ofNullable(couvertures.get(identifiantPatient));
+    }
+
+    public List<TraitementSeed> traitements(String patientId) {
+        return traitements.stream().filter(t -> t.patientId().equals(patientId)).toList();
     }
 
     public boolean medecinExiste(String identifiantMedecin) {

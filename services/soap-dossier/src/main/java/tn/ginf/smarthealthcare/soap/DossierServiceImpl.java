@@ -18,6 +18,7 @@ import tn.ginf.smarthealthcare.soap.generated.DossierPortType;
 import tn.ginf.smarthealthcare.soap.generated.EmettreFeuilleDeSoins;
 import tn.ginf.smarthealthcare.soap.generated.EmettreFeuilleDeSoinsResponse;
 import tn.ginf.smarthealthcare.soap.facturation.FacturationService;
+import tn.ginf.smarthealthcare.soap.historique.HistoriqueService;
 import tn.ginf.smarthealthcare.soap.generated.ErreurMetierFault;
 import tn.ginf.smarthealthcare.soap.generated.Filiere;
 import tn.ginf.smarthealthcare.soap.generated.StatutDroits;
@@ -28,8 +29,8 @@ import tn.ginf.smarthealthcare.soap.seed.SeedRepository.CouvertureSeed;
 
 /**
  * Implémentation de l'interface générée depuis contracts/soap/dossier.wsdl (approche top-down, D4).
- * Implémentées : verifierDroitsCNAM (P1.1), emettreFeuilleDeSoins (P2.SOAP.1).
- * consulterHistorique et comparerGaranties arrivent en P2.SOAP.2 et P2.SOAP.3.
+ * Implémentées : verifierDroitsCNAM (P1.1), emettreFeuilleDeSoins (P2.SOAP.1), consulterHistorique (P2.SOAP.2).
+ * comparerGaranties arrive en P2.SOAP.3.
  */
 @Service
 @WebService(
@@ -44,11 +45,14 @@ public class DossierServiceImpl implements DossierPortType {
 
     private final SeedRepository seed;
     private final FacturationService facturation;
+    private final HistoriqueService historique;
     private final DatatypeFactory datatypes;
 
-    public DossierServiceImpl(SeedRepository seed, FacturationService facturation) throws DatatypeConfigurationException {
+    public DossierServiceImpl(SeedRepository seed, FacturationService facturation, HistoriqueService historique)
+            throws DatatypeConfigurationException {
         this.seed = seed;
         this.facturation = facturation;
+        this.historique = historique;
         this.datatypes = DatatypeFactory.newInstance();
     }
 
@@ -92,8 +96,12 @@ public class DossierServiceImpl implements DossierPortType {
     }
 
     @Override
-    public ConsulterHistoriqueResponse consulterHistorique(ConsulterHistorique requete) {
-        throw new UnsupportedOperationException("consulterHistorique : prévu en P2.SOAP.2");
+    public ConsulterHistoriqueResponse consulterHistorique(ConsulterHistorique requete) throws ErreurMetierFault {
+        ConsulterHistoriqueResponse reponse = new ConsulterHistoriqueResponse();
+        reponse.setHistorique(historique.consulter(requete.getIdentifiantPatient(),
+                requete.getDateDebut() == null ? null : versLocalDate(requete.getDateDebut()),
+                requete.getDateFin() == null ? null : versLocalDate(requete.getDateFin())));
+        return reponse;
     }
 
     @Override

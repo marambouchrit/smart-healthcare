@@ -14,6 +14,12 @@ Modèle :
 
 ---
 
+## 2026-11-21 — P2.SOAP.2
+- Fait : `consulterHistorique` (`HistoriqueService`, D27) : consultations issues de `traitements.json` regroupées par (médecin, date), actes des feuilles de soins émises avec leur numéro, tri chronologique, filtre de période, `dateCertification` à l'instant de la consultation ; `SeedRepository` charge aussi les traitements.
+- Vérification : `./mvnw test` → 20 tests, 0 échec (6 nouveaux : Bisoprolol + Furosémide du 2026-02-10 → 1 consultation MED-001 ; feuille CS 1 + K 10 → entrées ACTE après la consultation avec FS-2026-000001 ; filtres de période ; TN-0045678 → 2 consultations ; patient inconnu → `PATIENT_INCONNU` ; période inversée → `DONNEES_INVALIDES`). Service lancé + `curl` : feuille FS-2026-000001 émise puis requête `contracts/soap/exemples/consulterHistorique-requete.xml` → 1 CONSULTATION (2026-02-10) + 2 ACTE (2026-11-17, FS-2026-000001), `dateCertification` 2026-11-21T20:26:37+01:00 ; réponse réelle validée contre `dossier.xsd` → VALIDE.
+- Reste à faire / blocages : P2.SOAP.3 (`comparerGaranties`).
+- Contrats ou décisions modifiés : aucun contrat ; D27.
+
 ## 2026-11-21 — P2.SOAP.1
 - Fait : `emettreFeuilleDeSoins` dans `services/soap-dossier` : `FacturationService` (montant = coefficient × valeur de `lettres-cles.json`, remboursé = total × taux, arrondis au millime, numéro `FS-AAAA-xxxxxx`, certification SHA-256 du contenu, feuilles gardées en mémoire pour l'historique), contrôles patient / vignette du patient / date de chaque acte couverte / médecin connu, `Erreurs.faute(...)` commun, horloge injectable (`dossier.fuseau`). Q6 réglée par D26.
 - Vérification : `./mvnw test` → 14 tests, 0 échec (8 nouveaux : CS 1 + K 10 → 60 + 25 = 85,000, remboursé 68,000 à 80 % ; B 120 → 48,000 remboursé 24,000 à 50 % et numérotation FS-2026-000002 ; vignette expirée, vignette d'un autre patient, non affilié → `VIGNETTE_INVALIDE` ; patient inconnu → `PATIENT_INCONNU` ; médecin MED-999 → `DONNEES_INVALIDES` ; certification différente si le contenu change). Service lancé + `curl` avec `contracts/soap/exemples/emettreFeuilleDeSoins-requete.xml` → HTTP 200, FS-2026-000001, total 85.000, remboursé 68.000, `SHA256:3df7…9ecd` ; réponse réelle validée par `java scripts/ValidateXsd.java` → VALIDE ; TN-0067890 + VIG-2025-100006 → HTTP 500, Fault `VIGNETTE_INVALIDE` « acte du 2026-11-17 non couvert ».
