@@ -6,15 +6,15 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.graphql.tester.AutoConfigureGraphQlTester;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.graphql.execution.ErrorType;
 import org.springframework.graphql.test.tester.GraphQlTester;
-import org.springframework.test.annotation.DirtiesContext;
 
 /** Requêtes exécutées par le moteur GraphQL du service, schéma chargé depuis contracts/graphql/dashboard.graphqls. */
 @SpringBootTest
 @AutoConfigureGraphQlTester
-@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
-class DashboardGraphqlTest {
+@Import(PostgresTest.class)
+class DashboardGraphqlTest extends PostgresTest.BaseVide {
 
     @Autowired GraphQlTester graphql;
 

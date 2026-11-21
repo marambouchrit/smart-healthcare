@@ -74,7 +74,7 @@ Objectif : le workflow complet fonctionne en version minimale avant d'enrichir q
 - [x] P2.GQL.1 Extraction personnalisée d'un dossier (profil, dernières constantes, alertes récentes, traitement en cours) en une requête
 - [x] P2.GQL.2 Filtrage dynamique des patients par service hospitalier, pathologie, niveau de risque
 - [x] P2.GQL.3 Agrégation à la demande de l'historique de soins
-- [ ] P2.GQL.4 Persistance de la vue consolidée (PostgreSQL) + données initiales
+- [x] P2.GQL.4 Persistance de la vue consolidée (PostgreSQL) + données initiales
 
 ### gRPC — Télémétrie & alertes temps réel
 - [x] P2.GRPC.1 Seuils critiques : fréquence cardiaque haute/basse, SpO2, chute

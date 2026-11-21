@@ -14,6 +14,12 @@ Modèle :
 
 ---
 
+## 2026-11-21 — P2.GQL.4
+- Fait : service GraphQL sur PostgreSQL (base `graphql_dashboard`) : `V1__schema_tableau_de_bord.sql` (service_hospitalier, medecin, patient, traitement, alerte, fiche_urgence, constante, couverture, contraintes CHECK, index) ; `VueConsolidee` réécrite en JDBC avec la même API (D36) : seed inséré si absent, alerte idempotente, fiche numérotée par la base, constantes en « upsert » qui ignore une mesure plus ancienne ; tests sur Testcontainers avec effacement des données de l'orchestrateur avant chaque test (`PostgresTest.BaseVide`).
+- Vérification : `./mvnw test` → 28 tests, 0 échec (4 nouveaux : version Flyway 1 et seed 4/4/8/10 ; les 4 mutations écrivent en base ; horodatage relu `2026-11-17T10:30:00+01:00` ; alerte envoyée deux fois → 1 ligne, valeur d'origine conservée). Service lancé sur la base Docker : ALR-900001 + FIC-000001 → service redémarré (« Schema is up to date », seed : 0 ajout) → ALR-900002 + FIC-000002 ; `patient(id: "TN-0045678")` renvoie les 2 alertes, les 2 fiches et `historiqueSoins` (2 alertes, 1 ambulance).
+- Reste à faire / blocages : P2.GRPC.3.
+- Contrats ou décisions modifiés : aucun contrat ; D36.
+
 ## 2026-11-21 — P2.SOAP.5
 - Fait : Docker Desktop démarré ; `docker-compose.yml` (PostgreSQL seul pour l'instant) + `infra/postgres/init/01-bases.sql` (4 bases, 4 utilisateurs, D35). Service SOAP : Spring Data JPA + Flyway (`V1__schema_dossier.sql` : patient, medecin, couverture, lettre_cle, traitement, feuille_de_soins, acte_medical, avec contraintes CHECK), `ChargementSeed` (insère seulement les lignes absentes), `SeedRepository` réécrit sur la base (API inchangée), feuilles de soins enregistrées en base avec un numéro tiré de l'identifiant. Tests sur Testcontainers (`PostgresTest`), tables des feuilles vidées avant chaque test.
 - Vérification : conteneur `healthy`, 4 bases avec leur propriétaire, `soap_dossier` refusé sur `grpc_telemetrie` (« does not have CONNECT privilege »). `./mvnw test` → 40 tests, 0 échec sur PostgreSQL 18.7 (4 nouveaux : version Flyway 1 et comptes 8/4/7/7/10 ; second chargement → 0 ajout ; feuille + acte en base, relue identique ; contraintes `TN-12` et taux 120 rejetées). Service lancé sur la base Docker : FS-2026-000001 émise → service arrêté et relancé (« Schema is up to date », seed : 0 ajout) → nouvelle feuille FS-2026-000002 ; `consulterHistorique` renvoie les actes des deux feuilles (réponse valide XSD) ; `psql` : FS-2026-000001 85.000 (2 actes), FS-2026-000002 110.000 (2 actes).

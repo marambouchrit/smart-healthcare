@@ -9,6 +9,11 @@ spring:
     graphiql:
       # Interface de test : http://localhost:8083/graphiql
       enabled: true
+  # Base PostgreSQL du service (D8, D35) : conteneur « postgres » de docker-compose.yml, port hôte 5433
+  datasource:
+    url: ${DASHBOARD_DB_URL:jdbc:postgresql://localhost:5433/graphql_dashboard}
+    username: ${DASHBOARD_DB_USER:graphql_dashboard}
+    password: ${DASHBOARD_DB_PASSWORD:graphql_dashboard_dev}
 
 dashboard:
   fuseau: Africa/Tunis

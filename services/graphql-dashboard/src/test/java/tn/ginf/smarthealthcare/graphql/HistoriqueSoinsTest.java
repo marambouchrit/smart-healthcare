@@ -10,12 +10,12 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.graphql.tester.AutoConfigureGraphQlTester;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
 import org.springframework.graphql.execution.ErrorType;
 import org.springframework.graphql.test.tester.GraphQlTester;
-import org.springframework.test.annotation.DirtiesContext;
 
 /**
  * P2.GQL.3. Données préparées : 3 alertes de TN-0012345 (CRITIQUE le 2026-10-05, URGENT et CRITIQUE le 2026-11-17)
@@ -23,8 +23,8 @@ import org.springframework.test.annotation.DirtiesContext;
  */
 @SpringBootTest
 @AutoConfigureGraphQlTester
-@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
-class HistoriqueSoinsTest {
+@Import(PostgresTest.class)
+class HistoriqueSoinsTest extends PostgresTest.BaseVide {
 
     @TestConfiguration
     static class Horloge {

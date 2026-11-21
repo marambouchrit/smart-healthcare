@@ -58,23 +58,27 @@ public class DashboardController {
         exigerPatient(alerte.identifiantPatient());
         Alerte a = new Alerte(alerte.identifiantAlerte(), alerte.identifiantPatient(), alerte.niveau(), alerte.type(),
                 alerte.valeur(), alerte.seuil(), alerte.message(), alerte.horodatage());
-        vue.enregistrer(a);
+        if (!vue.enregistrer(a)) {
+            // envoi répété de la même alerte (ex. nouvelle tentative de l'orchestrateur) : idempotent
+            log.info("enregistrerAlerte {} déjà enregistrée : renvoi de l'existante", a.id());
+            return vue.alerte(a.id()).orElseThrow();
+        }
         log.info("enregistrerAlerte {} patient={} niveau={}", a.id(), a.patientId(), a.niveau());
-        return a;
+        return vue.alerte(a.id()).orElseThrow();
     }
 
     @MutationMapping
-    public synchronized FicheUrgence creerFicheUrgence(@Argument FicheUrgenceInput fiche) {
+    public FicheUrgence creerFicheUrgence(@Argument FicheUrgenceInput fiche) {
         exigerPatient(fiche.identifiantPatient());
         Alerte alerte = vue.alerte(fiche.identifiantAlerte())
                 .orElseThrow(() -> new NonTrouve("Alerte inconnue : " + fiche.identifiantAlerte()));
         if (!alerte.patientId().equals(fiche.identifiantPatient())) {
             throw new Erreurs.Invalide("L'alerte " + alerte.id() + " ne concerne pas le patient " + fiche.identifiantPatient());
         }
-        FicheUrgence f = new FicheUrgence("FIC-%06d".formatted(vue.nombreFiches() + 1), fiche.identifiantPatient(),
+        // identifiant FIC-xxxxxx attribué par la base (continue après un redémarrage)
+        FicheUrgence f = vue.creerFiche(new FicheUrgence(null, fiche.identifiantPatient(),
                 alerte.id(), fiche.statutPriseEnCharge(), fiche.action(), fiche.identifiantRendezVous(),
-                fiche.dateRendezVous(), fiche.commentaire(), OffsetDateTime.now(horloge).withNano(0));
-        vue.enregistrer(f);
+                fiche.dateRendezVous(), fiche.commentaire(), OffsetDateTime.now(horloge).withNano(0)));
         log.info("creerFicheUrgence {} patient={} alerte={} action={}", f.id(), f.patientId(), f.alerteId(), f.action());
         return f;
     }

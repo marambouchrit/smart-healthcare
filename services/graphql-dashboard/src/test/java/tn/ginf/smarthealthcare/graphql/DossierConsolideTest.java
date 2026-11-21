@@ -6,15 +6,15 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.graphql.tester.AutoConfigureGraphQlTester;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.graphql.execution.ErrorType;
 import org.springframework.graphql.test.tester.GraphQlTester;
-import org.springframework.test.annotation.DirtiesContext;
 
 /** P2.GQL.1 : dossier consolidé en une requête (profil, dernières constantes, alertes récentes, traitement, couverture). */
 @SpringBootTest
 @AutoConfigureGraphQlTester
-@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
-class DossierConsolideTest {
+@Import(PostgresTest.class)
+class DossierConsolideTest extends PostgresTest.BaseVide {
 
     @Autowired GraphQlTester graphql;
 
