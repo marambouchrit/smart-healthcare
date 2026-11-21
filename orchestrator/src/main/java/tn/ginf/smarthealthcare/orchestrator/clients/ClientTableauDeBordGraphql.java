@@ -20,6 +20,8 @@ public class ClientTableauDeBordGraphql implements Ports.TableauDeBord {
 
     private static final String ENREGISTRER_ALERTE =
             "mutation($a: AlerteInput!) { enregistrerAlerte(alerte: $a) { id } }";
+    private static final String METTRE_A_JOUR_COUVERTURE =
+            "mutation($c: CouvertureInput!) { mettreAJourCouverture(couverture: $c) { statut } }";
     private static final String CREER_FICHE =
             "mutation($f: FicheUrgenceInput!) { creerFicheUrgence(fiche: $f) { id } }";
 
@@ -41,6 +43,17 @@ public class ClientTableauDeBordGraphql implements Ports.TableauDeBord {
         entree.put("message", a.message());
         entree.put("horodatage", iso(a.horodatage()));
         executer(ENREGISTRER_ALERTE, Map.of("a", entree));
+    }
+
+    @Override
+    public void mettreAJourCouverture(String patientId, Ports.Droits d) {
+        Map<String, Object> entree = new LinkedHashMap<>();
+        entree.put("identifiantPatient", patientId);
+        entree.put("statut", d.statut());
+        entree.put("codeVignette", d.codeVignette());
+        entree.put("tauxRemboursement", d.tauxRemboursement() == null ? 0 : d.tauxRemboursement()); // non affilié : 0
+        entree.put("dateFin", d.dateFin() == null ? null : d.dateFin().toString());
+        executer(METTRE_A_JOUR_COUVERTURE, Map.of("c", entree));
     }
 
     @Override

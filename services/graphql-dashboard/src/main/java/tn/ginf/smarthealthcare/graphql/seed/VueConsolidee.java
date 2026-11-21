@@ -19,6 +19,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Component;
 import tn.ginf.smarthealthcare.graphql.modele.Modele.Alerte;
+import tn.ginf.smarthealthcare.graphql.modele.Modele.Constante;
+import tn.ginf.smarthealthcare.graphql.modele.Modele.Couverture;
+import tn.ginf.smarthealthcare.graphql.modele.Modele.TypeMesure;
 import tn.ginf.smarthealthcare.graphql.modele.Modele.FicheUrgence;
 import tn.ginf.smarthealthcare.graphql.modele.Modele.Medecin;
 import tn.ginf.smarthealthcare.graphql.modele.Modele.Patient;
@@ -40,6 +43,10 @@ public class VueConsolidee {
     private final List<Traitement> traitements;
     private final Map<String, Alerte> alertes = new ConcurrentHashMap<>();
     private final List<FicheUrgence> fiches = new CopyOnWriteArrayList<>();
+    /** Dernière valeur connue de chaque type de mesure, par patient (alimenté par enregistrerConstantes, D18). */
+    private final Map<String, Map<TypeMesure, Constante>> constantes = new ConcurrentHashMap<>();
+    /** Dernière couverture CNAM transmise par l'orchestrateur, par patient. */
+    private final Map<String, Couverture> couvertures = new ConcurrentHashMap<>();
 
     public VueConsolidee(ObjectMapper mapper) throws IOException {
         ObjectMapper m = mapper.copy().disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
@@ -87,4 +94,19 @@ public class VueConsolidee {
     public int nombreFiches() { return fiches.size(); }
 
     public void enregistrer(FicheUrgence f) { fiches.add(f); }
+
+    /** Garde, pour chaque type, la mesure la plus récente (une mesure plus ancienne arrivée en retard est ignorée). */
+    public void enregistrer(Constante c) {
+        constantes.computeIfAbsent(c.patientId(), k -> new ConcurrentHashMap<>())
+                .merge(c.type(), c, (ancienne, nouvelle) -> nouvelle.horodatage().isBefore(ancienne.horodatage()) ? ancienne : nouvelle);
+    }
+
+    public List<Constante> dernieresConstantes(String patientId) {
+        return constantes.getOrDefault(patientId, Map.of()).values().stream()
+                .sorted(Comparator.comparing(Constante::type)).toList();
+    }
+
+    public void enregistrer(Couverture c) { couvertures.put(c.patientId(), c); }
+
+    public Optional<Couverture> couverture(String patientId) { return Optional.ofNullable(couvertures.get(patientId)); }
 }

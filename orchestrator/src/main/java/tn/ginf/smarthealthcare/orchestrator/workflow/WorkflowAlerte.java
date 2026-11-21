@@ -57,8 +57,9 @@ public class WorkflowAlerte {
             log.info("[{}] Étape 3/4 REST : rendez-vous {} réservé à {}", id, rdv.get().id(), rdv.get().debut());
 
             tableauDeBord.enregistrerAlerte(alerte);
+            tableauDeBord.mettreAJourCouverture(alerte.patientId(), droits);
             String ficheId = tableauDeBord.creerFicheUrgence(alerte, aRegulariser, rdv.get());
-            log.info("[{}] Étape 4/4 GraphQL : alerte enregistrée et fiche d'urgence {} créée", id, ficheId);
+            log.info("[{}] Étape 4/4 GraphQL : alerte et couverture enregistrées, fiche d'urgence {} créée", id, ficheId);
 
             log.info("[{}] Workflow terminé : patient {}, rendez-vous {}, fiche {}", id, alerte.patientId(), rdv.get().id(), ficheId);
             return new Resultat(Etat.TERMINE, ficheId, aRegulariser, rdv.get().id());

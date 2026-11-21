@@ -40,8 +40,11 @@ public class ClientDossierSoap implements Ports.Dossier {
         requete.setDatePrestation(datatypes.newXMLGregorianCalendar(datePrestation.toString()));
         try {
             VerifierDroitsCNAMResponse r = port.verifierDroitsCNAM(requete);
-            Integer taux = r.getCouverture() == null ? null : r.getCouverture().getTauxRemboursement();
-            return new Ports.Droits(r.getStatut().value(), r.isPriseEnCharge(), taux, r.getMotif());
+            var c = r.getCouverture();
+            return new Ports.Droits(r.getStatut().value(), r.isPriseEnCharge(),
+                    c == null ? null : c.getTauxRemboursement(), r.getMotif(),
+                    c == null ? null : c.getCodeVignette(),
+                    c == null ? null : LocalDate.parse(c.getDateFin().toXMLFormat()));
         } catch (ErreurMetierFault e) {
             throw new IllegalStateException("SOAP " + e.getFaultInfo().getCode() + " : " + e.getFaultInfo().getMessage(), e);
         }

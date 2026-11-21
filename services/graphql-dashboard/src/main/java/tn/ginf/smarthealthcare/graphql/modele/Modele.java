@@ -14,6 +14,17 @@ public final class Modele {
     public enum StatutTraitement { EN_COURS, TERMINE }
     public enum StatutPriseEnCharge { PRISE_EN_CHARGE, A_REGULARISER }
     public enum ActionUrgence { CONSULTATION_URGENCE, AMBULANCE }
+    public enum StatutCouverture { OUVERTS, EXPIRES, NON_AFFILIE }
+
+    public record Constante(String patientId, TypeMesure type, double valeur, OffsetDateTime horodatage) {}
+
+    public record Couverture(String patientId, StatutCouverture statut, String codeVignette, int tauxRemboursement,
+                             LocalDate dateFin, OffsetDateTime misAJourLe) {}
+
+    public record ConstanteInput(TypeMesure type, double valeur, OffsetDateTime horodatage) {}
+
+    public record CouvertureInput(String identifiantPatient, StatutCouverture statut, String codeVignette,
+                                  int tauxRemboursement, LocalDate dateFin) {}
 
     public record ServiceHospitalier(String code, String libelle) {}
 

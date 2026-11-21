@@ -21,7 +21,7 @@ class WorkflowAlerteTest {
 
     final List<String> appels = new ArrayList<>();
     LocalDate dateDemandee;
-    Droits droits = new Droits("OUVERTS", true, 80, null);
+    Droits droits = new Droits("OUVERTS", true, 80, null, "VIG-2026-100001", LocalDate.of(2026, 12, 31));
     Optional<RendezVousUrgence> rdv = Optional.of(new RendezVousUrgence("RDV-000001", OffsetDateTime.parse("2026-11-18T08:00:00+01:00")));
     boolean ficheARegulariser;
 
@@ -30,6 +30,7 @@ class WorkflowAlerteTest {
         Ports.Portail portail = (a, aReg) -> { appels.add("REST " + a.id() + " aRegulariser=" + aReg); return rdv; };
         Ports.TableauDeBord tdb = new Ports.TableauDeBord() {
             public void enregistrerAlerte(AlerteRecue a) { appels.add("GraphQL alerte " + a.id()); }
+            public void mettreAJourCouverture(String p, Droits d) { appels.add("GraphQL couverture " + p + " " + d.statut()); }
             public String creerFicheUrgence(AlerteRecue a, boolean aReg, RendezVousUrgence r) {
                 appels.add("GraphQL fiche " + r.id()); ficheARegulariser = aReg; return "FIC-000001";
             }
@@ -43,14 +44,14 @@ class WorkflowAlerteTest {
         assertThat(r.etat()).isEqualTo(Etat.TERMINE);
         assertThat(r.ficheId()).isEqualTo("FIC-000001");
         assertThat(appels).containsExactly("SOAP TN-0012345", "REST ALR-000001 aRegulariser=false",
-                "GraphQL alerte ALR-000001", "GraphQL fiche RDV-000001");
+                "GraphQL alerte ALR-000001", "GraphQL couverture TN-0012345 OUVERTS", "GraphQL fiche RDV-000001");
         // 23h30 UTC = 00h30 le lendemain à Tunis : la date de prestation suit le fuseau local
         assertThat(dateDemandee).isEqualTo(LocalDate.of(2026, 11, 18));
     }
 
     @Test
     void patientNonCouvertFicheARegulariser() {
-        droits = new Droits("EXPIRES", false, 80, "Vignette expirée");
+        droits = new Droits("EXPIRES", false, 80, "Vignette expirée", "VIG-2025-100006", LocalDate.of(2025, 12, 31));
         var r = workflow().traiter(ALERTE);
         assertThat(r.etat()).isEqualTo(Etat.TERMINE);
         assertThat(r.aRegulariser()).isTrue();

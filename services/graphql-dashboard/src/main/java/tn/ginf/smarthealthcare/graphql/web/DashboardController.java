@@ -12,6 +12,10 @@ import org.springframework.graphql.data.method.annotation.SchemaMapping;
 import org.springframework.stereotype.Controller;
 import tn.ginf.smarthealthcare.graphql.modele.Modele.Alerte;
 import tn.ginf.smarthealthcare.graphql.modele.Modele.AlerteInput;
+import tn.ginf.smarthealthcare.graphql.modele.Modele.Constante;
+import tn.ginf.smarthealthcare.graphql.modele.Modele.ConstanteInput;
+import tn.ginf.smarthealthcare.graphql.modele.Modele.Couverture;
+import tn.ginf.smarthealthcare.graphql.modele.Modele.CouvertureInput;
 import tn.ginf.smarthealthcare.graphql.modele.Modele.FicheUrgence;
 import tn.ginf.smarthealthcare.graphql.modele.Modele.FicheUrgenceInput;
 import tn.ginf.smarthealthcare.graphql.modele.Modele.Medecin;
@@ -23,8 +27,9 @@ import tn.ginf.smarthealthcare.graphql.seed.VueConsolidee;
 import tn.ginf.smarthealthcare.graphql.web.Erreurs.NonTrouve;
 
 /**
- * Phase 1 : query patient(id) et mutations enregistrerAlerte + creerFicheUrgence (appelées par l'orchestrateur).
- * Les autres opérations du contrat (patients(filtres), historiqueSoins, enregistrerConstantes…) arrivent en phase 2.
+ * Query patient(id) (dossier consolidé, P2.GQL.1) ; mutations de l'orchestrateur : enregistrerAlerte, creerFicheUrgence,
+ * enregistrerConstantes (D18), mettreAJourCouverture.
+ * patients(filtres), services et historiqueSoins : P2.GQL.2 et P2.GQL.3.
  */
 @Controller
 public class DashboardController {
@@ -74,6 +79,31 @@ public class DashboardController {
         return f;
     }
 
+    @MutationMapping
+    public List<Constante> enregistrerConstantes(@Argument String identifiantPatient, @Argument List<ConstanteInput> constantes) {
+        exigerPatient(identifiantPatient);
+        if (constantes.isEmpty()) {
+            throw new Erreurs.Invalide("La liste des constantes est vide.");
+        }
+        constantes.forEach(c -> vue.enregistrer(new Constante(identifiantPatient, c.type(), c.valeur(), c.horodatage())));
+        log.info("enregistrerConstantes patient={} : {}", identifiantPatient,
+                constantes.stream().map(c -> c.type() + "=" + c.valeur()).toList());
+        return vue.dernieresConstantes(identifiantPatient);
+    }
+
+    @MutationMapping
+    public Couverture mettreAJourCouverture(@Argument CouvertureInput couverture) {
+        exigerPatient(couverture.identifiantPatient());
+        if (couverture.tauxRemboursement() < 0 || couverture.tauxRemboursement() > 100) {
+            throw new Erreurs.Invalide("Taux de remboursement hors de 0..100 : " + couverture.tauxRemboursement());
+        }
+        Couverture c = new Couverture(couverture.identifiantPatient(), couverture.statut(), couverture.codeVignette(),
+                couverture.tauxRemboursement(), couverture.dateFin(), OffsetDateTime.now(horloge).withNano(0));
+        vue.enregistrer(c);
+        log.info("mettreAJourCouverture patient={} statut={} taux={} %", c.patientId(), c.statut(), c.tauxRemboursement());
+        return c;
+    }
+
     private void exigerPatient(String id) {
         vue.patient(id).orElseThrow(() -> new NonTrouve("Patient inconnu : " + id));
     }
@@ -86,9 +116,13 @@ public class DashboardController {
     @SchemaMapping
     public Medecin medecinTraitant(Patient p) { return vue.medecin(p.medecinTraitantId()).orElse(null); }
 
-    /** Alimenté par la mutation enregistrerConstantes (D18), implémentée en phase 2 : vide d'ici là. */
+    /** Dernière valeur de chaque type de mesure (enregistrerConstantes, D18). */
     @SchemaMapping
-    public List<Object> dernieresConstantes(Patient p) { return List.of(); }
+    public List<Constante> dernieresConstantes(Patient p) { return vue.dernieresConstantes(p.id()); }
+
+    /** Dernière couverture CNAM transmise par l'orchestrateur ; null si jamais vérifiée. */
+    @SchemaMapping
+    public Couverture couverture(Patient p) { return vue.couverture(p.id()).orElse(null); }
 
     @SchemaMapping
     public List<Alerte> alertesRecentes(Patient p, @Argument int limite) { return vue.alertesRecentes(p.id(), limite); }

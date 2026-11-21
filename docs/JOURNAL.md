@@ -14,6 +14,12 @@ Modèle :
 
 ---
 
+## 2026-11-21 — P2.GQL.1
+- Fait : service GraphQL : mutations `enregistrerConstantes` (dernière mesure de chaque type, une mesure plus ancienne arrivée en retard est ignorée) et `mettreAJourCouverture` (taux 0..100) ; champs `Patient.dernieresConstantes` et `Patient.couverture`. Orchestrateur : `Droits` porte la vignette et la date de fin, l'étape 4 appelle aussi `mettreAJourCouverture` (alerte → couverture → fiche). Q7 ouverte (source des mesures normales).
+- Vérification : `./mvnw test` GraphQL → 10 tests, 0 échec (4 nouveaux : dossier complet en une requête ; dernière mesure conservée ; patient sans données → couverture null, constantes vides ; erreurs NOT_FOUND / BAD_REQUEST) ; orchestrateur → 4 tests, ordre SOAP → REST → alerte → couverture → fiche. Bout en bout (5 composants, REST en fuseau America/New_York car 21h à Tunis) : `enregistrerConstantes` FC 84 / SpO2 95, capteur 158 bpm → ALR-000001 → OUVERTS 80 % → RDV-000001 → couverture + FIC-000001 ; une seule query `patient(id: "TN-0012345")` renvoie profil, service, médecin, 2 constantes, l'alerte, 2 traitements, la couverture (VIG-2026-100001, 80 %, misAJourLe) et la fiche.
+- Reste à faire / blocages : P2.GQL.2 ; Q7.
+- Contrats ou décisions modifiés : aucun contrat ; Q7.
+
 ## 2026-11-21 — P2.REST.6 (fin de la partie REST)
 - Fait : springdoc 2.10.1 ; Swagger UI (`/swagger-ui.html`) configuré sur le contrat servi tel quel (`/openapi/portail-openapi.yaml`, D29) ; test `AlignementContratTest` : opérations générées depuis le code (`/v3/api-docs`) = opérations du contrat (chemins, méthodes, operationId), seule différence admise `POST /api/ambulances` (P5.2) ; contrat servi identique au fichier.
 - Vérification : `./mvnw test` → 56 tests, 0 échec. Service lancé : `/swagger-ui.html`, `/swagger-ui/index.html`, `/v3/api-docs/swagger-config` (url = `/openapi/portail-openapi.yaml`) et le contrat → HTTP 200 ; fichier servi identique (`diff`) ; `python scripts/check_openapi.py <fichier servi>` → SPEC OK, 23 références.
