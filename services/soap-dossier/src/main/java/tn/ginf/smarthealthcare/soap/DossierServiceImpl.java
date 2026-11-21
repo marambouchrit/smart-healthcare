@@ -8,7 +8,9 @@ import javax.xml.datatype.XMLGregorianCalendar;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
-import tn.ginf.smarthealthcare.soap.generated.CodeErreur;
+import tn.ginf.smarthealthcare.soap.droits.DroitsService;
+import tn.ginf.smarthealthcare.soap.droits.DroitsService.Droits;
+import tn.ginf.smarthealthcare.soap.garanties.GarantiesService;
 import tn.ginf.smarthealthcare.soap.generated.ComparerGaranties;
 import tn.ginf.smarthealthcare.soap.generated.ComparerGarantiesResponse;
 import tn.ginf.smarthealthcare.soap.generated.ConsulterHistorique;
@@ -21,16 +23,14 @@ import tn.ginf.smarthealthcare.soap.facturation.FacturationService;
 import tn.ginf.smarthealthcare.soap.historique.HistoriqueService;
 import tn.ginf.smarthealthcare.soap.generated.ErreurMetierFault;
 import tn.ginf.smarthealthcare.soap.generated.Filiere;
-import tn.ginf.smarthealthcare.soap.generated.StatutDroits;
 import tn.ginf.smarthealthcare.soap.generated.VerifierDroitsCNAM;
 import tn.ginf.smarthealthcare.soap.generated.VerifierDroitsCNAMResponse;
-import tn.ginf.smarthealthcare.soap.seed.SeedRepository;
 import tn.ginf.smarthealthcare.soap.seed.SeedRepository.CouvertureSeed;
 
 /**
  * Implémentation de l'interface générée depuis contracts/soap/dossier.wsdl (approche top-down, D4).
- * Implémentées : verifierDroitsCNAM (P1.1), emettreFeuilleDeSoins (P2.SOAP.1), consulterHistorique (P2.SOAP.2).
- * comparerGaranties arrive en P2.SOAP.3.
+ * Les 4 opérations du contrat : verifierDroitsCNAM (P1.1), emettreFeuilleDeSoins (P2.SOAP.1),
+ * consulterHistorique (P2.SOAP.2), comparerGaranties (P2.SOAP.3).
  */
 @Service
 @WebService(
@@ -43,16 +43,18 @@ public class DossierServiceImpl implements DossierPortType {
 
     private static final Logger log = LoggerFactory.getLogger(DossierServiceImpl.class);
 
-    private final SeedRepository seed;
+    private final DroitsService droits;
     private final FacturationService facturation;
     private final HistoriqueService historique;
+    private final GarantiesService garanties;
     private final DatatypeFactory datatypes;
 
-    public DossierServiceImpl(SeedRepository seed, FacturationService facturation, HistoriqueService historique)
-            throws DatatypeConfigurationException {
-        this.seed = seed;
+    public DossierServiceImpl(DroitsService droits, FacturationService facturation, HistoriqueService historique,
+                              GarantiesService garanties) throws DatatypeConfigurationException {
+        this.droits = droits;
         this.facturation = facturation;
         this.historique = historique;
+        this.garanties = garanties;
         this.datatypes = DatatypeFactory.newInstance();
     }
 
@@ -62,26 +64,14 @@ public class DossierServiceImpl implements DossierPortType {
         LocalDate date = versLocalDate(requete.getDatePrestation());
         log.info("verifierDroitsCNAM patient={} prestation={} date={}", patientId, requete.getLettreCle(), date);
 
-        if (!seed.patientExiste(patientId)) {
-            throw Erreurs.faute(CodeErreur.PATIENT_INCONNU, "Aucun dossier pour l'identifiant " + patientId);
-        }
-
+        Droits d = droits.evaluer(patientId, date);
         VerifierDroitsCNAMResponse reponse = new VerifierDroitsCNAMResponse();
-        CouvertureSeed c = seed.couverture(patientId).orElse(null);
-        if (c == null) {
-            reponse.setStatut(StatutDroits.NON_AFFILIE);
-            reponse.setPriseEnCharge(false);
-            reponse.setMotif("Aucune affiliation CNAM pour ce patient");
-        } else if (date.isBefore(c.dateDebut()) || date.isAfter(c.dateFin())) {
-            reponse.setStatut(StatutDroits.EXPIRES);
-            reponse.setPriseEnCharge(false);
-            reponse.setCouverture(versCouverture(c));
-            reponse.setMotif("Vignette valide du " + c.dateDebut() + " au " + c.dateFin());
-        } else {
-            reponse.setStatut(StatutDroits.OUVERTS);
-            reponse.setPriseEnCharge(true);
-            reponse.setCouverture(versCouverture(c));
+        reponse.setStatut(d.statut());
+        reponse.setPriseEnCharge(d.ouverts());
+        if (d.couverture() != null) {
+            reponse.setCouverture(versCouverture(d.couverture()));
         }
+        reponse.setMotif(d.motif());
         log.info("verifierDroitsCNAM patient={} -> {}", patientId, reponse.getStatut());
         return reponse;
     }
@@ -105,8 +95,8 @@ public class DossierServiceImpl implements DossierPortType {
     }
 
     @Override
-    public ComparerGarantiesResponse comparerGaranties(ComparerGaranties requete) {
-        throw new UnsupportedOperationException("comparerGaranties : prévu en P2.SOAP.3");
+    public ComparerGarantiesResponse comparerGaranties(ComparerGaranties requete) throws ErreurMetierFault {
+        return garanties.comparer(requete.getPriseEnChargeA(), requete.getPriseEnChargeB());
     }
 
     private Couverture versCouverture(CouvertureSeed c) {

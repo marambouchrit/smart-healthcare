@@ -14,6 +14,12 @@ Modèle :
 
 ---
 
+## 2026-11-21 — P2.SOAP.3
+- Fait : `comparerGaranties` (`GarantiesService`, D16) ; règle des droits extraite dans `DroitsService` (partagée avec `verifierDroitsCNAM`) ; `FacturationService.montantActe` / `rembourse` partagés avec la facturation. Taux 0 si droits non ouverts ; écart = remboursé(A) − remboursé(B) ; plus avantageuse = remboursement le plus élevé (EGALE si écart nul).
+- Vérification : `./mvnw test` → 26 tests, 0 échec (6 nouveaux : CS à 80 % vs 50 % → 48 / 30, écart 18, A ; K 20 vignette expirée vs couvert → 0 / 40, écart −40, B ; même patient avant / après le début de vignette ; égalité ; non affilié ; patient inconnu → `PATIENT_INCONNU`). Service lancé + requête `contracts/soap/exemples/comparerGaranties-requete.xml` → réponse identique à `comparerGaranties-reponse.xml` (48.000 / 30.000 / 18.000 / A), validée contre `dossier.xsd`.
+- Reste à faire / blocages : P2.SOAP.4.
+- Contrats ou décisions modifiés : aucun.
+
 ## 2026-11-21 — P2.SOAP.2
 - Fait : `consulterHistorique` (`HistoriqueService`, D27) : consultations issues de `traitements.json` regroupées par (médecin, date), actes des feuilles de soins émises avec leur numéro, tri chronologique, filtre de période, `dateCertification` à l'instant de la consultation ; `SeedRepository` charge aussi les traitements.
 - Vérification : `./mvnw test` → 20 tests, 0 échec (6 nouveaux : Bisoprolol + Furosémide du 2026-02-10 → 1 consultation MED-001 ; feuille CS 1 + K 10 → entrées ACTE après la consultation avec FS-2026-000001 ; filtres de période ; TN-0045678 → 2 consultations ; patient inconnu → `PATIENT_INCONNU` ; période inversée → `DONNEES_INVALIDES`). Service lancé + `curl` : feuille FS-2026-000001 émise puis requête `contracts/soap/exemples/consulterHistorique-requete.xml` → 1 CONSULTATION (2026-02-10) + 2 ACTE (2026-11-17, FS-2026-000001), `dateCertification` 2026-11-21T20:26:37+01:00 ; réponse réelle validée contre `dossier.xsd` → VALIDE.

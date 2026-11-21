@@ -23,6 +23,7 @@ import tn.ginf.smarthealthcare.soap.generated.ActeMedical;
 import tn.ginf.smarthealthcare.soap.generated.CodeErreur;
 import tn.ginf.smarthealthcare.soap.generated.ErreurMetierFault;
 import tn.ginf.smarthealthcare.soap.generated.FeuilleDeSoins;
+import tn.ginf.smarthealthcare.soap.generated.LettreCle;
 import tn.ginf.smarthealthcare.soap.seed.SeedRepository;
 import tn.ginf.smarthealthcare.soap.seed.SeedRepository.CouvertureSeed;
 
@@ -69,10 +70,7 @@ public class FacturationService {
             if (!seed.medecinExiste(acte.getIdentifiantMedecin())) {
                 throw Erreurs.faute(CodeErreur.DONNEES_INVALIDES, "Médecin inconnu : " + acte.getIdentifiantMedecin());
             }
-            BigDecimal valeur = seed.valeurLettreCle(acte.getLettreCle().value())
-                    .orElseThrow(() -> Erreurs.faute(CodeErreur.DONNEES_INVALIDES,
-                            "Lettre-clé sans valeur : " + acte.getLettreCle().value()));
-            BigDecimal montant = acte.getCoefficient().multiply(valeur).setScale(3, RoundingMode.HALF_UP);
+            BigDecimal montant = montantActe(acte.getLettreCle(), acte.getCoefficient());
             ActeMedical cote = copier(acte);
             cote.setMontant(montant);
             actesCotes.add(cote);
@@ -88,13 +86,24 @@ public class FacturationService {
         f.getActe().addAll(actesCotes);
         f.setMontantTotal(total.setScale(3, RoundingMode.HALF_UP));
         f.setTauxRemboursement(couverture.tauxRemboursement());
-        f.setMontantRembourse(total.multiply(BigDecimal.valueOf(couverture.tauxRemboursement()))
-                .divide(CENT, 3, RoundingMode.HALF_UP));
+        f.setMontantRembourse(rembourse(total, couverture.tauxRemboursement()));
         f.setCodeCertification(certifier(f));
         feuilles.add(f);
         log.info("Feuille {} émise : patient={} {} acte(s) total={} TND remboursé={} TND ({} %)", f.getNumero(), patientId,
                 actesCotes.size(), f.getMontantTotal(), f.getMontantRembourse(), f.getTauxRemboursement());
         return f;
+    }
+
+    /** Montant d'un acte : coefficient × valeur de la lettre-clé, arrondi au millime (D26). */
+    public BigDecimal montantActe(LettreCle lettre, BigDecimal coefficient) throws ErreurMetierFault {
+        BigDecimal valeur = seed.valeurLettreCle(lettre.value())
+                .orElseThrow(() -> Erreurs.faute(CodeErreur.DONNEES_INVALIDES, "Lettre-clé sans valeur : " + lettre.value()));
+        return coefficient.multiply(valeur).setScale(3, RoundingMode.HALF_UP);
+    }
+
+    /** Montant remboursé : montant × taux / 100, arrondi au millime. */
+    public static BigDecimal rembourse(BigDecimal montant, int taux) {
+        return montant.multiply(BigDecimal.valueOf(taux)).divide(CENT, 3, RoundingMode.HALF_UP);
     }
 
     /** Feuilles émises pour un patient (utilisé par l'historique, P2.SOAP.2). */
