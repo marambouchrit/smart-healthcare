@@ -56,7 +56,7 @@ Objectif : le workflow complet fonctionne en version minimale avant d'enrichir q
 ## Phase 2 — Compléter les services
 
 ### SOAP — Dossier patient & facturation CNAM
-- [ ] P2.SOAP.1 `emettreFeuilleDeSoins` (enregistrement des actes cotés en lettres-clés)
+- [x] P2.SOAP.1 `emettreFeuilleDeSoins` (enregistrement des actes cotés en lettres-clés)
 - [ ] P2.SOAP.2 `consulterHistorique` (historique médical certifié)
 - [ ] P2.SOAP.3 Comparaison des garanties entre deux prises en charge
 - [ ] P2.SOAP.4 Erreurs métier renvoyées en SOAP Fault (patient inconnu, vignette invalide)

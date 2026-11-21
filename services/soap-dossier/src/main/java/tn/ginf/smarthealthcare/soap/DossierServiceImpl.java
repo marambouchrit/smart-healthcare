@@ -17,7 +17,7 @@ import tn.ginf.smarthealthcare.soap.generated.Couverture;
 import tn.ginf.smarthealthcare.soap.generated.DossierPortType;
 import tn.ginf.smarthealthcare.soap.generated.EmettreFeuilleDeSoins;
 import tn.ginf.smarthealthcare.soap.generated.EmettreFeuilleDeSoinsResponse;
-import tn.ginf.smarthealthcare.soap.generated.ErreurMetier;
+import tn.ginf.smarthealthcare.soap.facturation.FacturationService;
 import tn.ginf.smarthealthcare.soap.generated.ErreurMetierFault;
 import tn.ginf.smarthealthcare.soap.generated.Filiere;
 import tn.ginf.smarthealthcare.soap.generated.StatutDroits;
@@ -28,7 +28,8 @@ import tn.ginf.smarthealthcare.soap.seed.SeedRepository.CouvertureSeed;
 
 /**
  * Implémentation de l'interface générée depuis contracts/soap/dossier.wsdl (approche top-down, D4).
- * P1.1 : seule verifierDroitsCNAM est implémentée ; les autres opérations arrivent en phase 2.
+ * Implémentées : verifierDroitsCNAM (P1.1), emettreFeuilleDeSoins (P2.SOAP.1).
+ * consulterHistorique et comparerGaranties arrivent en P2.SOAP.2 et P2.SOAP.3.
  */
 @Service
 @WebService(
@@ -42,10 +43,12 @@ public class DossierServiceImpl implements DossierPortType {
     private static final Logger log = LoggerFactory.getLogger(DossierServiceImpl.class);
 
     private final SeedRepository seed;
+    private final FacturationService facturation;
     private final DatatypeFactory datatypes;
 
-    public DossierServiceImpl(SeedRepository seed) throws DatatypeConfigurationException {
+    public DossierServiceImpl(SeedRepository seed, FacturationService facturation) throws DatatypeConfigurationException {
         this.seed = seed;
+        this.facturation = facturation;
         this.datatypes = DatatypeFactory.newInstance();
     }
 
@@ -56,10 +59,7 @@ public class DossierServiceImpl implements DossierPortType {
         log.info("verifierDroitsCNAM patient={} prestation={} date={}", patientId, requete.getLettreCle(), date);
 
         if (!seed.patientExiste(patientId)) {
-            ErreurMetier erreur = new ErreurMetier();
-            erreur.setCode(CodeErreur.PATIENT_INCONNU);
-            erreur.setMessage("Aucun dossier pour l'identifiant " + patientId);
-            throw new ErreurMetierFault(erreur.getMessage(), erreur);
+            throw Erreurs.faute(CodeErreur.PATIENT_INCONNU, "Aucun dossier pour l'identifiant " + patientId);
         }
 
         VerifierDroitsCNAMResponse reponse = new VerifierDroitsCNAMResponse();
@@ -83,8 +83,12 @@ public class DossierServiceImpl implements DossierPortType {
     }
 
     @Override
-    public EmettreFeuilleDeSoinsResponse emettreFeuilleDeSoins(EmettreFeuilleDeSoins requete) {
-        throw new UnsupportedOperationException("emettreFeuilleDeSoins : prévu en P2.SOAP.1");
+    public EmettreFeuilleDeSoinsResponse emettreFeuilleDeSoins(EmettreFeuilleDeSoins requete) throws ErreurMetierFault {
+        log.info("emettreFeuilleDeSoins patient={} vignette={} actes={}", requete.getIdentifiantPatient(),
+                requete.getCodeVignette(), requete.getActe().size());
+        EmettreFeuilleDeSoinsResponse reponse = new EmettreFeuilleDeSoinsResponse();
+        reponse.setFeuilleDeSoins(facturation.emettre(requete.getIdentifiantPatient(), requete.getCodeVignette(), requete.getActe()));
+        return reponse;
     }
 
     @Override

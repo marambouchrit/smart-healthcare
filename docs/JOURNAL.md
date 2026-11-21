@@ -14,6 +14,12 @@ Modèle :
 
 ---
 
+## 2026-11-21 — P2.SOAP.1
+- Fait : `emettreFeuilleDeSoins` dans `services/soap-dossier` : `FacturationService` (montant = coefficient × valeur de `lettres-cles.json`, remboursé = total × taux, arrondis au millime, numéro `FS-AAAA-xxxxxx`, certification SHA-256 du contenu, feuilles gardées en mémoire pour l'historique), contrôles patient / vignette du patient / date de chaque acte couverte / médecin connu, `Erreurs.faute(...)` commun, horloge injectable (`dossier.fuseau`). Q6 réglée par D26.
+- Vérification : `./mvnw test` → 14 tests, 0 échec (8 nouveaux : CS 1 + K 10 → 60 + 25 = 85,000, remboursé 68,000 à 80 % ; B 120 → 48,000 remboursé 24,000 à 50 % et numérotation FS-2026-000002 ; vignette expirée, vignette d'un autre patient, non affilié → `VIGNETTE_INVALIDE` ; patient inconnu → `PATIENT_INCONNU` ; médecin MED-999 → `DONNEES_INVALIDES` ; certification différente si le contenu change). Service lancé + `curl` avec `contracts/soap/exemples/emettreFeuilleDeSoins-requete.xml` → HTTP 200, FS-2026-000001, total 85.000, remboursé 68.000, `SHA256:3df7…9ecd` ; réponse réelle validée par `java scripts/ValidateXsd.java` → VALIDE ; TN-0067890 + VIG-2025-100006 → HTTP 500, Fault `VIGNETTE_INVALIDE` « acte du 2026-11-17 non couvert ».
+- Reste à faire / blocages : P2.SOAP.2 (`consulterHistorique`).
+- Contrats ou décisions modifiés : aucun contrat ; D26.
+
 ## 2026-11-21 — Tests manuels de la phase 1 (par l'utilisatrice)
 - Fait : lancement manuel des 5 composants dans des terminaux séparés (SOAP 8081, REST 8082, GraphQL 8083, gRPC 50051, orchestrateur 8084 abonné aux alertes).
 - Vérification : SoapUI → `verifierDroitsCNAM` TN-0012345 → `OUVERTS`, `priseEnCharge` true, VIG-2026-100001, 80 % ; Postman → `POST /api/urgences` → `201 Created` + en-tête `Location` (service REST relancé avec `--portail.fuseau=America/New_York` car il était 19h44 à Tunis, après le dernier créneau des urgences) ; GraphiQL → `patient(id: "TN-0012345")` → Mansouri Hédi, ELEVE, Cardiologie, Ben Salah Amine, Bisoprolol + Furosémide, `fichesUrgence` vide. Workflow complet : `capteur.simulateur --patient TN-0012345 --mesures 6 --critique-a 3` → « 6 mesures, 1 alerte » ; GraphQL `patient(id)` → alerte ALR-000001 CRITIQUE (20:05:33) et fiche FIC-000001 `PRISE_EN_CHARGE` liée à RDV-000003, créée la même seconde. À harmoniser en phase 2 : l'horodatage d'alerte transmis par gRPC garde les microsecondes (`20:05:33.249924+01:00`). La vérification de la phase 1 est complète.

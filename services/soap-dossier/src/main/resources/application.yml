@@ -9,6 +9,9 @@ spring:
 cxf:
   path: /ws
 
+dossier:
+  fuseau: Africa/Tunis
+
 logging:
   level:
     tn.ginf.smarthealthcare.soap: INFO

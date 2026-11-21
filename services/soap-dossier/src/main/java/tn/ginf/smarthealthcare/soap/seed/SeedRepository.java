@@ -5,6 +5,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.io.InputStream;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
@@ -32,15 +33,28 @@ public class SeedRepository {
     public record CouvertureSeed(String patientId, String codeVignette, String filiere,
                                  LocalDate dateDebut, LocalDate dateFin, int tauxRemboursement) {}
 
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record MedecinSeed(String id) {}
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record LettreCleSeed(String code, BigDecimal valeurUnitaireTND) {}
+
     private final Set<String> patients;
+    private final Set<String> medecins;
     private final Map<String, CouvertureSeed> couvertures;
+    private final Map<String, BigDecimal> valeursLettresCles;
 
     public SeedRepository(ObjectMapper mapper) throws IOException {
         this.patients = lire(mapper, "seed/patients.json", new TypeReference<List<PatientSeed>>() {})
                 .stream().map(PatientSeed::id).collect(Collectors.toUnmodifiableSet());
+        this.medecins = lire(mapper, "seed/medecins.json", new TypeReference<List<MedecinSeed>>() {})
+                .stream().map(MedecinSeed::id).collect(Collectors.toUnmodifiableSet());
         this.couvertures = lire(mapper, "seed/couvertures-cnam.json", new TypeReference<List<CouvertureSeed>>() {})
                 .stream().collect(Collectors.toUnmodifiableMap(CouvertureSeed::patientId, Function.identity()));
-        log.info("Seed chargé : {} patients, {} couvertures CNAM", patients.size(), couvertures.size());
+        this.valeursLettresCles = lire(mapper, "seed/lettres-cles.json", new TypeReference<List<LettreCleSeed>>() {})
+                .stream().collect(Collectors.toUnmodifiableMap(LettreCleSeed::code, LettreCleSeed::valeurUnitaireTND));
+        log.info("Seed chargé : {} patients, {} médecins, {} couvertures CNAM, {} lettres-clés",
+                patients.size(), medecins.size(), couvertures.size(), valeursLettresCles.size());
     }
 
     private static <T> T lire(ObjectMapper mapper, String chemin, TypeReference<T> type) throws IOException {
@@ -55,5 +69,14 @@ public class SeedRepository {
 
     public Optional<CouvertureSeed> couverture(String identifiantPatient) {
         return Optional.ofNullable(couvertures.get(identifiantPatient));
+    }
+
+    public boolean medecinExiste(String identifiantMedecin) {
+        return medecins.contains(identifiantMedecin);
+    }
+
+    /** Valeur unitaire en dinars d'une lettre-clé (contracts/seed/lettres-cles.json). */
+    public Optional<BigDecimal> valeurLettreCle(String code) {
+        return Optional.ofNullable(valeursLettresCles.get(code));
     }
 }
