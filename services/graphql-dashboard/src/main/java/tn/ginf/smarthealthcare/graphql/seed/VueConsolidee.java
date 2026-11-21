@@ -74,6 +74,13 @@ public class VueConsolidee {
     public Optional<ServiceHospitalier> service(String code) { return Optional.ofNullable(services.get(code)); }
     public Optional<Alerte> alerte(String id) { return Optional.ofNullable(alertes.get(id)); }
 
+    public List<Patient> patients() { return List.copyOf(patients.values()); }
+
+    /** Services triés par libellé (listes déroulantes du client). */
+    public List<ServiceHospitalier> services() {
+        return services.values().stream().sorted(Comparator.comparing(ServiceHospitalier::libelle)).toList();
+    }
+
     public List<Traitement> traitements(String patientId) {
         return traitements.stream().filter(t -> t.patientId().equals(patientId)).toList();
     }

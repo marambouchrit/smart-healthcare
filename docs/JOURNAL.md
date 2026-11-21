@@ -14,6 +14,12 @@ Modèle :
 
 ---
 
+## 2026-11-21 — P2.GQL.2
+- Fait : `FiltrageController` : query `patients(filtres)` (service, pathologie, niveaux de risque, D30) et query `services` ; les champs du dossier (service, traitements, alertes…) se résolvent aussi dans la liste.
+- Vérification : `./mvnw test` → 19 tests, 0 échec (9 nouveaux : 8 patients triés ELEVE → FAIBLE ; CARDIO → 3 ; « diabete » → TN-0067890 ; « CARDIAQUE » → TN-0012345 ; [ELEVE] → 3, [MOYEN, FAIBLE] → 5 ; PNEUMO + [ELEVE, MOYEN] → 2 ; service inconnu → [] ; champs imbriqués ; `services` ; `TRES_ELEVE` rejeté par le schéma). Service lancé : exemple `contracts/graphql/exemples/patients-filtres.graphql` avec `{service: PNEUMO, niveaux: [ELEVE, MOYEN]}` → Chaabane (ELEVE), Hammami (MOYEN) ; « diabete » → Dridi ; `services` → 4 services.
+- Reste à faire / blocages : P2.GQL.3.
+- Contrats ou décisions modifiés : aucun contrat ; D30.
+
 ## 2026-11-21 — P2.GQL.1
 - Fait : service GraphQL : mutations `enregistrerConstantes` (dernière mesure de chaque type, une mesure plus ancienne arrivée en retard est ignorée) et `mettreAJourCouverture` (taux 0..100) ; champs `Patient.dernieresConstantes` et `Patient.couverture`. Orchestrateur : `Droits` porte la vignette et la date de fin, l'étape 4 appelle aussi `mettreAJourCouverture` (alerte → couverture → fiche). Q7 ouverte (source des mesures normales).
 - Vérification : `./mvnw test` GraphQL → 10 tests, 0 échec (4 nouveaux : dossier complet en une requête ; dernière mesure conservée ; patient sans données → couverture null, constantes vides ; erreurs NOT_FOUND / BAD_REQUEST) ; orchestrateur → 4 tests, ordre SOAP → REST → alerte → couverture → fiche. Bout en bout (5 composants, REST en fuseau America/New_York car 21h à Tunis) : `enregistrerConstantes` FC 84 / SpO2 95, capteur 158 bpm → ALR-000001 → OUVERTS 80 % → RDV-000001 → couverture + FIC-000001 ; une seule query `patient(id: "TN-0012345")` renvoie profil, service, médecin, 2 constantes, l'alerte, 2 traitements, la couverture (VIG-2026-100001, 80 %, misAJourLe) et la fiche.

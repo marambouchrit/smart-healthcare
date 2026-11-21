@@ -2,6 +2,7 @@ package tn.ginf.smarthealthcare.graphql.modele;
 
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
+import java.util.List;
 
 /** Types du contrat GraphQL (les énumérations Java portent exactement les noms du schéma). */
 public final class Modele {
@@ -20,6 +21,9 @@ public final class Modele {
 
     public record Couverture(String patientId, StatutCouverture statut, String codeVignette, int tauxRemboursement,
                              LocalDate dateFin, OffsetDateTime misAJourLe) {}
+
+    /** Entrée « FiltresPatients » : critères optionnels combinés par ET. */
+    public record FiltresPatients(String serviceCode, String pathologie, List<NiveauRisque> niveauRisque) {}
 
     public record ConstanteInput(TypeMesure type, double valeur, OffsetDateTime horodatage) {}
 
