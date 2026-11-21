@@ -8,6 +8,10 @@ spring:
     # Erreurs standard (400, 404, 405…) au format Problem Details, comme le contrat OpenAPI
     problemdetails:
       enabled: true
+  web:
+    # Messages de validation en français quel que soit l'OS (poste Windows ou conteneur Linux)
+    locale: fr
+    locale-resolver: fixed
 
 portail:
   # Les plannings de contracts/seed sont en heure locale tunisienne

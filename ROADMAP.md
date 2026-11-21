@@ -67,7 +67,7 @@ Objectif : le workflow complet fonctionne en version minimale avant d'enrichir q
 - [x] P2.REST.2 CRUD complet des rendez-vous (`POST`, `GET`, `PUT`, `PATCH`, `DELETE`)
 - [x] P2.REST.3 Historique des prescriptions et ordonnances
 - [x] P2.REST.4 Mise à jour du profil et des coordonnées (`PATCH`)
-- [ ] P2.REST.5 Codes HTTP corrects (201, 204, 400, 404, 409) et validation des entrées
+- [x] P2.REST.5 Codes HTTP corrects (201, 204, 400, 404, 409) et validation des entrées
 - [ ] P2.REST.6 Documentation OpenAPI exposée (Swagger UI) et alignée sur `contracts/rest/`
 
 ### GraphQL — Tableau de bord médical

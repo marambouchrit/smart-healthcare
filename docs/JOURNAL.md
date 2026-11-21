@@ -14,6 +14,12 @@ Modèle :
 
 ---
 
+## 2026-11-21 — P2.REST.5
+- Fait : erreurs 400 détaillées (propriété `erreurs` [{champ, message}] et `detail` lisible) pour la validation des corps, des paramètres (y compris corps validé avec un paramètre d'URL), les types invalides et les énumérations inconnues ; JSON illisible → « Corps JSON absent ou illisible. » ; route inconnue → 404 `/problemes/non-trouve` ; messages de validation forcés en français (`spring.web.locale: fr`, résolveur fixe). Test `CodesHttpContratTest` : 24 scénarios (un par code et par opération) dont le statut doit être celui attendu ET déclaré dans `contracts/rest/portail-openapi.yaml`, erreurs en `application/problem+json`.
+- Vérification : `./mvnw test` → 53 tests, 0 échec (27 nouveaux). Service lancé : PATCH profil `telephone: abc` → 400 « telephone : valeur 'abc' refusée (doit correspondre à …) » ; POST rendez-vous `TN-12` / `CRN-1` → 400 avec les 2 champs ; `/api/inexistant` → 404 « Aucune route /api/inexistant dans le portail. » ; service relancé avec `-Duser.language=en` → message toujours en français ; réponses conformes au schéma `Probleme`.
+- Reste à faire / blocages : P2.REST.6.
+- Contrats ou décisions modifiés : aucun.
+
 ## 2026-11-21 — P2.REST.4
 - Fait : `GET` / `PATCH /api/patients/{patientId}` (`ProfilController`, `ProfilService`) : profil initial du seed ; seules les coordonnées (téléphone, email, adresse complète) sont modifiables, champs absents inchangés ; PATCH sans coordonnée → 400 ; validation (téléphone, email, code postal à 4 chiffres, adresse complète).
 - Vérification : `./mvnw test` → 26 tests, 0 échec (5 nouveaux : profil du seed ; modifications partielles successives conservées ; `{"nom":…}` → 400 et nom inchangé ; formats invalides → 400 ; patient inconnu → 404). Service lancé : GET TN-0034567 → profil conforme ; PATCH email + adresse → 200, téléphone inchangé ; téléphone `abc` → 400 ; réponses validées contre `ProfilPatient` / `Probleme`. À améliorer en P2.REST.5 : le détail des 400 de validation (« Validation failure ») ne nomme pas le champ.
