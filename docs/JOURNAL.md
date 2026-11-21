@@ -14,6 +14,12 @@ Modèle :
 
 ---
 
+## 2026-11-21 — Vérification de fin de phase 2
+- Fait : 19/19 tâches de la phase 2 ; données d'essai effacées des bases de développement (référentiels conservés) avant le test final.
+- Vérification : suites complètes → SOAP 40 tests, REST 56, GraphQL 28, orchestrateur 4 (0 échec) ; gRPC 18 OK ; simulateur 10 OK ; `check-seed` OK ; 11/11 exemples SOAP valides. Bout en bout, 5 composants sur PostgreSQL (REST en fuseau America/New_York, 21h à Tunis) + `--scenario scenarios/demo-alertes.json` → 60 mesures, 7 alertes (base `grpc_telemetrie`) → 5 workflows terminés (RDV-000001…000005, FIC-000001…000005) → base `graphql_dashboard` : 5 alertes, 5 fiches, 4 couvertures. Opérations testées une à une : SOAP (tests + SoapUI + curl), REST (tests + Postman + Swagger UI), GraphQL (tests + GraphiQL), gRPC (tests + clients).
+- Reste à faire / blocages : Q7 (source des mesures normales pour `enregistrerConstantes`) ; le service REST reste en mémoire (aucune tâche de persistance REST dans la roadmap, alors que D8 prévoit une base par service) ; phase 3.
+- Contrats ou décisions modifiés : aucun.
+
 ## 2026-11-21 — P2.GRPC.3
 - Fait : `telemetrie/depot.py` (`DepotPostgres`, `DepotMemoire`) + `telemetrie/schema.sql` (tables `mesure`, `alerte` avec identifiant généré), le serveur enregistre chaque mesure et attribue l'identifiant d'alerte via la base (D37) ; `requirements.txt` : psycopg[binary] 3.3.9 ; tests `tests/test_depot.py`.
 - Vérification : `python -m unittest discover -s tests -t . -v` → 18 tests OK (4 nouveaux sur la base Docker, schéma temporaire : mesure + alerte reliées, ALR-000001 ; numérotation continue après reconnexion (ALR-000002) ; flux complet via le réseau → 4 mesures, 2 alertes identiques en base et chez l'abonné ; `TN-12` refusé par la contrainte CHECK) ; 0 schéma de test restant. Service lancé : scénario `afflux.json` → 20 mesures, 5 alertes en base (dernière ALR-000005) → service redémarré → nouvelle alerte **ALR-000006** (le problème d'identifiants en double de P2.GRPC.1 est corrigé) ; base : 23 mesures, 6 alertes.
@@ -107,7 +113,7 @@ Modèle :
 
 ## 2026-11-21 — P2.SOAP.4
 - Fait : catalogue des SOAP Faults vérifié sur les 4 opérations (`FautesSoapTest`, requêtes HTTP brutes) ; exemple `contracts/soap/exemples/erreurMetier-vignette-invalide.xml` ; `contracts/soap/README.md` (opérations, format des Faults, codes `PATIENT_INCONNU` / `VIGNETTE_INVALIDE` / `DONNEES_INVALIDES`, rejet `soap:Client` des messages non conformes au XSD).
-- Vérification : `./mvnw test` → 36 tests, 0 échec (10 nouveaux : 8 Faults métier → HTTP 500, `soap:Server`, `<detail><erreurMetier>` avec le bon code ; `TN-12` et identifiant vide → `soap:Client` `cvc-…`). 12/12 exemples valides contre le XSD. Appel réel `emettreFeuilleDeSoins` TN-0067890 / VIG-2025-100006 → Fault `VIGNETTE_INVALIDE` « acte du 2026-11-17 non couvert ».
+- Vérification : `./mvnw test` → 36 tests, 0 échec (10 nouveaux : 8 Faults métier → HTTP 500, `soap:Server`, `<detail><erreurMetier>` avec le bon code ; `TN-12` et identifiant vide → `soap:Client` `cvc-…`). 11/11 exemples valides contre le XSD (corrigé : 12 annoncé à tort, la ligne « SCHEMA OK » avait été comptée). Appel réel `emettreFeuilleDeSoins` TN-0067890 / VIG-2025-100006 → Fault `VIGNETTE_INVALIDE` « acte du 2026-11-17 non couvert ».
 - Reste à faire / blocages : P2.SOAP.5 (PostgreSQL) attend Docker Desktop ; les tâches REST, GraphQL (sauf P2.GQL.4) et gRPC (sauf P2.GRPC.3) sont faites avant.
 - Contrats ou décisions modifiés : ajout d'un exemple et d'un README dans `contracts/soap/` (pas de changement du WSDL/XSD).
 
