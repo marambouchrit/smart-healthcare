@@ -1,0 +1,31 @@
+# Smart Healthcare — composition Docker.
+# Phase 2 : seulement PostgreSQL (un conteneur, une base par service, D8 / D35).
+# Phase 3 (P3.2) : ajout des services, de l'orchestrateur, de la gateway et du client web.
+#
+#   docker compose up -d postgres        # démarre la base (port hôte 5433)
+#   docker compose down                  # arrête (les données restent dans le volume)
+#   docker compose down -v               # arrête et efface les données
+#
+# Mots de passe de DÉVELOPPEMENT uniquement (surchargeables par variables d'environnement ou fichier .env).
+
+services:
+  postgres:
+    image: postgres:18.7-alpine
+    container_name: smart-healthcare-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres_dev}
+    ports:
+      # 5433 côté hôte : le PostgreSQL installé sur le poste occupe déjà 5432
+      - "5433:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql
+      - ./infra/postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  postgres-data:

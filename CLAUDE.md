@@ -81,6 +81,7 @@ Conventions :
 | `/avancement` | Point d'avancement détaillé (commande Claude) | Oui |
 | `/tache-suivante` | Prépare et démarre la prochaine tâche | Oui |
 | `/terminer-tache` | Vérifie, coche, met à jour le journal | Oui |
+| `docker compose up -d postgres` | Démarre PostgreSQL (port 5433, une base par service) — prérequis des services persistés et de leurs tests | Oui |
 | `cd services/soap-dossier && ./mvnw test` | Génère le code depuis le WSDL, compile et lance les tests du service SOAP | Oui |
 | `cd services/soap-dossier && ./mvnw package -DskipTests && java -jar target/soap-dossier-0.1.0.jar` | Lance le service SOAP sur le port 8081 (`/ws/dossier?wsdl`) | Oui |
 | `cd services/rest-portail && ./mvnw test` | Tests du service REST | Oui |

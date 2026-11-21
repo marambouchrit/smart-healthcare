@@ -4,6 +4,16 @@ server:
 spring:
   application:
     name: soap-dossier
+  # Base PostgreSQL du service (D8, D35) : conteneur « postgres » de docker-compose.yml, port hôte 5433
+  datasource:
+    url: ${SOAP_DB_URL:jdbc:postgresql://localhost:5433/soap_dossier}
+    username: ${SOAP_DB_USER:soap_dossier}
+    password: ${SOAP_DB_PASSWORD:soap_dossier_dev}
+  jpa:
+    # Le schéma est créé par Flyway (src/main/resources/db/migration) ; Hibernate vérifie seulement la correspondance
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
 
 # Les endpoints CXF sont publiés sous /ws (route gateway /ws/dossier/**, docs/DECISIONS.md)
 cxf:

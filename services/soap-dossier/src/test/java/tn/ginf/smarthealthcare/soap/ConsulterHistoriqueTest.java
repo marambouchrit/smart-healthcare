@@ -14,11 +14,13 @@ import org.apache.cxf.jaxws.JaxWsProxyFactoryBean;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
-import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
 import tn.ginf.smarthealthcare.soap.generated.CodeErreur;
 import tn.ginf.smarthealthcare.soap.generated.ConsulterHistorique;
 import tn.ginf.smarthealthcare.soap.generated.DossierPortType;
@@ -30,7 +32,7 @@ import tn.ginf.smarthealthcare.soap.generated.TypeEvenement;
 
 /** consulterHistorique par de vrais appels SOAP (D27). Horloge fixée au 2026-11-17 10:00 (Tunis). */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
+@Import(PostgresTest.class)
 class ConsulterHistoriqueTest {
 
     @TestConfiguration
@@ -44,8 +46,12 @@ class ConsulterHistoriqueTest {
     @LocalServerPort int port;
     DossierPortType client;
 
+    @Autowired JdbcTemplate jdbc;
+
     @BeforeEach
     void client() {
+        // chaque test part sans feuille de soins, numérotation à 1 (FS-2026-000001)
+        jdbc.execute("TRUNCATE acte_medical, feuille_de_soins RESTART IDENTITY");
         JaxWsProxyFactoryBean factory = new JaxWsProxyFactoryBean();
         factory.setServiceClass(DossierPortType.class);
         factory.setAddress("http://localhost:" + port + "/ws/dossier");

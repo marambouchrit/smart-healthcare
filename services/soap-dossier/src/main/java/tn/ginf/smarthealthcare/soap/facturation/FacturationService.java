@@ -10,27 +10,30 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HexFormat;
 import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.atomic.AtomicInteger;
 import javax.xml.datatype.DatatypeConfigurationException;
 import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.XMLGregorianCalendar;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import tn.ginf.smarthealthcare.soap.Erreurs;
 import tn.ginf.smarthealthcare.soap.generated.ActeMedical;
 import tn.ginf.smarthealthcare.soap.generated.CodeErreur;
 import tn.ginf.smarthealthcare.soap.generated.ErreurMetierFault;
 import tn.ginf.smarthealthcare.soap.generated.FeuilleDeSoins;
 import tn.ginf.smarthealthcare.soap.generated.LettreCle;
+import tn.ginf.smarthealthcare.soap.persistance.ActeEntite;
+import tn.ginf.smarthealthcare.soap.persistance.Depots;
+import tn.ginf.smarthealthcare.soap.persistance.FeuilleEntite;
 import tn.ginf.smarthealthcare.soap.seed.SeedRepository;
 import tn.ginf.smarthealthcare.soap.seed.SeedRepository.CouvertureSeed;
 
 /**
  * Émission des feuilles de soins (P2.SOAP.1, D26).
  * Montant d'un acte = coefficient × valeur de la lettre-clé ; remboursé = total × taux de la couverture.
- * Les feuilles émises sont conservées en mémoire (historique en P2.SOAP.2, PostgreSQL en P2.SOAP.5).
+ * Les feuilles émises sont enregistrées dans PostgreSQL (P2.SOAP.5) ; leur numéro FS-AAAA-xxxxxx reprend
+ * l'identifiant attribué par la base, donc il continue après un redémarrage.
  */
 @Service
 public class FacturationService {
@@ -41,15 +44,16 @@ public class FacturationService {
     private final SeedRepository seed;
     private final Clock horloge;
     private final DatatypeFactory datatypes;
-    private final AtomicInteger sequence = new AtomicInteger();
-    private final List<FeuilleDeSoins> feuilles = new CopyOnWriteArrayList<>();
+    private final Depots.Feuilles feuilles;
 
-    public FacturationService(SeedRepository seed, Clock horloge) throws DatatypeConfigurationException {
+    public FacturationService(SeedRepository seed, Clock horloge, Depots.Feuilles feuilles) throws DatatypeConfigurationException {
         this.seed = seed;
         this.horloge = horloge;
+        this.feuilles = feuilles;
         this.datatypes = DatatypeFactory.newInstance();
     }
 
+    @Transactional
     public FeuilleDeSoins emettre(String patientId, String codeVignette, List<ActeMedical> actes) throws ErreurMetierFault {
         if (!seed.patientExiste(patientId)) {
             throw Erreurs.faute(CodeErreur.PATIENT_INCONNU, "Aucun dossier pour l'identifiant " + patientId);
@@ -78,17 +82,26 @@ public class FacturationService {
         }
 
         LocalDate aujourdhui = LocalDate.now(horloge);
+        BigDecimal rembourse = rembourse(total, couverture.tauxRemboursement());
+        FeuilleEntite entite = new FeuilleEntite(patientId, codeVignette, aujourdhui, total.setScale(3, RoundingMode.HALF_UP),
+                couverture.tauxRemboursement(), rembourse);
+        for (ActeMedical a : actesCotes) {
+            entite.ajouter(new ActeEntite(a.getLettreCle().value(), a.getCoefficient(), a.getLibelle(),
+                    versLocalDate(a.getDateActe()), a.getIdentifiantMedecin(), a.getMontant()));
+        }
+        feuilles.saveAndFlush(entite); // attribue l'identifiant
+
         FeuilleDeSoins f = new FeuilleDeSoins();
-        f.setNumero("FS-%d-%06d".formatted(aujourdhui.getYear(), sequence.incrementAndGet()));
+        f.setNumero("FS-%d-%06d".formatted(aujourdhui.getYear(), entite.getId()));
         f.setIdentifiantPatient(patientId);
         f.setCodeVignette(codeVignette);
         f.setDateEmission(versXml(aujourdhui));
         f.getActe().addAll(actesCotes);
         f.setMontantTotal(total.setScale(3, RoundingMode.HALF_UP));
         f.setTauxRemboursement(couverture.tauxRemboursement());
-        f.setMontantRembourse(rembourse(total, couverture.tauxRemboursement()));
+        f.setMontantRembourse(rembourse);
         f.setCodeCertification(certifier(f));
-        feuilles.add(f);
+        entite.numeroter(f.getNumero(), f.getCodeCertification()); // mis à jour en base à la fin de la transaction
         log.info("Feuille {} émise : patient={} {} acte(s) total={} TND remboursé={} TND ({} %)", f.getNumero(), patientId,
                 actesCotes.size(), f.getMontantTotal(), f.getMontantRembourse(), f.getTauxRemboursement());
         return f;
@@ -106,9 +119,33 @@ public class FacturationService {
         return montant.multiply(BigDecimal.valueOf(taux)).divide(CENT, 3, RoundingMode.HALF_UP);
     }
 
-    /** Feuilles émises pour un patient (utilisé par l'historique, P2.SOAP.2). */
+    /** Feuilles émises pour un patient, lues en base (utilisé par l'historique, P2.SOAP.2). */
+    @Transactional(readOnly = true)
     public List<FeuilleDeSoins> feuillesDuPatient(String patientId) {
-        return feuilles.stream().filter(f -> f.getIdentifiantPatient().equals(patientId)).toList();
+        return feuilles.findByPatientIdOrderByIdAsc(patientId).stream().map(this::versXml).toList();
+    }
+
+    private FeuilleDeSoins versXml(FeuilleEntite e) {
+        FeuilleDeSoins f = new FeuilleDeSoins();
+        f.setNumero(e.getNumero());
+        f.setIdentifiantPatient(e.getPatientId());
+        f.setCodeVignette(e.getCodeVignette());
+        f.setDateEmission(versXml(e.getDateEmission()));
+        for (ActeEntite a : e.getActes()) {
+            ActeMedical x = new ActeMedical();
+            x.setLettreCle(LettreCle.fromValue(a.getLettreCle()));
+            x.setCoefficient(a.getCoefficient());
+            x.setLibelle(a.getLibelle());
+            x.setDateActe(versXml(a.getDateActe()));
+            x.setIdentifiantMedecin(a.getMedecinId());
+            x.setMontant(a.getMontant());
+            f.getActe().add(x);
+        }
+        f.setMontantTotal(e.getMontantTotal());
+        f.setTauxRemboursement(e.getTauxRemboursement());
+        f.setMontantRembourse(e.getMontantRembourse());
+        f.setCodeCertification(e.getCodeCertification());
+        return f;
     }
 
     /** Certification simulée : empreinte SHA-256 du contenu de la feuille, recalculable par un tiers. */

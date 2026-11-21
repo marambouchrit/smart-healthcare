@@ -9,6 +9,7 @@ import org.apache.cxf.jaxws.JaxWsProxyFactoryBean;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import tn.ginf.smarthealthcare.soap.generated.Avantage;
 import tn.ginf.smarthealthcare.soap.generated.CodeErreur;
@@ -22,6 +23,7 @@ import tn.ginf.smarthealthcare.soap.generated.StatutDroits;
 
 /** comparerGaranties par de vrais appels SOAP (D16). Valeurs : CS = 60 TND, K = 2,5 TND. */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@Import(PostgresTest.class)
 class ComparerGarantiesTest {
 
     @LocalServerPort int port;

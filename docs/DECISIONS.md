@@ -40,6 +40,7 @@ Toute décision prise avec l'utilisateur est notée ici. Une décision ne change
 | D32 | 2026-11-21 | Seuils gRPC dans `services/grpc-telemetrie/seuils.json` (variable `TELEMETRIE_SEUILS`, remplace `TELEMETRIE_SEUIL_FC` de D24) : règles (type, sens haut/bas/égal, seuil, niveau, libellé) ; une alerte par mesure, la règle franchie la plus grave l'emporte ; seuils critiques de démonstration : FC > 140 ou < 40 bpm, SpO2 < 85 %, chute = 1 | Valeurs modifiables sans toucher au code ; ce ne sont pas des références médicales |
 | D33 | 2026-11-21 | Niveaux gradués (valeurs de démonstration, `seuils.json`) : FC > 100 INFO, > 120 URGENT, > 140 CRITIQUE ; FC < 60 INFO, < 50 URGENT, < 40 CRITIQUE ; SpO2 < 94 INFO, < 90 URGENT, < 85 CRITIQUE ; chute = CRITIQUE. Priorisation : la file de chaque abonné délivre CRITIQUE puis URGENT puis INFO, ordre d'arrivée à niveau égal ; l'orchestrateur (niveau minimal URGENT) ne lance pas de workflow pour une alerte INFO | Une alerte INFO informe sans mobiliser les urgences ; en cas d'afflux, le plus grave passe d'abord |
 | D34 | 2026-11-21 | Simulateur multi-patients : scénarios JSON dans `iot-simulator/scenarios/` (intervalle et nombre de mesures globaux ou par capteur, plage normale par type, événements « valeur v à la mesure n », graine), un flux gRPC par capteur, capteurs en parallèle ; scénarios fournis : `normal`, `demo-alertes`, `afflux` ; mode simple de P1.5 conservé ; variable `SCENARIO` pour Docker | Démonstrations reproductibles sans modifier le code |
+| D35 | 2026-11-21 | PostgreSQL : image `postgres:18.7-alpine`, conteneur `smart-healthcare-postgres` défini dans `docker-compose.yml`, port hôte **5433** (5432 occupé par le PostgreSQL du poste), une base + un utilisateur par service créés par `infra/postgres/init/01-bases.sql` (CONNECT retiré à PUBLIC), mots de passe de développement surchargeables par variables d'environnement ; schémas versionnés par **Flyway** (`db/migration`), Hibernate en `validate` ; seed chargé au démarrage en n'insérant que les lignes absentes ; tests sur un PostgreSQL jetable (Testcontainers, même image) | Choix « Docker » de l'utilisatrice ; schéma documenté en SQL ; tests sur la même base qu'en production |
 
 ## Ports et routes
 
@@ -74,12 +75,13 @@ Toute décision prise avec l'utilisateur est notée ici. Une décision ne change
 | Python | 3.12.4 (installé) | 2026-11-17 |
 | grpcio / grpcio-tools | 1.85.1 (protobuf 7.36.2, libprotoc 35.1) | 2026-11-17 |
 | Node.js / Angular CLI | | |
-| PostgreSQL (image Docker) | | |
+| PostgreSQL (image Docker) | postgres:18.7-alpine (Docker Engine 29.8.0) | 2026-11-21 |
 | grpc-java (orchestrateur) | 1.85.1 ; protobuf-java 4.36.2 (même protobuf 36.2 que Python) | 2026-11-17 |
 | protobuf-maven-plugin (org.xolstice) / os-maven-plugin | 0.6.1 / 1.7.1 | 2026-11-17 |
 | zeep (outil de vérification du WSDL) | 4.3.3 | 2026-11-17 |
 | graphql-core (outil de vérification du schéma GraphQL) | 3.3.2 | 2026-11-17 |
 | springdoc-openapi-starter-webmvc-ui (service REST) | 2.10.1 (cible Spring Boot 3.5.16) | 2026-11-21 |
+| Flyway / pilote PostgreSQL / Hibernate / Testcontainers (gérés par Spring Boot 3.5.16) | 11.7.2 / 42.7.11 / 6.6.53.Final / 1.21.4 | 2026-11-21 |
 | openapi-spec-validator (outil de vérification OpenAPI) | 0.9.0 | 2026-11-17 |
 
 ## Questions ouvertes

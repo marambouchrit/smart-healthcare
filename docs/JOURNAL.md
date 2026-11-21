@@ -14,6 +14,12 @@ Modèle :
 
 ---
 
+## 2026-11-21 — P2.SOAP.5
+- Fait : Docker Desktop démarré ; `docker-compose.yml` (PostgreSQL seul pour l'instant) + `infra/postgres/init/01-bases.sql` (4 bases, 4 utilisateurs, D35). Service SOAP : Spring Data JPA + Flyway (`V1__schema_dossier.sql` : patient, medecin, couverture, lettre_cle, traitement, feuille_de_soins, acte_medical, avec contraintes CHECK), `ChargementSeed` (insère seulement les lignes absentes), `SeedRepository` réécrit sur la base (API inchangée), feuilles de soins enregistrées en base avec un numéro tiré de l'identifiant. Tests sur Testcontainers (`PostgresTest`), tables des feuilles vidées avant chaque test.
+- Vérification : conteneur `healthy`, 4 bases avec leur propriétaire, `soap_dossier` refusé sur `grpc_telemetrie` (« does not have CONNECT privilege »). `./mvnw test` → 40 tests, 0 échec sur PostgreSQL 18.7 (4 nouveaux : version Flyway 1 et comptes 8/4/7/7/10 ; second chargement → 0 ajout ; feuille + acte en base, relue identique ; contraintes `TN-12` et taux 120 rejetées). Service lancé sur la base Docker : FS-2026-000001 émise → service arrêté et relancé (« Schema is up to date », seed : 0 ajout) → nouvelle feuille FS-2026-000002 ; `consulterHistorique` renvoie les actes des deux feuilles (réponse valide XSD) ; `psql` : FS-2026-000001 85.000 (2 actes), FS-2026-000002 110.000 (2 actes).
+- Reste à faire / blocages : P2.GQL.4, P2.GRPC.3. Les tests des services persistés demandent Docker démarré.
+- Contrats ou décisions modifiés : aucun contrat ; D35.
+
 ## 2026-11-21 — P2.GRPC.4
 - Fait : `iot-simulator/capteur/scenario.py` (chargement et validation des scénarios, séries avec événements, capteurs en parallèle) ; option `--scenario` (ou variable `SCENARIO`) dans `capteur.simulateur` ; scénarios `normal.json` (8 patients × FC + SpO2, sans alerte), `demo-alertes.json` (pic cardiaque, désaturation progressive, chute, tachycardie modérée, patient témoin), `afflux.json` (5 alertes critiques simultanées) (D34).
 - Vérification : `python -m unittest discover -s tests -t .` → 10 tests OK (5 nouveaux : scénarios fournis valides ; normal = 8 patients ; valeurs par défaut et surcharges ; événements aux bonnes positions ; 4 erreurs de scénario détectées). Plateforme lancée : `--scenario scenarios/demo-alertes.json` → 60 mesures, 7 alertes (2 INFO, 2 URGENT, 3 CRITIQUE), témoin sans alerte ; l'orchestrateur a terminé 3 workflows puis signalé « aucun créneau d'urgence libre » pour les 2 dernières (urgences saturées par les essais : cas d'ambulance de P5.2).

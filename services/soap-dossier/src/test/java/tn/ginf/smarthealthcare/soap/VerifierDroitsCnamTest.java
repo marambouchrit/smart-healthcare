@@ -13,6 +13,7 @@ import org.apache.cxf.jaxws.JaxWsProxyFactoryBean;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import tn.ginf.smarthealthcare.soap.generated.CodeErreur;
 import tn.ginf.smarthealthcare.soap.generated.DossierPortType;
@@ -24,6 +25,7 @@ import tn.ginf.smarthealthcare.soap.generated.VerifierDroitsCNAMResponse;
 
 /** Appels SOAP réels (HTTP) sur le service démarré, avec un client généré depuis le même WSDL. */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@Import(PostgresTest.class)
 class VerifierDroitsCnamTest {
 
     @LocalServerPort

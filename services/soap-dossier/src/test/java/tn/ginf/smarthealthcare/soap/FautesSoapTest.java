@@ -9,6 +9,7 @@ import java.net.http.HttpResponse;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.boot.test.web.server.LocalServerPort;
 
 /**
@@ -16,6 +17,7 @@ import org.springframework.boot.test.web.server.LocalServerPort;
  * c'est-à-dire ce que reçoit n'importe quel client (SoapUI, orchestrateur, autre langage).
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@Import(PostgresTest.class)
 class FautesSoapTest {
 
     @LocalServerPort int port;
