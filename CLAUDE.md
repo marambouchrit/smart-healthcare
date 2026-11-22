@@ -74,6 +74,7 @@ Conventions :
 | `node scripts/roadmap-status.mjs` | Résumé de l'avancement et tâche suivante | Oui |
 | `node scripts/check-seed.mjs` | Contrôle des données fictives de `contracts/seed/` | Oui |
 | `PYTHON=.venv-contrats/Scripts/python bash scripts/check-contrats.sh` | Contrôle tous les contrats de `contracts/` (seed, XSD, WSDL, .proto, SDL, 2 OpenAPI) ; index : `contracts/README.md` | Oui |
+| `npm install --no-save --prefix .outils bpmn-moddle@10.3.1 @mermaid-js/mermaid-cli@11.17.1` puis `node scripts/check-bpmn.mjs docs/schemas/workflow-prise-en-charge.bpmn` | Outils des schémas (une fois) et contrôle du BPMN ; SVG : `.outils/node_modules/.bin/mmdc -i docs/schemas/<schéma>.md -o docs/schemas/svg/<schéma>.md` (voir `docs/schemas/README.md`) | Oui |
 | `bash scripts/tests-unitaires.sh` | Lance les tests des 8 composants (Maven, unittest, Vitest) et affiche un bilan (Docker démarré, `docker compose up -d postgres`) | Oui |
 | `python -X utf8 scripts/test_integration.py` | Test d'intégration du scénario d'alerte complet contre la stack Docker, par la gateway (SSE, gRPC, SOAP, REST, GraphQL, trace) ; `--patients TN-…` pour choisir | Oui |
 | `java scripts/ValidateXsd.java <xsd> <xml>...` | Valide des messages XML contre un XSD (JDK seul) | Oui |

@@ -1,0 +1,328 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Workflow « prise en charge automatisée d'une alerte médicale à domicile » (sujet, partie A ; P5.6, D9).
+  BPMN 2.0 de documentation : le processus est exécuté par le code de l'orchestrateur (WorkflowAlerte, D9),
+  pas par un moteur BPMN. S'ouvre dans Camunda Modeler ou sur https://demo.bpmn.io.
+  Règles : D25 (droits CNAM), D52 (à régulariser), D53 (ambulance), D54 (délais, essais, trace), contracts/sse.
+-->
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                  xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+                  xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+                  xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+                  id="Definitions_PriseEnCharge"
+                  targetNamespace="http://hopital.tn/smart-healthcare/workflow"
+                  exporter="smart-healthcare (écrit à la main)" exporterVersion="1.0">
+
+  <bpmn:collaboration id="Collaboration_PriseEnCharge">
+    <bpmn:participant id="Participant_Orchestrateur" name="Orchestrateur (Spring Boot, port 8084)" processRef="Process_PriseEnCharge" />
+    <bpmn:participant id="Participant_Telemetrie" name="Télémétrie — gRPC" />
+    <bpmn:participant id="Participant_Dossier" name="Dossier &amp; CNAM — SOAP" />
+    <bpmn:participant id="Participant_Portail" name="Portail &amp; rendez-vous — REST" />
+    <bpmn:participant id="Participant_TableauDeBord" name="Tableau de bord — GraphQL" />
+    <bpmn:participant id="Participant_ClientWeb" name="Client web du médecin (flux SSE /events via la gateway)" />
+
+    <bpmn:messageFlow id="Message_Alerte" name="SuivreAlertes (URGENT, CRITIQUE)" sourceRef="Participant_Telemetrie" targetRef="Start_Alerte" />
+    <bpmn:messageFlow id="Message_SseAlerte" name="événement « alerte »" sourceRef="Task_DiffuserAlerte" targetRef="Participant_ClientWeb" />
+    <bpmn:messageFlow id="Message_Droits" name="verifierDroitsCNAM" sourceRef="Task_Droits" targetRef="Participant_Dossier" />
+    <bpmn:messageFlow id="Message_Urgence" name="POST /api/urgences" sourceRef="Task_Urgence" targetRef="Participant_Portail" />
+    <bpmn:messageFlow id="Message_Ambulance" name="POST /api/ambulances" sourceRef="Task_Ambulance" targetRef="Participant_Portail" />
+    <bpmn:messageFlow id="Message_Tdb" name="enregistrerAlerte, mettreAJourCouverture" sourceRef="Task_TableauDeBord" targetRef="Participant_TableauDeBord" />
+    <bpmn:messageFlow id="Message_Fiche" name="creerFicheUrgence" sourceRef="Task_Fiche" targetRef="Participant_TableauDeBord" />
+    <bpmn:messageFlow id="Message_SseResultat" name="« prise-en-charge » TERMINE / AMBULANCE" sourceRef="Task_DiffuserResultat" targetRef="Participant_ClientWeb" />
+    <bpmn:messageFlow id="Message_SseEchec" name="« prise-en-charge » ECHEC" sourceRef="Task_DiffuserEchec" targetRef="Participant_ClientWeb" />
+
+    <bpmn:textAnnotation id="Annotation_Robustesse">
+      <bpmn:text>Chaque appel de service : délais 2 s / 5 s, jusqu'à 3 essais sûrs (D54), étape tracée dans la base orchestrator (GET /orchestrator/workflows)</bpmn:text>
+    </bpmn:textAnnotation>
+    <bpmn:association id="Association_Robustesse" sourceRef="Annotation_Robustesse" targetRef="Task_Droits" />
+  </bpmn:collaboration>
+
+  <bpmn:process id="Process_PriseEnCharge" name="Prise en charge automatisée d'une alerte médicale" isExecutable="false">
+    <bpmn:startEvent id="Start_Alerte" name="Alerte critique reçue">
+      <bpmn:outgoing>Flow_1</bpmn:outgoing>
+      <bpmn:messageEventDefinition id="MessageDef_Alerte" />
+    </bpmn:startEvent>
+
+    <bpmn:sendTask id="Task_DiffuserAlerte" name="Diffuser l'alerte au tableau de bord (SSE)">
+      <bpmn:incoming>Flow_1</bpmn:incoming>
+      <bpmn:outgoing>Flow_2</bpmn:outgoing>
+    </bpmn:sendTask>
+
+    <bpmn:serviceTask id="Task_Droits" name="Vérifier les droits CNAM (SOAP)">
+      <bpmn:incoming>Flow_2</bpmn:incoming>
+      <bpmn:outgoing>Flow_3</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <bpmn:exclusiveGateway id="Gateway_Droits" name="Droits ouverts ?">
+      <bpmn:incoming>Flow_3</bpmn:incoming>
+      <bpmn:outgoing>Flow_DroitsOuverts</bpmn:outgoing>
+      <bpmn:outgoing>Flow_DroitsNonOuverts</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+
+    <bpmn:scriptTask id="Task_Regulariser" name="Marquer « à régulariser » (soins assurés)">
+      <bpmn:incoming>Flow_DroitsNonOuverts</bpmn:incoming>
+      <bpmn:outgoing>Flow_6</bpmn:outgoing>
+    </bpmn:scriptTask>
+
+    <bpmn:exclusiveGateway id="Gateway_FusionDroits">
+      <bpmn:incoming>Flow_DroitsOuverts</bpmn:incoming>
+      <bpmn:incoming>Flow_6</bpmn:incoming>
+      <bpmn:outgoing>Flow_7</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+
+    <bpmn:serviceTask id="Task_Urgence" name="Réserver un créneau d'urgence (REST)">
+      <bpmn:incoming>Flow_7</bpmn:incoming>
+      <bpmn:outgoing>Flow_8</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <bpmn:exclusiveGateway id="Gateway_Creneau" name="Créneau libre ?">
+      <bpmn:incoming>Flow_8</bpmn:incoming>
+      <bpmn:outgoing>Flow_CreneauReserve</bpmn:outgoing>
+      <bpmn:outgoing>Flow_AucunCreneau</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+
+    <bpmn:serviceTask id="Task_Ambulance" name="Envoyer une ambulance au domicile (REST)">
+      <bpmn:incoming>Flow_AucunCreneau</bpmn:incoming>
+      <bpmn:outgoing>Flow_11</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <bpmn:exclusiveGateway id="Gateway_FusionAction">
+      <bpmn:incoming>Flow_CreneauReserve</bpmn:incoming>
+      <bpmn:incoming>Flow_11</bpmn:incoming>
+      <bpmn:outgoing>Flow_12</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+
+    <bpmn:serviceTask id="Task_TableauDeBord" name="Enregistrer l'alerte et la couverture (GraphQL)">
+      <bpmn:incoming>Flow_12</bpmn:incoming>
+      <bpmn:outgoing>Flow_13</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <bpmn:serviceTask id="Task_Fiche" name="Créer la fiche d'urgence (GraphQL)">
+      <bpmn:incoming>Flow_13</bpmn:incoming>
+      <bpmn:outgoing>Flow_14</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <bpmn:sendTask id="Task_DiffuserResultat" name="Diffuser la prise en charge (SSE)">
+      <bpmn:incoming>Flow_14</bpmn:incoming>
+      <bpmn:outgoing>Flow_15</bpmn:outgoing>
+    </bpmn:sendTask>
+
+    <bpmn:endEvent id="End_PrisEnCharge" name="Patient pris en charge (TERMINE ou AMBULANCE)">
+      <bpmn:incoming>Flow_15</bpmn:incoming>
+    </bpmn:endEvent>
+
+    <!-- Échec d'une étape après les essais prévus (D54) : workflow ECHEC -->
+    <bpmn:boundaryEvent id="Erreur_Droits" name="SOAP indisponible" attachedToRef="Task_Droits">
+      <bpmn:outgoing>Flow_ErreurDroits</bpmn:outgoing>
+      <bpmn:errorEventDefinition id="ErrorDef_Droits" errorRef="Error_ServiceIndisponible" />
+    </bpmn:boundaryEvent>
+    <bpmn:boundaryEvent id="Erreur_Urgence" name="REST indisponible" attachedToRef="Task_Urgence">
+      <bpmn:outgoing>Flow_ErreurUrgence</bpmn:outgoing>
+      <bpmn:errorEventDefinition id="ErrorDef_Urgence" errorRef="Error_ServiceIndisponible" />
+    </bpmn:boundaryEvent>
+    <bpmn:boundaryEvent id="Erreur_Ambulance" name="REST indisponible" attachedToRef="Task_Ambulance">
+      <bpmn:outgoing>Flow_ErreurAmbulance</bpmn:outgoing>
+      <bpmn:errorEventDefinition id="ErrorDef_Ambulance" errorRef="Error_ServiceIndisponible" />
+    </bpmn:boundaryEvent>
+    <bpmn:boundaryEvent id="Erreur_TableauDeBord" name="GraphQL indisponible" attachedToRef="Task_TableauDeBord">
+      <bpmn:outgoing>Flow_ErreurTableauDeBord</bpmn:outgoing>
+      <bpmn:errorEventDefinition id="ErrorDef_TableauDeBord" errorRef="Error_ServiceIndisponible" />
+    </bpmn:boundaryEvent>
+    <bpmn:boundaryEvent id="Erreur_Fiche" name="GraphQL indisponible" attachedToRef="Task_Fiche">
+      <bpmn:outgoing>Flow_ErreurFiche</bpmn:outgoing>
+      <bpmn:errorEventDefinition id="ErrorDef_Fiche" errorRef="Error_ServiceIndisponible" />
+    </bpmn:boundaryEvent>
+
+    <bpmn:sendTask id="Task_DiffuserEchec" name="Diffuser l'échec (SSE)">
+      <bpmn:incoming>Flow_ErreurDroits</bpmn:incoming>
+      <bpmn:incoming>Flow_ErreurUrgence</bpmn:incoming>
+      <bpmn:incoming>Flow_ErreurAmbulance</bpmn:incoming>
+      <bpmn:incoming>Flow_ErreurTableauDeBord</bpmn:incoming>
+      <bpmn:incoming>Flow_ErreurFiche</bpmn:incoming>
+      <bpmn:outgoing>Flow_Echec</bpmn:outgoing>
+    </bpmn:sendTask>
+
+    <bpmn:endEvent id="End_Echec" name="Échec tracé (ECHEC)">
+      <bpmn:incoming>Flow_Echec</bpmn:incoming>
+    </bpmn:endEvent>
+
+    <bpmn:sequenceFlow id="Flow_1" sourceRef="Start_Alerte" targetRef="Task_DiffuserAlerte" />
+    <bpmn:sequenceFlow id="Flow_2" sourceRef="Task_DiffuserAlerte" targetRef="Task_Droits" />
+    <bpmn:sequenceFlow id="Flow_3" sourceRef="Task_Droits" targetRef="Gateway_Droits" />
+    <bpmn:sequenceFlow id="Flow_DroitsOuverts" name="OUVERTS" sourceRef="Gateway_Droits" targetRef="Gateway_FusionDroits" />
+    <bpmn:sequenceFlow id="Flow_DroitsNonOuverts" name="EXPIRES ou NON_AFFILIE" sourceRef="Gateway_Droits" targetRef="Task_Regulariser" />
+    <bpmn:sequenceFlow id="Flow_6" sourceRef="Task_Regulariser" targetRef="Gateway_FusionDroits" />
+    <bpmn:sequenceFlow id="Flow_7" sourceRef="Gateway_FusionDroits" targetRef="Task_Urgence" />
+    <bpmn:sequenceFlow id="Flow_8" sourceRef="Task_Urgence" targetRef="Gateway_Creneau" />
+    <bpmn:sequenceFlow id="Flow_CreneauReserve" name="201 rendez-vous" sourceRef="Gateway_Creneau" targetRef="Gateway_FusionAction" />
+    <bpmn:sequenceFlow id="Flow_AucunCreneau" name="409 aucun créneau" sourceRef="Gateway_Creneau" targetRef="Task_Ambulance" />
+    <bpmn:sequenceFlow id="Flow_11" sourceRef="Task_Ambulance" targetRef="Gateway_FusionAction" />
+    <bpmn:sequenceFlow id="Flow_12" sourceRef="Gateway_FusionAction" targetRef="Task_TableauDeBord" />
+    <bpmn:sequenceFlow id="Flow_13" sourceRef="Task_TableauDeBord" targetRef="Task_Fiche" />
+    <bpmn:sequenceFlow id="Flow_14" sourceRef="Task_Fiche" targetRef="Task_DiffuserResultat" />
+    <bpmn:sequenceFlow id="Flow_15" sourceRef="Task_DiffuserResultat" targetRef="End_PrisEnCharge" />
+    <bpmn:sequenceFlow id="Flow_ErreurDroits" sourceRef="Erreur_Droits" targetRef="Task_DiffuserEchec" />
+    <bpmn:sequenceFlow id="Flow_ErreurUrgence" sourceRef="Erreur_Urgence" targetRef="Task_DiffuserEchec" />
+    <bpmn:sequenceFlow id="Flow_ErreurAmbulance" sourceRef="Erreur_Ambulance" targetRef="Task_DiffuserEchec" />
+    <bpmn:sequenceFlow id="Flow_ErreurTableauDeBord" sourceRef="Erreur_TableauDeBord" targetRef="Task_DiffuserEchec" />
+    <bpmn:sequenceFlow id="Flow_ErreurFiche" sourceRef="Erreur_Fiche" targetRef="Task_DiffuserEchec" />
+    <bpmn:sequenceFlow id="Flow_Echec" sourceRef="Task_DiffuserEchec" targetRef="End_Echec" />
+  </bpmn:process>
+
+  <bpmn:error id="Error_ServiceIndisponible" name="Service indisponible après les essais prévus" errorCode="SERVICE_INDISPONIBLE" />
+
+  <bpmndi:BPMNDiagram id="Diagram_PriseEnCharge">
+    <bpmndi:BPMNPlane id="Plane_PriseEnCharge" bpmnElement="Collaboration_PriseEnCharge">
+      <!-- Participants -->
+      <bpmndi:BPMNShape id="Participant_Orchestrateur_di" bpmnElement="Participant_Orchestrateur" isHorizontal="true">
+        <dc:Bounds x="100" y="180" width="2180" height="400" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Participant_Telemetrie_di" bpmnElement="Participant_Telemetrie" isHorizontal="true">
+        <dc:Bounds x="100" y="40" width="200" height="60" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Participant_Dossier_di" bpmnElement="Participant_Dossier" isHorizontal="true">
+        <dc:Bounds x="380" y="40" width="200" height="60" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Participant_Portail_di" bpmnElement="Participant_Portail" isHorizontal="true">
+        <dc:Bounds x="900" y="40" width="480" height="60" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Participant_TableauDeBord_di" bpmnElement="Participant_TableauDeBord" isHorizontal="true">
+        <dc:Bounds x="1440" y="40" width="340" height="60" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Participant_ClientWeb_di" bpmnElement="Participant_ClientWeb" isHorizontal="true">
+        <dc:Bounds x="100" y="620" width="2180" height="60" />
+      </bpmndi:BPMNShape>
+
+      <!-- Nœuds du processus -->
+      <bpmndi:BPMNShape id="Start_Alerte_di" bpmnElement="Start_Alerte">
+        <dc:Bounds x="170" y="282" width="36" height="36" />
+        <bpmndi:BPMNLabel><dc:Bounds x="146" y="325" width="84" height="27" /></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_DiffuserAlerte_di" bpmnElement="Task_DiffuserAlerte">
+        <dc:Bounds x="250" y="260" width="120" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_Droits_di" bpmnElement="Task_Droits">
+        <dc:Bounds x="420" y="260" width="120" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_Droits_di" bpmnElement="Gateway_Droits" isMarkerVisible="true">
+        <dc:Bounds x="600" y="275" width="50" height="50" />
+        <bpmndi:BPMNLabel><dc:Bounds x="584" y="245" width="82" height="14" /></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_Regulariser_di" bpmnElement="Task_Regulariser">
+        <dc:Bounds x="700" y="380" width="120" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_FusionDroits_di" bpmnElement="Gateway_FusionDroits" isMarkerVisible="true">
+        <dc:Bounds x="860" y="275" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_Urgence_di" bpmnElement="Task_Urgence">
+        <dc:Bounds x="950" y="260" width="120" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_Creneau_di" bpmnElement="Gateway_Creneau" isMarkerVisible="true">
+        <dc:Bounds x="1120" y="275" width="50" height="50" />
+        <bpmndi:BPMNLabel><dc:Bounds x="1107" y="245" width="76" height="14" /></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_Ambulance_di" bpmnElement="Task_Ambulance">
+        <dc:Bounds x="1220" y="380" width="120" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_FusionAction_di" bpmnElement="Gateway_FusionAction" isMarkerVisible="true">
+        <dc:Bounds x="1380" y="275" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_TableauDeBord_di" bpmnElement="Task_TableauDeBord">
+        <dc:Bounds x="1470" y="260" width="120" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_Fiche_di" bpmnElement="Task_Fiche">
+        <dc:Bounds x="1630" y="260" width="120" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_DiffuserResultat_di" bpmnElement="Task_DiffuserResultat">
+        <dc:Bounds x="1790" y="260" width="120" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="End_PrisEnCharge_di" bpmnElement="End_PrisEnCharge">
+        <dc:Bounds x="1952" y="282" width="36" height="36" />
+        <bpmndi:BPMNLabel><dc:Bounds x="1925" y="325" width="90" height="40" /></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_DiffuserEchec_di" bpmnElement="Task_DiffuserEchec">
+        <dc:Bounds x="2010" y="460" width="120" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="End_Echec_di" bpmnElement="End_Echec">
+        <dc:Bounds x="2172" y="482" width="36" height="36" />
+        <bpmndi:BPMNLabel><dc:Bounds x="2150" y="525" width="80" height="27" /></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+
+      <!-- Événements d'erreur attachés (bord inférieur des tâches) -->
+      <bpmndi:BPMNShape id="Erreur_Droits_di" bpmnElement="Erreur_Droits">
+        <dc:Bounds x="462" y="322" width="36" height="36" />
+        <bpmndi:BPMNLabel><dc:Bounds x="488" y="362" width="88" height="14" /></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Erreur_Urgence_di" bpmnElement="Erreur_Urgence">
+        <dc:Bounds x="992" y="322" width="36" height="36" />
+        <bpmndi:BPMNLabel><dc:Bounds x="1018" y="362" width="88" height="14" /></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Erreur_Ambulance_di" bpmnElement="Erreur_Ambulance">
+        <dc:Bounds x="1262" y="442" width="36" height="36" />
+        <bpmndi:BPMNLabel><dc:Bounds x="1288" y="478" width="88" height="14" /></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Erreur_TableauDeBord_di" bpmnElement="Erreur_TableauDeBord">
+        <dc:Bounds x="1512" y="322" width="36" height="36" />
+        <bpmndi:BPMNLabel><dc:Bounds x="1538" y="362" width="88" height="27" /></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Erreur_Fiche_di" bpmnElement="Erreur_Fiche">
+        <dc:Bounds x="1672" y="322" width="36" height="36" />
+        <bpmndi:BPMNLabel><dc:Bounds x="1698" y="362" width="88" height="27" /></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Annotation_Robustesse_di" bpmnElement="Annotation_Robustesse">
+        <dc:Bounds x="600" y="108" width="270" height="62" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Association_Robustesse_di" bpmnElement="Association_Robustesse">
+        <di:waypoint x="610" y="170" />
+        <di:waypoint x="540" y="262" />
+      </bpmndi:BPMNEdge>
+
+      <!-- Flux de séquence -->
+      <bpmndi:BPMNEdge id="Flow_1_di" bpmnElement="Flow_1"><di:waypoint x="206" y="300" /><di:waypoint x="250" y="300" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_2_di" bpmnElement="Flow_2"><di:waypoint x="370" y="300" /><di:waypoint x="420" y="300" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_3_di" bpmnElement="Flow_3"><di:waypoint x="540" y="300" /><di:waypoint x="600" y="300" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_DroitsOuverts_di" bpmnElement="Flow_DroitsOuverts">
+        <di:waypoint x="650" y="300" /><di:waypoint x="860" y="300" />
+        <bpmndi:BPMNLabel><dc:Bounds x="728" y="282" width="54" height="14" /></bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_DroitsNonOuverts_di" bpmnElement="Flow_DroitsNonOuverts">
+        <di:waypoint x="625" y="325" /><di:waypoint x="625" y="420" /><di:waypoint x="700" y="420" />
+        <bpmndi:BPMNLabel><dc:Bounds x="560" y="430" width="90" height="27" /></bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_6_di" bpmnElement="Flow_6"><di:waypoint x="820" y="420" /><di:waypoint x="885" y="420" /><di:waypoint x="885" y="325" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_7_di" bpmnElement="Flow_7"><di:waypoint x="910" y="300" /><di:waypoint x="950" y="300" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_8_di" bpmnElement="Flow_8"><di:waypoint x="1070" y="300" /><di:waypoint x="1120" y="300" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_CreneauReserve_di" bpmnElement="Flow_CreneauReserve">
+        <di:waypoint x="1170" y="300" /><di:waypoint x="1380" y="300" />
+        <bpmndi:BPMNLabel><dc:Bounds x="1188" y="282" width="84" height="14" /></bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_AucunCreneau_di" bpmnElement="Flow_AucunCreneau">
+        <di:waypoint x="1145" y="325" /><di:waypoint x="1145" y="420" /><di:waypoint x="1220" y="420" />
+        <bpmndi:BPMNLabel><dc:Bounds x="1080" y="430" width="70" height="27" /></bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_11_di" bpmnElement="Flow_11"><di:waypoint x="1340" y="420" /><di:waypoint x="1405" y="420" /><di:waypoint x="1405" y="325" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_12_di" bpmnElement="Flow_12"><di:waypoint x="1430" y="300" /><di:waypoint x="1470" y="300" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_13_di" bpmnElement="Flow_13"><di:waypoint x="1590" y="300" /><di:waypoint x="1630" y="300" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_14_di" bpmnElement="Flow_14"><di:waypoint x="1750" y="300" /><di:waypoint x="1790" y="300" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_15_di" bpmnElement="Flow_15"><di:waypoint x="1910" y="300" /><di:waypoint x="1952" y="300" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_ErreurDroits_di" bpmnElement="Flow_ErreurDroits"><di:waypoint x="480" y="358" /><di:waypoint x="480" y="500" /><di:waypoint x="2010" y="500" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_ErreurUrgence_di" bpmnElement="Flow_ErreurUrgence"><di:waypoint x="1010" y="358" /><di:waypoint x="1010" y="500" /><di:waypoint x="2010" y="500" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_ErreurAmbulance_di" bpmnElement="Flow_ErreurAmbulance"><di:waypoint x="1280" y="478" /><di:waypoint x="1280" y="500" /><di:waypoint x="2010" y="500" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_ErreurTableauDeBord_di" bpmnElement="Flow_ErreurTableauDeBord"><di:waypoint x="1530" y="358" /><di:waypoint x="1530" y="500" /><di:waypoint x="2010" y="500" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_ErreurFiche_di" bpmnElement="Flow_ErreurFiche"><di:waypoint x="1690" y="358" /><di:waypoint x="1690" y="500" /><di:waypoint x="2010" y="500" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Echec_di" bpmnElement="Flow_Echec"><di:waypoint x="2130" y="500" /><di:waypoint x="2172" y="500" /></bpmndi:BPMNEdge>
+
+      <!-- Flux de messages -->
+      <bpmndi:BPMNEdge id="Message_Alerte_di" bpmnElement="Message_Alerte"><di:waypoint x="188" y="100" /><di:waypoint x="188" y="282" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Message_SseAlerte_di" bpmnElement="Message_SseAlerte"><di:waypoint x="310" y="340" /><di:waypoint x="310" y="620" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Message_Droits_di" bpmnElement="Message_Droits"><di:waypoint x="480" y="260" /><di:waypoint x="480" y="100" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Message_Urgence_di" bpmnElement="Message_Urgence"><di:waypoint x="1010" y="260" /><di:waypoint x="1010" y="100" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Message_Ambulance_di" bpmnElement="Message_Ambulance"><di:waypoint x="1280" y="380" /><di:waypoint x="1280" y="100" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Message_Tdb_di" bpmnElement="Message_Tdb"><di:waypoint x="1530" y="260" /><di:waypoint x="1530" y="100" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Message_Fiche_di" bpmnElement="Message_Fiche"><di:waypoint x="1690" y="260" /><di:waypoint x="1690" y="100" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Message_SseResultat_di" bpmnElement="Message_SseResultat"><di:waypoint x="1850" y="340" /><di:waypoint x="1850" y="620" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Message_SseEchec_di" bpmnElement="Message_SseEchec"><di:waypoint x="2070" y="540" /><di:waypoint x="2070" y="620" /></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

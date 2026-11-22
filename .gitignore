@@ -11,3 +11,5 @@ dist/
 
 # Outils de contrôle des contrats (scripts/check-contrats.sh)
 .venv-contrats/
+# Outils de vérification des schémas (bpmn-moddle, mermaid-cli)
+.outils/

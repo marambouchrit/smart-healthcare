@@ -120,7 +120,7 @@ Objectif : le workflow complet fonctionne en version minimale avant d'enrichir q
 - [x] P5.3 Orchestrateur : délais d'attente, nouvelles tentatives et trace de chaque instance de workflow
 - [x] P5.4 Tests unitaires par service + test d'intégration du scénario d'alerte complet
 - [x] P5.5 Documentation technique : WSDL, OpenAPI, SDL, `.proto` à jour dans `contracts/`
-- [ ] P5.6 Schémas : architecture microservices, BPMN du workflow, déploiement Docker
+- [x] P5.6 Schémas : architecture microservices, BPMN du workflow, déploiement Docker
 - [ ] P5.7 Scénario de démonstration écrit pas à pas
 - [ ] P5.8 Rapport final
 
