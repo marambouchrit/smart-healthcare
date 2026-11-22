@@ -14,10 +14,18 @@ Modèle :
 
 ---
 
+## 2026-11-22 — P4.3
+- Fait : onglets `/patient/ordonnances` (`GET /api/patients/{id}/ordonnances`, filtre `statut` EN_COURS / TERMINE, lignes avec médicament, dosage, posologie, période, statut, nom du prescripteur) et `/patient/profil` (identité en lecture, formulaire des seules coordonnées du schéma `ProfilModification` avec les mêmes règles que le contrat : téléphone `^\+?[0-9 ]{8,20}$`, e-mail, adresse complète avec code postal à 4 chiffres ; `PATCH` avec uniquement les champs modifiés, adresse toujours complète). Fixtures des tests alignées sur le seed (TN-0012345 Hédi Mansouri, ORD-000004).
+- Vérification : `npm test -- --watch=false` → 7 fichiers, 36 tests OK (dont 6 nouveaux : ordonnances et filtre, profil pré-rempli, PATCH limité aux champs modifiés, saisie non conforme bloquée sans appel, `detail` d'un 400 affiché). Stack Docker via le proxy (jeton `patient`) : ordonnances → ORD-000004 du 2026-02-10 (MED-001, Bisoprolol et Furosémide EN_COURS) ; `statut=TERMINE` → [] ; profil Hédi Mansouri ; PATCH téléphone + adresse → relu à l'identique ; code postal `12` → 400 ; coordonnées d'origine restaurées ensuite.
+- Reste à faire / blocages : P4.4.
+- Contrats ou décisions modifiés : aucun.
+
 ## 2026-11-22 — P4.2
 - Fait : D49. `core/api/portail.ts` (types et appels du contrat OpenAPI, sans ajout), `core/referentiel.ts` (noms des médecins et services depuis `/seed/`, copiés de `contracts/seed/` par `copier-seed.mjs`), `core/format.ts` (dates à Tunis, `detail` des Problem Details). Espace patient en onglets (`/patient/rendez-vous`) : rendez-vous à venir (modifier le motif, changer de créneau, annuler après confirmation), recherche de créneaux libres (service hors URGENCES, médecin, jour sur 14 jours), réservation avec motif, historique (passés, annulés, honorés) ; patient = sujet du jeton. Styles communs dans `styles.css`.
 - Vérification : `npm test -- --watch=false` → 6 fichiers, 30 tests OK (dont 7 pour l'écran : liste et noms, POST avec le patient du jeton, URGENCES masqué, 409 affiché avec son `detail`, PUT, PATCH motif, PATCH ANNULE et renoncement). Stack Docker via `npm start` (4200, proxy) avec le jeton `patient` : `/seed/*.json` servis ; 12 créneaux CARDIO libres le 2026-11-23 ; POST CRN-000051 → RDV CONFIRME ; même créneau → 409 `creneau-indisponible` ; PUT vers CRN-000053 → CRN-000051 libéré, CRN-000053 pris ; PATCH motif → « Bilan annuel » ; PATCH ANNULE → créneau libéré, puis motif refusé 409 `rendez-vous annulé` ; rendez-vous d'essai supprimés ensuite (DELETE 204). Écran contrôlé dans le navigateur à la vérification de la phase 4.
-- Reste à faire / blocages : P4.3. Scripts de test sous Windows : retirer le `` des sorties Python (`tr -d ''`).
+- Reste à faire / blocages : P4.3. Scripts de test sous Windows : retirer le `
+` des sorties Python (`tr -d '
+'`).
 - Contrats ou décisions modifiés : aucun contrat ; D49.
 
 ## 2026-11-22 — P4.1

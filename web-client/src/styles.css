@@ -270,3 +270,23 @@ dl.fiche dt {
 dl.fiche dd {
   margin: 0;
 }
+
+.formulaire {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ligne-champs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.ligne-champs .large {
+  flex: 1;
+}
+
+.champ-erreur {
+  color: var(--danger);
+}

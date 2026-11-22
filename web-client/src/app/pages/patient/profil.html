@@ -1,0 +1,68 @@
+@if (message(); as m) {
+  <p class="bandeau" [class.ok]="m.type === 'ok'" [class.erreur]="m.type === 'erreur'" role="status">{{ m.texte }}</p>
+}
+
+@if (profil(); as p) {
+  <div class="grille-2">
+    <section class="panneau">
+      <h2>Identité</h2>
+      <dl class="fiche">
+        <dt>Dossier</dt>
+        <dd>{{ p.id }}</dd>
+        <dt>Nom</dt>
+        <dd data-nom>{{ p.prenom }} {{ p.nom }}</dd>
+        <dt>Naissance</dt>
+        <dd>{{ dateLongue(p.dateNaissance) }}</dd>
+        <dt>Sexe</dt>
+        <dd>{{ p.sexe === 'F' ? 'Féminin' : 'Masculin' }}</dd>
+        <dt>Médecin traitant</dt>
+        <dd>{{ ref.nomMedecin(p.medecinTraitantId) }}</dd>
+      </dl>
+      <p class="discret">L'identité est gérée par l'hôpital ; seules les coordonnées sont modifiables.</p>
+    </section>
+
+    <section class="panneau">
+      <h2>Coordonnées</h2>
+      <form class="formulaire" [formGroup]="formulaire" (ngSubmit)="enregistrer()" novalidate>
+        <label>
+          Téléphone
+          <input formControlName="telephone" autocomplete="tel" placeholder="+216 20 000 001" />
+        </label>
+        @if (formulaire.controls.telephone.invalid && formulaire.controls.telephone.touched) {
+          <small class="champ-erreur">8 à 20 chiffres ou espaces, « + » facultatif au début.</small>
+        }
+        <label>
+          E-mail
+          <input formControlName="email" type="email" autocomplete="email" />
+        </label>
+        @if (formulaire.controls.email.invalid && formulaire.controls.email.touched) {
+          <small class="champ-erreur">Adresse e-mail invalide.</small>
+        }
+        <label>
+          Rue
+          <input formControlName="rue" autocomplete="street-address" />
+        </label>
+        <div class="ligne-champs">
+          <label>
+            Code postal
+            <input formControlName="codePostal" inputmode="numeric" maxlength="4" />
+          </label>
+          <label class="large">
+            Ville
+            <input formControlName="ville" autocomplete="address-level2" />
+          </label>
+        </div>
+        @if ((formulaire.controls.rue.invalid || formulaire.controls.ville.invalid || formulaire.controls.codePostal.invalid) &&
+          (formulaire.controls.rue.touched || formulaire.controls.ville.touched || formulaire.controls.codePostal.touched)) {
+          <small class="champ-erreur">Adresse complète requise, code postal à 4 chiffres.</small>
+        }
+        <div class="actions">
+          <button type="submit" [disabled]="envoi() || formulaire.pristine">Enregistrer</button>
+          <button type="button" class="secondaire" (click)="annulerSaisie()" [disabled]="formulaire.pristine">Annuler</button>
+        </div>
+      </form>
+    </section>
+  </div>
+} @else if (!message()) {
+  <p class="discret">Chargement…</p>
+}

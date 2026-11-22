@@ -49,7 +49,7 @@ describe('Espace patient — rendez-vous (P4.2)', () => {
     el = fixture.nativeElement as HTMLElement;
     http.expectOne('seed/medecins.json').flush([
       { id: 'MED-001', nom: 'Ben Salah', prenom: 'Amine', specialite: 'Cardiologue', serviceCode: 'CARDIO' },
-      { id: 'MED-004', nom: 'X', prenom: 'Y', specialite: 'Urgentiste', serviceCode: 'URGENCES' },
+      { id: 'MED-004', nom: 'Jaziri', prenom: 'Leila', specialite: 'Médecin urgentiste', serviceCode: 'URGENCES' },
     ]);
     http.expectOne('seed/services-hospitaliers.json').flush([
       { code: 'CARDIO', libelle: 'Cardiologie' },

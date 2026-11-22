@@ -4,6 +4,8 @@ import { invitesSeulement, redirectionAccueil, roleGuard } from './core/auth/rol
 import { Connexion } from './pages/connexion/connexion';
 import { EspaceAdmin, EspaceMedecin } from './pages/espaces/espaces';
 import { EspacePatient } from './pages/patient/espace-patient';
+import { OrdonnancesPage } from './pages/patient/ordonnances';
+import { ProfilPage } from './pages/patient/profil';
 import { RendezVousPage } from './pages/patient/rendez-vous';
 
 /** Écrans par rôle (D48). */
@@ -15,6 +17,8 @@ export const routes: Routes = [
     canActivate: [roleGuard('PATIENT')],
     children: [
       { path: 'rendez-vous', component: RendezVousPage, title: 'Mes rendez-vous' },
+      { path: 'ordonnances', component: OrdonnancesPage, title: 'Mes ordonnances' },
+      { path: 'profil', component: ProfilPage, title: 'Mon profil' },
       { path: '', pathMatch: 'full', redirectTo: 'rendez-vous' },
     ],
   },
