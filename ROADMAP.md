@@ -102,7 +102,7 @@ Objectif : le workflow complet fonctionne en version minimale avant d'enrichir q
 
 ## Phase 4 — Client web Angular
 
-- [ ] P4.1 Projet Angular, routing, authentification (stockage du JWT, intercepteur HTTP)
+- [x] P4.1 Projet Angular, routing, authentification (stockage du JWT, intercepteur HTTP)
 - [ ] P4.2 Espace patient : créneaux et prise / modification / annulation de rendez-vous (REST)
 - [ ] P4.3 Espace patient : ordonnances et profil (REST)
 - [ ] P4.4 Tableau de bord médecin : liste filtrable des patients et fiche patient (GraphQL)

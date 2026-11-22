@@ -1,0 +1,62 @@
+.carte {
+  max-width: 380px;
+  margin: 64px auto;
+  padding: 32px;
+  background: var(--surface);
+  border: 1px solid var(--bordure);
+  border-radius: 8px;
+}
+
+h1 {
+  margin: 0 0 4px;
+  font-size: 1.5rem;
+}
+
+.aide {
+  margin: 0 0 24px;
+  color: var(--texte-secondaire);
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+label {
+  margin-top: 10px;
+  font-weight: 600;
+}
+
+input {
+  padding: 9px 10px;
+  border: 1px solid var(--bordure);
+  border-radius: 6px;
+  font: inherit;
+}
+
+button {
+  margin-top: 20px;
+  padding: 10px;
+  border: 0;
+  border-radius: 6px;
+  background: var(--accent);
+  color: #fff;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.champ-erreur,
+.erreur {
+  color: var(--danger);
+}
+
+.erreur {
+  margin: 12px 0 0;
+}

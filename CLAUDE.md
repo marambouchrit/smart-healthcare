@@ -105,5 +105,9 @@ Conventions :
 | `docker compose run --rm -e SCENARIO=scenarios/demo-alertes.json iot-simulator` | Lance les capteurs IoT dans Docker (profil `demo`) | Oui |
 | `curl -N "http://localhost:8090/events?access_token=<jeton>"` | Suit en direct le flux SSE des alertes et des prises en charge (format : `contracts/sse/README.md`) | Oui |
 | `docker compose logs -f orchestrator` / `docker compose down` | Suit les workflows / arrête la plateforme (`-v` efface les données) | Oui |
+| `cd web-client && npm install` | Installe les dépendances du client Angular (versions exactes, D48) | Oui |
+| `cd web-client && npx ng test --watch=false` | Tests du client Angular (Vitest). Sous Windows, lancer depuis un chemin `C:\…` (lettre majuscule) : avec `c:\…`, Vitest échoue avec « failed to find the runner » | Oui |
+| `cd web-client && npm start` | Lance le client sur http://localhost:4200 ; `proxy.conf.mjs` relaie `/auth`, `/api`, `/graphql`, `/ws`, `/events` vers la gateway (port `GATEWAY_PORT` du `.env`, sinon 8080) | Oui |
+| `cd web-client && npx ng build` | Build de production du client dans `web-client/dist/web-client` | Oui |
 
 Ajouter ici chaque nouvelle commande (build, tests) au moment où elle est créée.

@@ -1,0 +1,26 @@
+<header class="barre">
+  <span class="marque">Smart Healthcare</span>
+
+  @if (auth.session(); as session) {
+    <nav>
+      @switch (session.role) {
+        @case ('PATIENT') {
+          <a routerLink="/patient" routerLinkActive="actif">Mon espace</a>
+        }
+        @case ('MEDECIN') {
+          <a routerLink="/medecin" routerLinkActive="actif">Tableau de bord</a>
+        }
+        @case ('ADMIN') {
+          <a routerLink="/admin" routerLinkActive="actif">Administration</a>
+          <a routerLink="/medecin" routerLinkActive="actif">Tableau de bord</a>
+        }
+      }
+    </nav>
+    <span class="utilisateur">{{ libelleRole[session.role] }} · {{ session.sujet }}</span>
+    <button type="button" (click)="auth.deconnecter()">Se déconnecter</button>
+  }
+</header>
+
+<main>
+  <router-outlet />
+</main>
