@@ -29,7 +29,7 @@ class PersistancePortailTest extends PostgresTest.BaseVide {
 
     @Test
     void schemaSeedEtCreneauxEnBase() {
-        assertThat(jdbc.queryForObject("SELECT max(version) FROM flyway_schema_history", String.class)).isEqualTo("1");
+        assertThat(jdbc.queryForObject("SELECT max(version) FROM flyway_schema_history", String.class)).isEqualTo("2"); // V2 : ambulances (P5.2)
         assertThat(Map.of("medecin", compter("SELECT count(*) FROM medecin"), "patient", compter("SELECT count(*) FROM patient"),
                 "traitement", compter("SELECT count(*) FROM traitement")))
                 .isEqualTo(Map.of("medecin", 4, "patient", 8, "traitement", 10));

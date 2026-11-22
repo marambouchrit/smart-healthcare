@@ -1,4 +1,4 @@
-# Contrat du flux SSE `/events` — alertes en direct (P3.5, D6, D45)
+# Contrat du flux SSE `/events` — alertes en direct (P3.5, D6, D45 ; état AMBULANCE : P5.2, D53)
 
 Le navigateur ne parle pas gRPC (D6) : l'orchestrateur relaie au client web, en **Server-Sent Events**, les alertes
 qu'il reçoit du service de télémétrie et le résultat du workflow de prise en charge.
@@ -44,20 +44,34 @@ data: {"id":"ALR-000001","patientId":"TN-0012345","niveau":"CRITIQUE","type":"FR
 
 ### `prise-en-charge` — à la fin du workflow
 
+Rendez-vous d'urgence réservé :
+
 ```
 event: prise-en-charge
 id: ALR-000001
-data: {"alerteId":"ALR-000001","patientId":"TN-0012345","etat":"TERMINE","aRegulariser":false,"rendezVousId":"RDV-000001","debutRendezVous":"2026-11-22T17:30:00+01:00","ficheId":"FIC-000001","horodatage":"2026-11-22T17:20:01+01:00"}
+data: {"alerteId":"ALR-000001","patientId":"TN-0012345","etat":"TERMINE","aRegulariser":false,"rendezVousId":"RDV-000001","debutRendezVous":"2026-11-22T17:30:00+01:00","ficheId":"FIC-000001","interventionId":null,"arriveeEstimee":null,"horodatage":"2026-11-22T17:20:01+01:00"}
+```
+
+Aucun créneau d'urgence libre : ambulance envoyée au domicile (P5.2) :
+
+```
+event: prise-en-charge
+id: ALR-000002
+data: {"alerteId":"ALR-000002","patientId":"TN-0089012","etat":"AMBULANCE","aRegulariser":true,"rendezVousId":null,"debutRendezVous":null,"ficheId":"FIC-000002","interventionId":"AMB-000001","arriveeEstimee":"2026-11-22T23:41:00+01:00","horodatage":"2026-11-22T23:21:01+01:00"}
 ```
 
 | Champ | Type | Valeurs |
 |---|---|---|
 | `alerteId`, `patientId` | chaîne | alerte et patient concernés |
-| `etat` | chaîne | `TERMINE` (rendez-vous + fiche créés), `AUCUN_CRENEAU` (aucun créneau d'urgence libre ; ambulance en P5.2), `ECHEC` (un service n'a pas répondu) |
+| `etat` | chaîne | `TERMINE` (rendez-vous d'urgence + fiche créés), `AMBULANCE` (aucun créneau d'urgence libre : ambulance envoyée + fiche créée, P5.2), `ECHEC` (un service n'a pas répondu) |
 | `aRegulariser` | booléen | `true` si les droits CNAM ne sont pas ouverts (prise en charge « à régulariser ») |
-| `rendezVousId`, `debutRendezVous` | chaîne, date-heure ou `null` | rendez-vous d'urgence réservé (service REST) ; `null` si `etat` ≠ `TERMINE` |
-| `ficheId` | chaîne ou `null` | fiche d'urgence créée (tableau de bord GraphQL) ; `null` si `etat` ≠ `TERMINE` |
+| `rendezVousId`, `debutRendezVous` | chaîne, date-heure ou `null` | rendez-vous d'urgence réservé (service REST) ; renseignés seulement si `etat` = `TERMINE` |
+| `interventionId`, `arriveeEstimee` | chaîne, date-heure ou `null` | intervention d'ambulance (`AMB-` + 6 chiffres, `POST /api/ambulances`) et heure d'arrivée estimée ; renseignés seulement si `etat` = `AMBULANCE` |
+| `ficheId` | chaîne ou `null` | fiche d'urgence créée (tableau de bord GraphQL) ; renseigné si `etat` = `TERMINE` ou `AMBULANCE`, `null` si `ECHEC` |
 | `horodatage` | date-heure | fin du workflow |
+
+Historique : jusqu'à P5.2, un état `AUCUN_CRENEAU` signalait l'absence de créneau sans autre action ; il est
+remplacé par `AMBULANCE` (D53).
 
 ### Maintien de la connexion
 

@@ -22,14 +22,13 @@ import org.yaml.snakeyaml.Yaml;
 /**
  * P2.REST.6 : la description générée depuis le code (/v3/api-docs, springdoc) a les mêmes chemins, méthodes et
  * operationId que contracts/rest/portail-openapi.yaml ; Swagger UI et le contrat sont servis.
- * Seule différence admise : POST /api/ambulances, prévu au contrat pour P5.2.
+ * Depuis P5.2 (POST /api/ambulances), aucune différence n'est admise.
  */
 @SpringBootTest
 @Import({HorlogeTest.Config.class, PostgresTest.class})
 @AutoConfigureMockMvc
 class AlignementContratTest extends PostgresTest.BaseVide {
 
-    static final Set<String> PREVU_PLUS_TARD = Set.of("POST /api/ambulances envoyerAmbulance");
     static final Set<String> METHODES = Set.of("get", "post", "put", "patch", "delete");
 
     @Autowired MockMvc mvc;
@@ -65,8 +64,8 @@ class AlignementContratTest extends PostgresTest.BaseVide {
         enTrop.removeAll(duContrat);
 
         assertThat(enTrop).as("opérations du code absentes du contrat").isEmpty();
-        assertThat(manquantes).as("opérations du contrat non implémentées").isEqualTo(PREVU_PLUS_TARD);
-        assertThat(duCode).hasSize(11); // 1 créneaux + 6 rendez-vous + 2 profil + 1 ordonnances + 1 urgences
+        assertThat(manquantes).as("opérations du contrat non implémentées").isEmpty();
+        assertThat(duCode).hasSize(12); // 1 créneaux + 6 rendez-vous + 2 profil + 1 ordonnances + 1 urgences + 1 ambulances
     }
 
     @Test

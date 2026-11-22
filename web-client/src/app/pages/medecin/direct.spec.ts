@@ -60,6 +60,8 @@ const PEC: EvenementPriseEnCharge = {
   rendezVousId: 'RDV-000001',
   debutRendezVous: '2026-11-22T17:30:00+01:00',
   ficheId: 'FIC-000001',
+  interventionId: null,
+  arriveeEstimee: null,
   horodatage: '2026-11-22T17:20:01+01:00',
 };
 
@@ -182,9 +184,22 @@ describe('Panneau « Alertes en direct » (P4.5)', () => {
     expect(ligne.textContent).toContain('Fiche FIC-000001 · rendez-vous RDV-000001 à 17:30');
 
     es.emettre('alerte', { ...ALERTE, id: 'ALR-000002' });
-    es.emettre('prise-en-charge', { ...PEC, alerteId: 'ALR-000002', etat: 'AUCUN_CRENEAU', rendezVousId: null, ficheId: null });
+    // exemple du contrat SSE (P5.2) : aucun créneau, ambulance envoyée
+    es.emettre('prise-en-charge', {
+      ...PEC,
+      alerteId: 'ALR-000002',
+      etat: 'AMBULANCE',
+      aRegulariser: true,
+      rendezVousId: null,
+      debutRendezVous: null,
+      ficheId: 'FIC-000002',
+      interventionId: 'AMB-000001',
+      arriveeEstimee: '2026-11-22T23:41:00+01:00',
+    });
     await fixture.whenStable();
-    expect(el.querySelector('[data-direct="ALR-000002"]')?.textContent).toContain('Aucun créneau');
+    expect(el.querySelector('[data-direct="ALR-000002"]')?.textContent).toContain(
+      'Fiche FIC-000002 · ambulance AMB-000001 (arrivée 23:41) · à régularise',
+    );
   });
 });
 

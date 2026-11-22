@@ -13,7 +13,10 @@ import org.springframework.web.client.RestClient;
 import tn.ginf.smarthealthcare.orchestrator.workflow.Ports;
 import tn.ginf.smarthealthcare.orchestrator.workflow.Ports.AlerteRecue;
 
-/** Étape 3 : POST /api/urgences (contracts/rest/portail-openapi.yaml). 409 = aucun créneau libre. */
+/**
+ * Étape 3 (contracts/rest/portail-openapi.yaml) : POST /api/urgences, 409 = aucun créneau libre ;
+ * POST /api/ambulances dans ce cas (P5.2).
+ */
 @Component
 public class ClientPortailRest implements Ports.Portail {
 
@@ -23,14 +26,31 @@ public class ClientPortailRest implements Ports.Portail {
         this.http = builder.baseUrl(url).build();
     }
 
-    @Override
-    public Optional<Ports.RendezVousUrgence> reserverUrgence(AlerteRecue alerte, boolean aRegulariser) {
+    /** Schéma DemandeUrgence, commun aux deux opérations. */
+    private static Map<String, Object> demande(AlerteRecue alerte, boolean aRegulariser) {
         Map<String, Object> demande = new LinkedHashMap<>();
         demande.put("patientId", alerte.patientId());
         demande.put("identifiantAlerte", alerte.id());
         demande.put("niveau", alerte.niveau());
         demande.put("motif", alerte.message());
         demande.put("aRegulariser", aRegulariser);
+        return demande;
+    }
+
+    @Override
+    public Ports.InterventionAmbulance envoyerAmbulance(AlerteRecue alerte, boolean aRegulariser) {
+        Map<String, Object> intervention = http.post().uri("/api/ambulances")
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(demande(alerte, aRegulariser))
+                .retrieve()
+                .body(new ParameterizedTypeReference<Map<String, Object>>() {});
+        return new Ports.InterventionAmbulance((String) intervention.get("id"),
+                OffsetDateTime.parse((String) intervention.get("arriveeEstimee")));
+    }
+
+    @Override
+    public Optional<Ports.RendezVousUrgence> reserverUrgence(AlerteRecue alerte, boolean aRegulariser) {
+        Map<String, Object> demande = demande(alerte, aRegulariser);
         try {
             Map<String, Object> rdv = http.post().uri("/api/urgences")
                     .contentType(MediaType.APPLICATION_JSON)

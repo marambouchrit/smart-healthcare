@@ -36,7 +36,7 @@ public class PostgresTest {
 
         @BeforeEach
         void repartirDUneBasePropre() {
-            jdbc.execute("TRUNCATE rendez_vous RESTART IDENTITY");
+            jdbc.execute("TRUNCATE rendez_vous, intervention_ambulance RESTART IDENTITY");
             seed.restaurerProfils();
             horloge.regler(17, 10, 10);
         }

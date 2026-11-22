@@ -8,7 +8,7 @@ import jakarta.persistence.Table;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 
-/** Entités JPA du portail (P2.REST.7), une par table de V1__schema_portail.sql. */
+/** Entités JPA du portail (P2.REST.7), une par table des migrations Flyway (V2 : ambulances). */
 public final class Entites {
 
     private Entites() {}
@@ -109,6 +109,32 @@ public final class Entites {
                                 OffsetDateTime creeLe) {
             this.patientId = patientId; this.creneauId = creneauId; this.motif = motif; this.statut = statut;
             this.urgence = urgence; this.creeLe = creeLe;
+        }
+    }
+
+    @Entity(name = "InterventionAmbulanceEntite")
+    @Table(name = "intervention_ambulance")
+    public static class InterventionAmbulanceEntite {
+        @Id @GeneratedValue(strategy = GenerationType.IDENTITY) public Long id;
+        public String patientId;
+        public String identifiantAlerte;
+        public String niveau;
+        public String motif;
+        public boolean aRegulariser;
+        public String rue;
+        public String ville;
+        public String codePostal;
+        public OffsetDateTime declencheeLe;
+        public OffsetDateTime arriveeEstimee;
+
+        protected InterventionAmbulanceEntite() {}
+
+        public InterventionAmbulanceEntite(String patientId, String identifiantAlerte, String niveau, String motif,
+                                           boolean aRegulariser, String rue, String ville, String codePostal,
+                                           OffsetDateTime declencheeLe, OffsetDateTime arriveeEstimee) {
+            this.patientId = patientId; this.identifiantAlerte = identifiantAlerte; this.niveau = niveau;
+            this.motif = motif; this.aRegulariser = aRegulariser; this.rue = rue; this.ville = ville;
+            this.codePostal = codePostal; this.declencheeLe = declencheeLe; this.arriveeEstimee = arriveeEstimee;
         }
     }
 }

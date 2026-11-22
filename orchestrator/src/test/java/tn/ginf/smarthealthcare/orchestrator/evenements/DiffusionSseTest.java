@@ -65,23 +65,27 @@ class DiffusionSseTest {
     }
 
     @Test
-    void priseEnChargeTermineeEtSansCreneau() throws Exception {
+    void priseEnChargeTermineeEtAmbulance() throws Exception {
         MvcResult r = abonner();
         diffusion.priseEnCharge(new PriseEnCharge("ALR-000001", "TN-0012345", "TERMINE", false, "RDV-000001",
-                OffsetDateTime.parse("2026-11-22T17:30:00+01:00"), "FIC-000001", OffsetDateTime.parse("2026-11-22T17:20:01+01:00")));
-        diffusion.priseEnCharge(new PriseEnCharge("ALR-000002", "TN-0067890", "AUCUN_CRENEAU", true, null, null, null,
-                OffsetDateTime.parse("2026-11-22T22:05:00+01:00")));
+                OffsetDateTime.parse("2026-11-22T17:30:00+01:00"), "FIC-000001", null, null,
+                OffsetDateTime.parse("2026-11-22T17:20:01+01:00")));
+        // exemple du contrat contracts/sse/README.md (P5.2, D53)
+        diffusion.priseEnCharge(new PriseEnCharge("ALR-000002", "TN-0089012", "AMBULANCE", true, null, null, "FIC-000002",
+                "AMB-000001", OffsetDateTime.parse("2026-11-22T23:41:00+01:00"), OffsetDateTime.parse("2026-11-22T23:21:01+01:00")));
 
         assertThat(lignes(r)).containsSubsequence(
                 "event:prise-en-charge",
                 "id:ALR-000001",
                 "data:{\"alerteId\":\"ALR-000001\",\"patientId\":\"TN-0012345\",\"etat\":\"TERMINE\",\"aRegulariser\":false,"
                         + "\"rendezVousId\":\"RDV-000001\",\"debutRendezVous\":\"2026-11-22T17:30:00+01:00\","
-                        + "\"ficheId\":\"FIC-000001\",\"horodatage\":\"2026-11-22T17:20:01+01:00\"}",
+                        + "\"ficheId\":\"FIC-000001\",\"interventionId\":null,\"arriveeEstimee\":null,"
+                        + "\"horodatage\":\"2026-11-22T17:20:01+01:00\"}",
                 "event:prise-en-charge",
                 "id:ALR-000002",
-                "data:{\"alerteId\":\"ALR-000002\",\"patientId\":\"TN-0067890\",\"etat\":\"AUCUN_CRENEAU\",\"aRegulariser\":true,"
-                        + "\"rendezVousId\":null,\"debutRendezVous\":null,\"ficheId\":null,\"horodatage\":\"2026-11-22T22:05:00+01:00\"}");
+                "data:{\"alerteId\":\"ALR-000002\",\"patientId\":\"TN-0089012\",\"etat\":\"AMBULANCE\",\"aRegulariser\":true,"
+                        + "\"rendezVousId\":null,\"debutRendezVous\":null,\"ficheId\":\"FIC-000002\",\"interventionId\":\"AMB-000001\","
+                        + "\"arriveeEstimee\":\"2026-11-22T23:41:00+01:00\",\"horodatage\":\"2026-11-22T23:21:01+01:00\"}");
     }
 
     @Test

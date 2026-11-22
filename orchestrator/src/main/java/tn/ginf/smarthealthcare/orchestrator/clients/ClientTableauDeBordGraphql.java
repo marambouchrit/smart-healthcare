@@ -59,14 +59,18 @@ public class ClientTableauDeBordGraphql implements Ports.TableauDeBord {
     }
 
     @Override
-    public String creerFicheUrgence(AlerteRecue a, boolean aRegulariser, String commentaire, RendezVousUrgence rdv) {
+    public String creerFicheUrgence(AlerteRecue a, boolean aRegulariser, String commentaire, RendezVousUrgence rdv,
+                                    Ports.InterventionAmbulance ambulance) {
         Map<String, Object> entree = new LinkedHashMap<>();
         entree.put("identifiantPatient", a.patientId());
         entree.put("identifiantAlerte", a.id());
         entree.put("statutPriseEnCharge", aRegulariser ? "A_REGULARISER" : "PRISE_EN_CHARGE");
-        entree.put("action", "CONSULTATION_URGENCE");
-        entree.put("identifiantRendezVous", rdv.id());
-        entree.put("dateRendezVous", iso(rdv.debut()));
+        // ActionUrgence du contrat : identifiant et date du rendez-vous absents si ambulance (P5.2)
+        entree.put("action", rdv != null ? "CONSULTATION_URGENCE" : "AMBULANCE");
+        if (rdv != null) {
+            entree.put("identifiantRendezVous", rdv.id());
+            entree.put("dateRendezVous", iso(rdv.debut()));
+        }
         if (commentaire != null) {
             entree.put("commentaire", commentaire);
         }

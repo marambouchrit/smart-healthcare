@@ -116,7 +116,7 @@ Objectif : le workflow complet fonctionne en version minimale avant d'enrichir q
 ## Phase 5 — Robustesse, tests et documentation
 
 - [x] P5.1 Orchestrateur : patient non couvert → prise en charge « à régulariser »
-- [ ] P5.2 Orchestrateur : aucun créneau libre → envoi d'ambulance
+- [x] P5.2 Orchestrateur : aucun créneau libre → envoi d'ambulance
 - [ ] P5.3 Orchestrateur : délais d'attente, nouvelles tentatives et trace de chaque instance de workflow
 - [ ] P5.4 Tests unitaires par service + test d'intégration du scénario d'alerte complet
 - [ ] P5.5 Documentation technique : WSDL, OpenAPI, SDL, `.proto` à jour dans `contracts/`

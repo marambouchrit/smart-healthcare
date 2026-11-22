@@ -102,7 +102,9 @@ export class AlertesEnDirect {
     const p = a.priseEnCharge;
     if (!p) return 'Prise en charge en cours…';
     if (p.etat === 'ECHEC') return 'Échec de la prise en charge (service indisponible)';
-    if (p.etat === 'AUCUN_CRENEAU') return 'Aucun créneau d’urgence libre';
+    if (p.etat === 'AMBULANCE') {
+      return `Fiche ${p.ficheId} · ambulance ${p.interventionId} (arrivée ${heure(p.arriveeEstimee!)})${p.aRegulariser ? ' · à régulariser' : ''}`;
+    }
     const rdv = p.rendezVousId ? `${p.rendezVousId} à ${heure(p.debutRendezVous!)}` : '';
     return `Fiche ${p.ficheId} · rendez-vous ${rdv}${p.aRegulariser ? ' · à régulariser' : ''}`;
   }

@@ -23,11 +23,14 @@ export interface EvenementAlerte {
 export interface EvenementPriseEnCharge {
   alerteId: string;
   patientId: string;
-  etat: 'TERMINE' | 'AUCUN_CRENEAU' | 'ECHEC';
+  /** AMBULANCE : aucun créneau d'urgence libre, ambulance envoyée (P5.2, D53). */
+  etat: 'TERMINE' | 'AMBULANCE' | 'ECHEC';
   aRegulariser: boolean;
   rendezVousId: string | null;
   debutRendezVous: string | null;
   ficheId: string | null;
+  interventionId: string | null;
+  arriveeEstimee: string | null;
   horodatage: string;
 }
 

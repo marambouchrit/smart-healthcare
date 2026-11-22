@@ -6,6 +6,7 @@ import java.util.Set;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import tn.ginf.smarthealthcare.rest.persistance.Entites.CreneauEntite;
+import tn.ginf.smarthealthcare.rest.persistance.Entites.InterventionAmbulanceEntite;
 import tn.ginf.smarthealthcare.rest.persistance.Entites.MedecinEntite;
 import tn.ginf.smarthealthcare.rest.persistance.Entites.PatientEntite;
 import tn.ginf.smarthealthcare.rest.persistance.Entites.RendezVousEntite;
@@ -39,4 +40,6 @@ public final class Depots {
 
         List<RendezVousEntite> findAllByOrderByIdAsc();
     }
+
+    public interface InterventionsAmbulance extends JpaRepository<InterventionAmbulanceEntite, Long> {}
 }

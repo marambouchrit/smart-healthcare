@@ -34,7 +34,8 @@ public class DiffusionSse implements Ports.Diffusion {
                            String message, String horodatage) {}
 
     record EvenementPriseEnCharge(String alerteId, String patientId, String etat, boolean aRegulariser,
-                                  String rendezVousId, String debutRendezVous, String ficheId, String horodatage) {}
+                                  String rendezVousId, String debutRendezVous, String ficheId,
+                                  String interventionId, String arriveeEstimee, String horodatage) {}
 
     private final List<SseEmitter> abonnes = new CopyOnWriteArrayList<>();
     private final ObjectMapper json;
@@ -68,7 +69,8 @@ public class DiffusionSse implements Ports.Diffusion {
     @Override
     public void priseEnCharge(PriseEnCharge p) {
         diffuser("prise-en-charge", p.alerteId(), new EvenementPriseEnCharge(p.alerteId(), p.patientId(), p.etat(),
-                p.aRegulariser(), p.rendezVousId(), date(p.debutRendezVous()), p.ficheId(), date(p.horodatage())));
+                p.aRegulariser(), p.rendezVousId(), date(p.debutRendezVous()), p.ficheId(), p.interventionId(),
+                date(p.arriveeEstimee()), date(p.horodatage())));
     }
 
     /** Commentaire périodique : garde la connexion ouverte à travers la gateway et détecte les clients partis. */

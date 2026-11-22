@@ -22,7 +22,8 @@ class RelaisConstantesTest {
     final Ports.TableauDeBord tableauDeBord = new Ports.TableauDeBord() {
         public void enregistrerAlerte(AlerteRecue a) {}
         public void mettreAJourCouverture(String p, Droits d) {}
-        public String creerFicheUrgence(AlerteRecue a, boolean r, String c, RendezVousUrgence v) { return null; }
+        public String creerFicheUrgence(AlerteRecue a, boolean r, String c, RendezVousUrgence v,
+                                        Ports.InterventionAmbulance m) { return null; }
         public void enregistrerConstantes(String p, List<ConstanteMesuree> c) {
             if (enPanne) {
                 throw new IllegalStateException("GraphQL indisponible");

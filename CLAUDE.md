@@ -103,6 +103,7 @@ Conventions :
 | `curl -X POST -H 'Content-Type: application/json' -d '{"identifiant":"medecin","motDePasse":"medecin_dev"}' http://localhost:8090/auth/login` | Obtient un jeton (comptes `patient`, `medecin`, `admin`, D44) à envoyer en `Authorization: Bearer <jeton>` | Oui |
 | `cd gateway && ./mvnw package -DskipTests && java -jar target/gateway-0.1.0.jar` | Lance la gateway hors Docker (port 8080, services sur localhost:8081–8084) | Oui |
 | `docker compose run --rm -e SCENARIO=scenarios/demo-alertes.json iot-simulator` | Lance les capteurs IoT dans Docker (profil `demo`) | Oui |
+| `docker compose run --rm -e SCENARIO= iot-simulator python -m capteur.simulateur --patient TN-0089012 --mesures 3 --critique-a 2` | Un seul patient dans Docker (vider `SCENARIO`, sinon `normal.json` s'applique) : valeur critique à la 2ᵉ mesure | Oui |
 | `curl -N "http://localhost:8090/events?access_token=<jeton>"` | Suit en direct le flux SSE des alertes et des prises en charge (format : `contracts/sse/README.md`) | Oui |
 | `docker compose logs -f orchestrator` / `docker compose down` | Suit les workflows / arrête la plateforme (`-v` efface les données) | Oui |
 | `cd web-client && npm install` | Installe les dépendances du client Angular (versions exactes, D48) | Oui |

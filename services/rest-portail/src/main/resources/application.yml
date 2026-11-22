@@ -36,6 +36,9 @@ portail:
   fuseau: Africa/Tunis
   # Nombre de jours de créneaux générés à partir d'aujourd'hui
   horizon-jours: 14
+  ambulance:
+    # Envoi simulé (P5.2, D53) : arrivée estimée = déclenchement + délai (durée ISO 8601)
+    delai: ${PORTAIL_AMBULANCE_DELAI:PT20M}
 
 logging:
   level:

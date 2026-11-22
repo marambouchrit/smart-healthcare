@@ -3,6 +3,7 @@ package tn.ginf.smarthealthcare.orchestrator.workflow;
 import java.time.Clock;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.Optional;
 import org.slf4j.Logger;
@@ -12,12 +13,14 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import tn.ginf.smarthealthcare.orchestrator.workflow.Ports.AlerteRecue;
 import tn.ginf.smarthealthcare.orchestrator.workflow.Ports.Droits;
+import tn.ginf.smarthealthcare.orchestrator.workflow.Ports.InterventionAmbulance;
 import tn.ginf.smarthealthcare.orchestrator.workflow.Ports.PriseEnCharge;
 import tn.ginf.smarthealthcare.orchestrator.workflow.Ports.RendezVousUrgence;
 
 /**
  * Workflow « prise en charge automatisée d'une alerte médicale à domicile » (sujet, partie A) :
- * 1. alerte reçue (gRPC) → 2. droits CNAM (SOAP) → 3. créneau d'urgence (REST) → 4. fiche d'urgence (GraphQL).
+ * 1. alerte reçue (gRPC) → 2. droits CNAM (SOAP) → 3. créneau d'urgence ou, à défaut, ambulance (REST, P5.2)
+ * → 4. fiche d'urgence (GraphQL).
  * Orchestration codée (D9) ; aucun service n'appelle un autre service (D5).
  * L'alerte puis le résultat sont diffusés en direct au client web (SSE, P3.5, contracts/sse).
  * Patient non couvert (P5.1) : la prise en charge continue, marquée « à régulariser » au REST et dans la fiche,
@@ -28,11 +31,18 @@ public class WorkflowAlerte {
 
     private static final Logger log = LoggerFactory.getLogger(WorkflowAlerte.class);
 
-    public enum Etat { TERMINE, AUCUN_CRENEAU, ECHEC }
+    /** TERMINE : rendez-vous d'urgence ; AMBULANCE : aucun créneau libre, ambulance envoyée (D53) ; ECHEC. */
+    public enum Etat { TERMINE, AMBULANCE, ECHEC }
 
-    /** rendezVousId, debutRendezVous et ficheId sont null si etat ≠ TERMINE. */
+    /** Rendez-vous renseigné si TERMINE, ambulance si AMBULANCE, fiche sauf si ECHEC. */
     public record Resultat(Etat etat, String ficheId, boolean aRegulariser, String rendezVousId,
-                           OffsetDateTime debutRendezVous) {}
+                           OffsetDateTime debutRendezVous, String interventionId, OffsetDateTime arriveeEstimee) {
+        static Resultat echec() {
+            return new Resultat(Etat.ECHEC, null, false, null, null, null, null);
+        }
+    }
+
+    private static final DateTimeFormatter HEURE = DateTimeFormatter.ofPattern("HH:mm");
 
     private final Ports.Dossier dossier;
     private final Ports.Portail portail;
@@ -76,23 +86,43 @@ public class WorkflowAlerte {
                     aRegulariser ? "prise en charge À RÉGULARISER" : "prise en charge validée");
 
             Optional<RendezVousUrgence> rdv = portail.reserverUrgence(alerte, aRegulariser);
-            if (rdv.isEmpty()) {
-                log.warn("[{}] Étape 3/4 REST : aucun créneau d'urgence libre — envoi d'ambulance prévu en P5.2, workflow arrêté", id);
-                return new Resultat(Etat.AUCUN_CRENEAU, null, aRegulariser, null, null);
+            InterventionAmbulance ambulance = null;
+            if (rdv.isPresent()) {
+                log.info("[{}] Étape 3/4 REST : rendez-vous {} réservé à {}", id, rdv.get().id(), rdv.get().debut());
+            } else {
+                // P5.2 : aucun créneau d'urgence libre aujourd'hui → ambulance au domicile du patient
+                log.warn("[{}] Étape 3/4 REST : aucun créneau d'urgence libre → envoi d'une ambulance", id);
+                ambulance = portail.envoyerAmbulance(alerte, aRegulariser);
+                log.info("[{}] Étape 3/4 REST : ambulance {} envoyée, arrivée estimée {}", id, ambulance.id(), ambulance.arriveeEstimee());
             }
-            log.info("[{}] Étape 3/4 REST : rendez-vous {} réservé à {}", id, rdv.get().id(), rdv.get().debut());
 
             tableauDeBord.enregistrerAlerte(alerte);
             tableauDeBord.mettreAJourCouverture(alerte.patientId(), droits);
-            String ficheId = tableauDeBord.creerFicheUrgence(alerte, aRegulariser, commentaireRegularisation(droits), rdv.get());
+            String ficheId = tableauDeBord.creerFicheUrgence(alerte, aRegulariser, commentaire(droits, ambulance),
+                    rdv.orElse(null), ambulance);
             log.info("[{}] Étape 4/4 GraphQL : alerte et couverture enregistrées, fiche d'urgence {} créée", id, ficheId);
 
+            if (ambulance != null) {
+                log.info("[{}] Workflow terminé : patient {}, ambulance {}, fiche {}", id, alerte.patientId(), ambulance.id(), ficheId);
+                return new Resultat(Etat.AMBULANCE, ficheId, aRegulariser, null, null, ambulance.id(), ambulance.arriveeEstimee());
+            }
             log.info("[{}] Workflow terminé : patient {}, rendez-vous {}, fiche {}", id, alerte.patientId(), rdv.get().id(), ficheId);
-            return new Resultat(Etat.TERMINE, ficheId, aRegulariser, rdv.get().id(), rdv.get().debut());
+            return new Resultat(Etat.TERMINE, ficheId, aRegulariser, rdv.get().id(), rdv.get().debut(), null, null);
         } catch (RuntimeException e) {
             log.error("[{}] Workflow en échec : {}", id, e.getMessage());
-            return new Resultat(Etat.ECHEC, null, false, null, null);
+            return Resultat.echec();
         }
+    }
+
+    /** Commentaire de la fiche : ambulance (P5.2) puis régularisation (P5.1) ; null si rien à signaler. */
+    String commentaire(Droits droits, InterventionAmbulance ambulance) {
+        String regularisation = commentaireRegularisation(droits);
+        if (ambulance == null) {
+            return regularisation;
+        }
+        String envoi = "Aucun créneau d'urgence libre : ambulance " + ambulance.id() + " envoyée au domicile, arrivée estimée à "
+                + ambulance.arriveeEstimee().atZoneSameInstant(fuseau).format(HEURE) + ".";
+        return regularisation == null ? envoi : envoi + " " + regularisation;
     }
 
     /**
@@ -115,6 +145,7 @@ public class WorkflowAlerte {
     private void diffuser(AlerteRecue alerte, Resultat resultat) {
         PriseEnCharge evenement = new PriseEnCharge(alerte.id(), alerte.patientId(), resultat.etat().name(),
                 resultat.aRegulariser(), resultat.rendezVousId(), resultat.debutRendezVous(), resultat.ficheId(),
+                resultat.interventionId(), resultat.arriveeEstimee(),
                 OffsetDateTime.now(horloge).atZoneSameInstant(fuseau).toOffsetDateTime().truncatedTo(ChronoUnit.SECONDS));
         diffuserSansBloquer(alerte.id(), () -> diffusion.priseEnCharge(evenement));
     }

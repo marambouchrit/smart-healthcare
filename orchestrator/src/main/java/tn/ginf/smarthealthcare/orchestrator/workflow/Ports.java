@@ -22,6 +22,9 @@ public final class Ports {
 
     public record RendezVousUrgence(String id, OffsetDateTime debut) {}
 
+    /** Ambulance envoyée au domicile (POST /api/ambulances, P5.2). */
+    public record InterventionAmbulance(String id, OffsetDateTime arriveeEstimee) {}
+
     /** Dernière valeur d'un type de mesure, relayée vers le tableau de bord (P2.GRPC.5, D18). */
     public record ConstanteMesuree(String type, double valeur, OffsetDateTime horodatage) {}
 
@@ -30,18 +33,20 @@ public final class Ports {
         Droits verifierDroits(String patientId, LocalDate datePrestation);
     }
 
-    /** Étape 3 — REST : créneau d'urgence ; vide si aucun créneau libre (HTTP 409). */
+    /** Étape 3 — REST : créneau d'urgence ; vide si aucun créneau libre (HTTP 409) → ambulance (P5.2). */
     public interface Portail {
         Optional<RendezVousUrgence> reserverUrgence(AlerteRecue alerte, boolean aRegulariser);
+
+        InterventionAmbulance envoyerAmbulance(AlerteRecue alerte, boolean aRegulariser);
     }
 
     /**
      * Résultat d'un workflow diffusé au client web (contracts/sse, événement « prise-en-charge ») ;
-     * rendezVousId, debutRendezVous et ficheId sont null si etat ≠ TERMINE.
+     * rendez-vous renseigné si etat = TERMINE, ambulance si etat = AMBULANCE, fiche sauf si ECHEC (D53).
      */
     public record PriseEnCharge(String alerteId, String patientId, String etat, boolean aRegulariser,
                                 String rendezVousId, OffsetDateTime debutRendezVous, String ficheId,
-                                OffsetDateTime horodatage) {}
+                                String interventionId, OffsetDateTime arriveeEstimee, OffsetDateTime horodatage) {}
 
     /** Alertes et résultats poussés en direct au client web (SSE, P3.5, D6) ; ne doit jamais bloquer le workflow. */
     public interface Diffusion {
@@ -57,8 +62,12 @@ public final class Ports {
         /** Dernier résultat de la vérification CNAM, affiché dans le dossier consolidé. */
         void mettreAJourCouverture(String patientId, Droits droits);
 
-        /** commentaire : raison de la régularisation (P5.1), null si la prise en charge est validée. */
-        String creerFicheUrgence(AlerteRecue alerte, boolean aRegulariser, String commentaire, RendezVousUrgence rendezVous);
+        /**
+         * Fiche d'urgence : soit un rendez-vous (CONSULTATION_URGENCE), soit une ambulance (AMBULANCE, P5.2) ;
+         * l'autre vaut null. commentaire : ambulance et/ou régularisation (P5.1), null sinon.
+         */
+        String creerFicheUrgence(AlerteRecue alerte, boolean aRegulariser, String commentaire,
+                                 RendezVousUrgence rendezVous, InterventionAmbulance ambulance);
 
         /** Dernières constantes d'un patient (mutation enregistrerConstantes). */
         void enregistrerConstantes(String patientId, java.util.List<ConstanteMesuree> constantes);
