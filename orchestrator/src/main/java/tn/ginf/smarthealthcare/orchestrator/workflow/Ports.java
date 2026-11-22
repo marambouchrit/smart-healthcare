@@ -35,6 +35,21 @@ public final class Ports {
         Optional<RendezVousUrgence> reserverUrgence(AlerteRecue alerte, boolean aRegulariser);
     }
 
+    /**
+     * Résultat d'un workflow diffusé au client web (contracts/sse, événement « prise-en-charge ») ;
+     * rendezVousId, debutRendezVous et ficheId sont null si etat ≠ TERMINE.
+     */
+    public record PriseEnCharge(String alerteId, String patientId, String etat, boolean aRegulariser,
+                                String rendezVousId, OffsetDateTime debutRendezVous, String ficheId,
+                                OffsetDateTime horodatage) {}
+
+    /** Alertes et résultats poussés en direct au client web (SSE, P3.5, D6) ; ne doit jamais bloquer le workflow. */
+    public interface Diffusion {
+        void alerte(AlerteRecue alerte);
+
+        void priseEnCharge(PriseEnCharge resultat);
+    }
+
     /** Étape 4 — GraphQL : vue consolidée du tableau de bord. */
     public interface TableauDeBord {
         void enregistrerAlerte(AlerteRecue alerte);
