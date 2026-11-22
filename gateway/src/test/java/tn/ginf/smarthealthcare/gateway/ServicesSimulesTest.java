@@ -16,7 +16,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 /**
- * Base des tests : gateway complète sur un port aléatoire, les 4 services remplacés par de petits serveurs HTTP du JDK
+ * Base des tests : gateway complète sur un port aléatoire, les 4 services et le client web (D51) remplacés par de petits serveurs HTTP du JDK
  * qui renvoient « nom-du-service METHODE chemin?requête ».
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -27,7 +27,8 @@ abstract class ServicesSimulesTest {
             "soap", demarrer("soap"),
             "rest", demarrer("rest"),
             "graphql", demarrer("graphql"),
-            "orchestrateur", demarrer("orchestrateur"));
+            "orchestrateur", demarrer("orchestrateur"),
+            "web", demarrer("web"));
 
     @DynamicPropertySource
     static void adresses(DynamicPropertyRegistry registre) {
@@ -35,6 +36,7 @@ abstract class ServicesSimulesTest {
         registre.add("GATEWAY_REST_URL", () -> url("rest"));
         registre.add("GATEWAY_GRAPHQL_URL", () -> url("graphql"));
         registre.add("GATEWAY_ORCHESTRATOR_URL", () -> url("orchestrateur"));
+        registre.add("GATEWAY_WEB_URL", () -> url("web"));
     }
 
     @Autowired

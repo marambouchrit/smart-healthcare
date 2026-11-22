@@ -28,8 +28,8 @@ import java.util.List;
 
 /**
  * Sécurité de la gateway (P3.4, D41, D44) : jeton JWT HS256 émis par {@code POST /auth/login} et exigé sur toutes
- * les routes des services ; restent publics le login et les outils de test (WSDL, Swagger UI, GraphiQL).
- * Les rôles sont portés par le jeton mais ne restreignent encore aucune route (question Q2, avant P4.1).
+ * les routes des services ; restent publics le login, les outils de test (WSDL, Swagger UI, GraphiQL) et les pages
+ * du client web (D51). Les rôles sont portés par le jeton ; l'accès aux écrans par rôle est géré par le client (D48).
  */
 @Configuration
 @EnableConfigurationProperties(SecuriteProperties.class)
@@ -37,6 +37,10 @@ public class ConfigurationSecurite {
 
     /** Seul chemin où le jeton est accepté en paramètre d'URL : EventSource (SSE) ne peut pas envoyer d'en-tête. */
     static final String CHEMIN_SSE = "/events";
+
+    /** Pages et fichiers statiques du client web (D51), publics en GET : ils se chargent avant la connexion. */
+    static final String[] CHEMINS_CLIENT_WEB = {"/", "/index.html", "/*.js", "/*.css", "/*.ico", "/seed/**",
+            "/connexion", "/patient", "/patient/**", "/medecin", "/medecin/**", "/admin", "/admin/**"};
 
     @Bean
     SecurityWebFilterChain chaineSecurite(ServerHttpSecurity http, ReactiveJwtDecoder decodeur) {
@@ -50,6 +54,8 @@ public class ConfigurationSecurite {
                         .pathMatchers(HttpMethod.GET, "/ws/dossier", "/ws/dossier/**").permitAll()
                         .pathMatchers(HttpMethod.GET, "/swagger-ui.html", "/swagger-ui/**", "/openapi/**",
                                 "/v3/api-docs", "/v3/api-docs/**", "/graphiql", "/graphiql/**").permitAll()
+                        // Client web (D51)
+                        .pathMatchers(HttpMethod.GET, CHEMINS_CLIENT_WEB).permitAll()
                         .anyExchange().authenticated())
                 .oauth2ResourceServer(rs -> rs
                         .bearerTokenConverter(convertisseurJeton())

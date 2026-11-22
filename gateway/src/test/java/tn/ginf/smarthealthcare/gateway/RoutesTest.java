@@ -25,6 +25,11 @@ class RoutesTest extends ServicesSimulesTest {
             "GET,  /graphiql,                              graphql",
             "GET,  /events,                                orchestrateur",
             "GET,  /orchestrator/workflows,                orchestrateur",
+            "GET,  /,                                      web",
+            "GET,  /main-F67VSUIB.js,                      web",
+            "GET,  /seed/medecins.json,                    web",
+            "GET,  /connexion,                             web",
+            "GET,  /medecin/patients/TN-0012345,           web",
     })
     void routeVersLeBonService(String methode, String chemin, String service) {
         // un vrai client HTTP/1.1 envoie toujours Host ; le client de test ne le fait pas de lui-même
@@ -58,6 +63,11 @@ class RoutesTest extends ServicesSimulesTest {
                 .exchange().expectStatus().isNotFound();
         // /ws/autre n'appartient pas au service SOAP publié (/ws/dossier)
         client.get().uri("/ws/autre").header(HttpHeaders.AUTHORIZATION, bearer)
+                .exchange().expectStatus().isNotFound();
+        // le client web n'a qu'une liste de chemins (D51) : pas de route attrape-tout
+        client.get().uri("/patients").header(HttpHeaders.AUTHORIZATION, bearer)
+                .exchange().expectStatus().isNotFound();
+        client.get().uri("/scripts/app.js").header(HttpHeaders.AUTHORIZATION, bearer)
                 .exchange().expectStatus().isNotFound();
     }
 }

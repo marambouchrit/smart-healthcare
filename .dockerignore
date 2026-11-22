@@ -7,3 +7,5 @@
 **/node_modules
 **/.angular
 docs
+**/dist
+web-client/public/seed

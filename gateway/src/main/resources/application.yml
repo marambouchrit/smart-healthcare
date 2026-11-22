@@ -40,6 +40,11 @@ spring:
               uri: ${GATEWAY_ORCHESTRATOR_URL:http://localhost:8084}
               predicates:
                 - Path=/orchestrator/**,/events
+            # Client web Angular servi par nginx (D51) : seulement ses pages et ses fichiers statiques
+            - id: web-client
+              uri: ${GATEWAY_WEB_URL:http://localhost:4200}
+              predicates:
+                - Path=/,/index.html,/*.js,/*.css,/*.ico,/seed/**,/connexion,/patient,/patient/**,/medecin,/medecin/**,/admin,/admin/**
 
 # JWT émis par POST /auth/login et exigé sur les routes des services (P3.4, D41, D44).
 # Secret et mots de passe de DÉVELOPPEMENT, surchargeables par variables d'environnement.

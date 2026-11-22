@@ -115,6 +115,7 @@ services:
       GATEWAY_REST_URL: http://rest-portail:8082
       GATEWAY_GRAPHQL_URL: http://graphql-dashboard:8083
       GATEWAY_ORCHESTRATOR_URL: http://orchestrator:8084
+      GATEWAY_WEB_URL: http://web-client:4200
     ports:
       # Port de l'hôte configurable (D43) : 8080 par défaut ; GATEWAY_PORT dans .env si 8080 est déjà pris sur le poste
       - "${GATEWAY_PORT:-8080}:8080"
@@ -123,6 +124,14 @@ services:
       - rest-portail
       - graphql-dashboard
       - orchestrator
+      - web-client
+
+  # Client web Angular servi par nginx (D51) ; aucun port publié : on y accède par la gateway
+  web-client:
+    build:
+      context: .
+      dockerfile: web-client/Dockerfile
+    image: smart-healthcare/web-client
 
   # Capteurs IoT virtuels — lancés à la demande seulement (profil « demo », D42) :
   #   docker compose run --rm -e SCENARIO=scenarios/demo-alertes.json iot-simulator

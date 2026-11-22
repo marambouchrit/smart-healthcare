@@ -124,6 +124,22 @@ class SecuriteTest extends ServicesSimulesTest {
                 .expectBody(String.class).isEqualTo(service + " GET " + chemin);
     }
 
+    @ParameterizedTest(name = "GET {0} sans jeton → client web")
+    @CsvSource({"/", "/index.html", "/main-F67VSUIB.js", "/styles-ABC.css", "/favicon.ico", "/seed/lettres-cles.json",
+            "/connexion", "/patient/rendez-vous", "/medecin", "/medecin/patients/TN-0012345", "/admin"})
+    void pagesDuClientWebSontPubliques(String chemin) {
+        client.get().uri(chemin).exchange()
+                .expectStatus().isOk()
+                .expectBody(String.class).isEqualTo("web GET " + chemin);
+    }
+
+    @Test
+    void seulsLesGetDuClientWebSontPublics() {
+        client.post().uri("/connexion").exchange().expectStatus().isUnauthorized();
+        client.get().uri("/inconnu").exchange().expectStatus().isUnauthorized();
+        client.get().uri("/api/creneaux").exchange().expectStatus().isUnauthorized();
+    }
+
     @Test
     void jetonExpireRefuse() {
         Instant passe = Instant.now().minusSeconds(7200);

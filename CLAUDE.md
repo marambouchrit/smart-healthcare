@@ -97,8 +97,8 @@ Conventions :
 | `cd orchestrator && ./mvnw package -DskipTests && java -jar target/orchestrator-0.1.0.jar` | Lance l'orchestrateur (port 8084) ; il s'abonne aux alertes gRPC | Oui |
 | `http://localhost:8082/swagger-ui.html` | Swagger UI du service REST (affiche le contrat ; choisir le serveur 8082 pour « Try it out ») | Oui |
 | `cd iot-simulator && .venv/Scripts/python -m capteur.simulateur --scenario scenarios/demo-alertes.json` | Scénario multi-patients (autres : `normal.json`, `afflux.json`) | Oui |
-| `docker build -f services/soap-dossier/Dockerfile -t smart-healthcare/soap-dossier:0.1.0 .` | Construit l'image d'un composant (même forme pour rest-portail, graphql-dashboard, grpc-telemetrie, orchestrator, iot-simulator) ; à lancer depuis la racine | Oui |
-| `docker compose up -d --build` | Construit et lance PostgreSQL, les 5 services et la gateway (seul port publié : `${GATEWAY_PORT:-8080}`, 8090 sur ce poste via `.env`) | Oui |
+| `docker build -f services/soap-dossier/Dockerfile -t smart-healthcare/soap-dossier:0.1.0 .` | Construit l'image d'un composant (même forme pour rest-portail, graphql-dashboard, grpc-telemetrie, orchestrator, iot-simulator, `web-client/Dockerfile`) ; à lancer depuis la racine | Oui |
+| `docker compose up -d --build` | Construit et lance PostgreSQL, les 5 services, le client web et la gateway (seul port publié : `${GATEWAY_PORT:-8080}`, 8090 sur ce poste via `.env`) | Oui |
 | `cd gateway && ./mvnw test` | Tests des routes et de l'authentification JWT de la gateway | Oui |
 | `curl -X POST -H 'Content-Type: application/json' -d '{"identifiant":"medecin","motDePasse":"medecin_dev"}' http://localhost:8090/auth/login` | Obtient un jeton (comptes `patient`, `medecin`, `admin`, D44) à envoyer en `Authorization: Bearer <jeton>` | Oui |
 | `cd gateway && ./mvnw package -DskipTests && java -jar target/gateway-0.1.0.jar` | Lance la gateway hors Docker (port 8080, services sur localhost:8081–8084) | Oui |
@@ -109,5 +109,6 @@ Conventions :
 | `cd web-client && npm test -- --watch=false` | Tests du client Angular (Vitest ; copie d'abord le référentiel de `contracts/seed/`). Sous Windows, lancer depuis un chemin `C:\…` (lettre majuscule) : avec `c:\…`, Vitest échoue avec « failed to find the runner » | Oui |
 | `cd web-client && npm start` | Copie le référentiel du seed puis lance le client sur http://localhost:4200 ; `proxy.conf.mjs` relaie `/auth`, `/api`, `/graphql`, `/ws`, `/events` vers la gateway (port `GATEWAY_PORT` du `.env`, sinon 8080) | Oui |
 | `cd web-client && npm run build` | Build de production du client dans `web-client/dist/web-client` | Oui |
+| `http://localhost:8090/` | Client web servi par la gateway (stack Docker, D51) ; `npm start` (4200) reste le mode développement | Oui |
 
 Ajouter ici chaque nouvelle commande (build, tests) au moment où elle est créée.
