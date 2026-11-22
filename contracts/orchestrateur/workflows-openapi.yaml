@@ -1,0 +1,162 @@
+openapi: 3.0.3
+info:
+  title: Orchestrateur — trace des workflows de prise en charge
+  version: 1.0.0
+  description: |
+    Trace de chaque instance du workflow « prise en charge automatisée d'une alerte médicale » (P5.3, D54) :
+    une instance par alerte reçue du service de télémétrie, avec chaque étape (service appelé, durée,
+    nombre d'essais, résultat). Lecture seule ; écrite par l'orchestrateur dans sa base PostgreSQL.
+
+    Accès par la gateway uniquement (route `/orchestrator/**`), jeton JWT obligatoire (D44).
+    Dates : ISO 8601 avec décalage, à la seconde, fuseau Africa/Tunis (comme contracts/sse).
+servers:
+  - url: /
+    description: Même origine que la gateway
+  - url: http://localhost:8080
+    description: Gateway (8090 sur le poste de développement)
+security:
+  - jetonJwt: []
+
+paths:
+  /orchestrator/workflows:
+    get:
+      tags: [Workflows]
+      operationId: listerWorkflows
+      summary: Instances de workflow, les plus récentes d'abord
+      parameters:
+        - name: patientId
+          in: query
+          schema: { type: string, pattern: '^TN-[0-9]{7}$', example: TN-0012345 }
+        - name: etat
+          in: query
+          schema: { $ref: '#/components/schemas/EtatWorkflow' }
+        - name: limite
+          in: query
+          description: Nombre maximal d'instances renvoyées (1 à 200).
+          schema: { type: integer, minimum: 1, maximum: 200, default: 50 }
+      responses:
+        '200':
+          description: Liste (éventuellement vide), sans le détail des étapes
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/WorkflowResume' }
+        '400': { $ref: '#/components/responses/RequeteInvalide' }
+        '401': { $ref: '#/components/responses/NonAuthentifie' }
+
+  /orchestrator/workflows/{id}:
+    get:
+      tags: [Workflows]
+      operationId: obtenirWorkflow
+      summary: Une instance avec toutes ses étapes
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, pattern: '^WF-[0-9]{6}$', example: WF-000001 }
+      responses:
+        '200':
+          description: Instance trouvée
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Workflow' }
+        '401': { $ref: '#/components/responses/NonAuthentifie' }
+        '404': { $ref: '#/components/responses/NonTrouve' }
+
+components:
+  securitySchemes:
+    jetonJwt:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Jeton émis par la gateway (`POST /auth/login`).
+
+  responses:
+    NonAuthentifie:
+      description: Jeton absent, expiré ou invalide (réponse de la gateway)
+    RequeteInvalide:
+      description: Paramètre invalide
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Probleme' }
+    NonTrouve:
+      description: Aucune instance avec cet identifiant
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Probleme' }
+
+  schemas:
+    EtatWorkflow:
+      type: string
+      description: |
+        EN_COURS (instance démarrée, pas encore terminée), TERMINE (rendez-vous d'urgence + fiche),
+        AMBULANCE (aucun créneau : ambulance + fiche), ECHEC (un service n'a pas répondu après les essais
+        prévus, ou a refusé la demande). Mêmes valeurs finales que l'événement SSE « prise-en-charge ».
+      enum: [EN_COURS, TERMINE, AMBULANCE, ECHEC]
+
+    NomEtape:
+      type: string
+      description: |
+        ALERTE_RECUE (gRPC), DROITS_CNAM (SOAP verifierDroitsCNAM), CRENEAU_URGENCE (REST POST /api/urgences),
+        AMBULANCE (REST POST /api/ambulances), ALERTE_TABLEAU_DE_BORD (GraphQL enregistrerAlerte),
+        COUVERTURE (GraphQL mettreAJourCouverture), FICHE_URGENCE (GraphQL creerFicheUrgence).
+      enum: [ALERTE_RECUE, DROITS_CNAM, CRENEAU_URGENCE, AMBULANCE, ALERTE_TABLEAU_DE_BORD, COUVERTURE, FICHE_URGENCE]
+
+    StatutEtape:
+      type: string
+      description: OK (réussie), REFUS (réponse métier négative attendue, ex. 409 aucun créneau), ECHEC.
+      enum: [OK, REFUS, ECHEC]
+
+    WorkflowResume:
+      type: object
+      required: [id, alerteId, patientId, niveau, message, debut, etat, aRegulariser]
+      properties:
+        id: { type: string, pattern: '^WF-[0-9]{6}$', example: WF-000001 }
+        alerteId: { type: string, example: ALR-000001 }
+        patientId: { type: string, pattern: '^TN-[0-9]{7}$' }
+        niveau: { type: string, enum: [URGENT, CRITIQUE] }
+        message: { type: string, example: Fréquence cardiaque 165 bpm > 140 bpm }
+        debut: { type: string, format: date-time }
+        fin: { type: string, format: date-time, nullable: true }
+        dureeMs: { type: integer, nullable: true, description: "Durée totale (null si EN_COURS)." }
+        etat: { $ref: '#/components/schemas/EtatWorkflow' }
+        aRegulariser: { type: boolean }
+        rendezVousId: { type: string, nullable: true }
+        interventionId: { type: string, nullable: true }
+        ficheId: { type: string, nullable: true }
+        erreur: { type: string, nullable: true, description: "Cause de l'échec (si ECHEC)." }
+
+    Etape:
+      type: object
+      required: [ordre, nom, service, debut, dureeMs, tentatives, statut]
+      properties:
+        ordre: { type: integer, minimum: 1 }
+        nom: { $ref: '#/components/schemas/NomEtape' }
+        service: { type: string, enum: [gRPC, SOAP, REST, GraphQL] }
+        debut: { type: string, format: date-time }
+        dureeMs: { type: integer, description: "Durée totale de l'étape, essais et attentes compris." }
+        tentatives: { type: integer, minimum: 1, description: "Nombre d'appels effectués (1 = sans nouvel essai)." }
+        statut: { $ref: '#/components/schemas/StatutEtape' }
+        detail: { type: string, nullable: true, example: "RDV-000001 à 10:30" }
+
+    Workflow:
+      allOf:
+        - $ref: '#/components/schemas/WorkflowResume'
+        - type: object
+          required: [etapes]
+          properties:
+            etapes:
+              type: array
+              items: { $ref: '#/components/schemas/Etape' }
+
+    Probleme:
+      type: object
+      description: Problem Details (RFC 9457).
+      required: [type, title, status]
+      properties:
+        type: { type: string, example: /problemes/non-trouve }
+        title: { type: string }
+        status: { type: integer }
+        detail: { type: string }
+        instance: { type: string }

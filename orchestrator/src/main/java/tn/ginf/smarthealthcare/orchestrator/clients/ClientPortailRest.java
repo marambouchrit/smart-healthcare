@@ -39,11 +39,16 @@ public class ClientPortailRest implements Ports.Portail {
 
     @Override
     public Ports.InterventionAmbulance envoyerAmbulance(AlerteRecue alerte, boolean aRegulariser) {
-        Map<String, Object> intervention = http.post().uri("/api/ambulances")
-                .contentType(MediaType.APPLICATION_JSON)
-                .body(demande(alerte, aRegulariser))
-                .retrieve()
-                .body(new ParameterizedTypeReference<Map<String, Object>>() {});
+        Map<String, Object> intervention;
+        try {
+            intervention = http.post().uri("/api/ambulances")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(demande(alerte, aRegulariser))
+                    .retrieve()
+                    .body(new ParameterizedTypeReference<Map<String, Object>>() {});
+        } catch (RuntimeException e) {
+            throw Pannes.traduire("REST", e);
+        }
         return new Ports.InterventionAmbulance((String) intervention.get("id"),
                 OffsetDateTime.parse((String) intervention.get("arriveeEstimee")));
     }
@@ -63,6 +68,8 @@ public class ClientPortailRest implements Ports.Portail {
                     OffsetDateTime.parse((String) creneau.get("debut"))));
         } catch (HttpClientErrorException.Conflict e) {
             return Optional.empty();
+        } catch (RuntimeException e) {
+            throw Pannes.traduire("REST", e);
         }
     }
 }

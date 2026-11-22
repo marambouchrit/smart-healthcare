@@ -13,9 +13,13 @@ CREATE DATABASE graphql_dashboard OWNER graphql_dashboard;
 
 CREATE USER grpc_telemetrie WITH PASSWORD 'grpc_telemetrie_dev';
 CREATE DATABASE grpc_telemetrie OWNER grpc_telemetrie;
+-- Trace des workflows de l'orchestrateur (P5.3, D54)
+CREATE USER orchestrator WITH PASSWORD 'orchestrator_dev';
+CREATE DATABASE orchestrator OWNER orchestrator;
 
 -- Empêche chaque utilisateur de se connecter aux bases des autres services
 REVOKE CONNECT ON DATABASE soap_dossier FROM PUBLIC;
 REVOKE CONNECT ON DATABASE rest_portail FROM PUBLIC;
 REVOKE CONNECT ON DATABASE graphql_dashboard FROM PUBLIC;
 REVOKE CONNECT ON DATABASE grpc_telemetrie FROM PUBLIC;
+REVOKE CONNECT ON DATABASE orchestrator FROM PUBLIC;

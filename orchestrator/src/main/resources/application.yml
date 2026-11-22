@@ -4,6 +4,15 @@ server:
 spring:
   application:
     name: orchestrator
+  mvc:
+    # Erreurs de GET /orchestrator/workflows au format Problem Details, comme les autres services
+    problemdetails:
+      enabled: true
+  # Trace des workflows (P5.3, D54) : base « orchestrator » du conteneur PostgreSQL, port hôte 5433
+  datasource:
+    url: ${ORCHESTRATEUR_DB_URL:jdbc:postgresql://localhost:5433/orchestrator}
+    username: ${ORCHESTRATEUR_DB_USER:orchestrator}
+    password: ${ORCHESTRATEUR_DB_PASSWORD:orchestrator_dev}
 
 orchestrateur:
   fuseau: Africa/Tunis
@@ -24,6 +33,13 @@ orchestrateur:
     url: http://localhost:8082
   tableau-de-bord:
     url: http://localhost:8083/graphql
+  # Appels SOAP, REST et GraphQL (P5.3, D54) : délais d'attente (durées ISO 8601) et nouveaux essais
+  appels:
+    delai-connexion: ${ORCHESTRATEUR_DELAI_CONNEXION:PT2S}
+    delai-reponse: ${ORCHESTRATEUR_DELAI_REPONSE:PT5S}
+    tentatives: ${ORCHESTRATEUR_TENTATIVES:3}
+    # attente avant le 2e essai, doublée ensuite (0,5 s puis 1 s)
+    attente-initiale: ${ORCHESTRATEUR_ATTENTE_INITIALE:PT0.5S}
 
 logging:
   level:

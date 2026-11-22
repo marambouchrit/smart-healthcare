@@ -98,11 +98,16 @@ public class ClientTableauDeBordGraphql implements Ports.TableauDeBord {
 
     @SuppressWarnings("unchecked")
     private Map<String, Object> executer(String document, Map<String, Object> variables) {
-        Map<String, Object> reponse = http.post()
-                .contentType(MediaType.APPLICATION_JSON)
-                .body(Map.of("query", document, "variables", variables))
-                .retrieve()
-                .body(new ParameterizedTypeReference<Map<String, Object>>() {});
+        Map<String, Object> reponse;
+        try {
+            reponse = http.post()
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(Map.of("query", document, "variables", variables))
+                    .retrieve()
+                    .body(new ParameterizedTypeReference<Map<String, Object>>() {});
+        } catch (RuntimeException e) {
+            throw Pannes.traduire("GraphQL", e);
+        }
         List<Map<String, Object>> erreurs = (List<Map<String, Object>>) reponse.get("errors");
         if (erreurs != null && !erreurs.isEmpty()) {
             throw new IllegalStateException("GraphQL : " + erreurs.get(0).get("message"));

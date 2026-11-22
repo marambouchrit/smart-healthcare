@@ -93,7 +93,7 @@ Conventions :
 | `cd services/grpc-telemetrie && .venv/Scripts/python -m telemetrie.serveur` | Lance le service gRPC sur le port 50051 | Oui |
 | `cd iot-simulator && python -m venv .venv && .venv/Scripts/pip install -r requirements.txt && .venv/Scripts/python generer.py` | Prépare le simulateur de capteurs | Oui |
 | `cd iot-simulator && .venv/Scripts/python -m capteur.simulateur --patient TN-0012345 --critique-a 5` | Envoie des mesures et injecte une valeur critique (options : `--help`) | Oui |
-| `cd orchestrator && ./mvnw test` | Tests du workflow de l'orchestrateur | Oui |
+| `cd orchestrator && ./mvnw test` | Tests de l'orchestrateur (workflow, essais, clients sur réseau local, trace sur PostgreSQL Testcontainers : Docker requis) | Oui |
 | `cd orchestrator && ./mvnw package -DskipTests && java -jar target/orchestrator-0.1.0.jar` | Lance l'orchestrateur (port 8084) ; il s'abonne aux alertes gRPC | Oui |
 | `http://localhost:8082/swagger-ui.html` | Swagger UI du service REST (affiche le contrat ; choisir le serveur 8082 pour « Try it out ») | Oui |
 | `cd iot-simulator && .venv/Scripts/python -m capteur.simulateur --scenario scenarios/demo-alertes.json` | Scénario multi-patients (autres : `normal.json`, `afflux.json`) | Oui |
@@ -105,6 +105,8 @@ Conventions :
 | `docker compose run --rm -e SCENARIO=scenarios/demo-alertes.json iot-simulator` | Lance les capteurs IoT dans Docker (profil `demo`) | Oui |
 | `docker compose run --rm -e SCENARIO= iot-simulator python -m capteur.simulateur --patient TN-0089012 --mesures 3 --critique-a 2` | Un seul patient dans Docker (vider `SCENARIO`, sinon `normal.json` s'applique) : valeur critique à la 2ᵉ mesure | Oui |
 | `curl -N "http://localhost:8090/events?access_token=<jeton>"` | Suit en direct le flux SSE des alertes et des prises en charge (format : `contracts/sse/README.md`) | Oui |
+| `curl -H "Authorization: Bearer <jeton>" "http://localhost:8090/orchestrator/workflows?limite=10"` | Trace des workflows (détail des étapes : `/orchestrator/workflows/WF-000001` ; contrat `contracts/orchestrateur/workflows-openapi.yaml`) | Oui |
+| `docker compose exec -T postgres psql -U postgres -c "CREATE USER orchestrator WITH PASSWORD 'orchestrator_dev'" -c "CREATE DATABASE orchestrator OWNER orchestrator"` | Une seule fois sur un volume PostgreSQL créé avant P5.3 (sinon `docker compose down -v` puis `up`) | Oui |
 | `docker compose logs -f orchestrator` / `docker compose down` | Suit les workflows / arrête la plateforme (`-v` efface les données) | Oui |
 | `cd web-client && npm install` | Installe les dépendances du client Angular (versions exactes, D48) | Oui |
 | `cd web-client && npm test -- --watch=false` | Tests du client Angular (Vitest ; copie d'abord le référentiel de `contracts/seed/`). Sous Windows, lancer depuis un chemin `C:\…` (lettre majuscule) : avec `c:\…`, Vitest échoue avec « failed to find the runner » | Oui |

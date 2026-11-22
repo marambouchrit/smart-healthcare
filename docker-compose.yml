@@ -98,11 +98,21 @@ services:
       ORCHESTRATEUR_DOSSIER_URL: http://soap-dossier:8081/ws/dossier
       ORCHESTRATEUR_PORTAIL_URL: http://rest-portail:8082
       ORCHESTRATEUR_TABLEAUDEBORD_URL: http://graphql-dashboard:8083/graphql
+      # Trace des workflows (P5.3, D54)
+      ORCHESTRATEUR_DB_URL: jdbc:postgresql://postgres:5432/orchestrator
+      ORCHESTRATEUR_DB_USER: orchestrator
+      ORCHESTRATEUR_DB_PASSWORD: ${ORCHESTRATEUR_DB_PASSWORD:-orchestrator_dev}
     depends_on:
-      - grpc-telemetrie
-      - soap-dossier
-      - rest-portail
-      - graphql-dashboard
+      postgres:
+        condition: service_healthy
+      grpc-telemetrie:
+        condition: service_started
+      soap-dossier:
+        condition: service_started
+      rest-portail:
+        condition: service_started
+      graphql-dashboard:
+        condition: service_started
 
   # API Gateway — seul port publié (8080) : /ws/dossier/**, /api/**, /graphql, /orchestrator/**, /events
   gateway:

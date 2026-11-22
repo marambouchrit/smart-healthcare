@@ -72,4 +72,22 @@ public final class Ports {
         /** Dernières constantes d'un patient (mutation enregistrerConstantes). */
         void enregistrerConstantes(String patientId, java.util.List<ConstanteMesuree> constantes);
     }
+
+    /** Une étape tracée (contrat contracts/orchestrateur/workflows-openapi.yaml, schéma Etape). */
+    public record EtapeTrace(int ordre, String nom, String service, OffsetDateTime debut, long dureeMs, int tentatives,
+                             String statut, String detail) {}
+
+    /**
+     * Trace de chaque instance de workflow (P5.3, D54), écrite dans la base de l'orchestrateur ; comme la diffusion,
+     * une panne de la trace n'interrompt jamais la prise en charge.
+     */
+    public interface Traces {
+        /** Nouvelle instance EN_COURS ; renvoie son identifiant interne. */
+        long demarrer(AlerteRecue alerte, OffsetDateTime debut);
+
+        void etape(long workflowId, EtapeTrace etape);
+
+        /** Fin de l'instance (instant précis, pour la durée) : état final, résultats et cause de l'échec éventuel. */
+        void terminer(long workflowId, PriseEnCharge resultat, String erreur, OffsetDateTime fin);
+    }
 }
