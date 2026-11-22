@@ -14,6 +14,12 @@ Modèle :
 
 ---
 
+## 2026-11-22 — Vérification de la phase 4
+- Fait : retrait de la ligne descriptive du service SOAP en tête de la vue administrateur (demande de l'utilisatrice).
+- Vérification : **phase 4 vérifiée par l'utilisatrice dans le navigateur** contre la stack Docker (via `npm start`) : écrans patient (rendez-vous, ordonnances, profil), tableau de bord médecin et fiche patient, alertes simulées affichées en direct avec mise à jour de la fiche sans rechargement, vue administrateur (droits CNAM, historique) → « tout fonctionne ». `npm test -- --watch=false` → 57 tests OK après la modification.
+- Reste à faire / blocages : Dockerfile du client web (D40) : mode de service à décider ; phase 5.
+- Contrats ou décisions modifiés : aucun.
+
 ## 2026-11-22 — P4.6
 - Fait : D50. `core/api/dossier-soap.ts` (client SOAP du contrat : `verifierDroitsCNAM`, `consulterHistorique`, lecture des réponses et des Faults `erreurMetier`). `/admin` : choix du patient (liste du tableau de bord ou saisie `TN-` + 7 chiffres contrôlée), droits CNAM (lettre-clé du seed, date de prestation → statut, prise en charge, vignette, filière, validité, taux, motif), historique médical certifié (période facultative → date de certification, entrées avec type, description, médecin, feuille de soins), enveloppes SOAP visibles. `lettres-cles.json` ajouté à `copier-seed.mjs` ; `pages/espaces/espaces.ts` supprimé (plus d'écran provisoire).
 - Vérification : `npm test -- --watch=false` → 10 fichiers, 57 tests OK (8 nouveaux, réponses SOAP réelles : enveloppe conforme au XSD + SOAPAction, lecture des deux réponses, Fault → `PATIENT_INCONNU`, échappement XML ; écran : droits ouverts avec enveloppes, non affilié avec motif, historique avec nom du médecin, Fault affiché et identifiant mal formé sans appel). Stack Docker via le proxy (jeton `admin`), enveloppes de la même forme que le client : TN-0012345 → OUVERTS 80 % VIG-2026-100001 ; TN-0089012 → NON_AFFILIE + motif ; TN-0067890 (CS) → EXPIRES, VIG-2025-100006 ; historique TN-0012345 → entrée CONSULTATION du 2026-02-10 (MED-001), période 2026-11 → 0 entrée ; TN-9999999 → HTTP 500 Fault PATIENT_INCONNU ; sans jeton → 401.
