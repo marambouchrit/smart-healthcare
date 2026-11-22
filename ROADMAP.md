@@ -93,7 +93,7 @@ Objectif : le workflow complet fonctionne en version minimale avant d'enrichir q
 - [x] P3.1 Dockerfile pour chaque microservice (SOAP, REST, GraphQL, gRPC, orchestrateur, gateway) + script IoT + client web
 - [x] P3.2 `docker-compose.yml` : tous les services + un conteneur PostgreSQL avec une base par service
 - [x] P3.3 API Gateway (Spring Cloud Gateway) : routes vers chaque service (voir `docs/DECISIONS.md`)
-- [ ] P3.4 Authentification JWT vérifiée à la gateway (emplacement de l'émission du jeton : voir question ouverte dans `docs/DECISIONS.md`)
+- [x] P3.4 Authentification JWT vérifiée à la gateway (emplacement de l'émission du jeton : voir question ouverte dans `docs/DECISIONS.md`)
 - [ ] P3.5 Diffusion des alertes vers le client (SSE) exposée par l'orchestrateur à travers la gateway
 
 **Vérification phase 3** : `docker compose up` démarre tout ; le workflow de la phase 1 fonctionne en passant uniquement par la gateway (port 8080).

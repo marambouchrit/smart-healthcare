@@ -99,7 +99,8 @@ Conventions :
 | `cd iot-simulator && .venv/Scripts/python -m capteur.simulateur --scenario scenarios/demo-alertes.json` | Scénario multi-patients (autres : `normal.json`, `afflux.json`) | Oui |
 | `docker build -f services/soap-dossier/Dockerfile -t smart-healthcare/soap-dossier:0.1.0 .` | Construit l'image d'un composant (même forme pour rest-portail, graphql-dashboard, grpc-telemetrie, orchestrator, iot-simulator) ; à lancer depuis la racine | Oui |
 | `docker compose up -d --build` | Construit et lance PostgreSQL, les 5 services et la gateway (seul port publié : `${GATEWAY_PORT:-8080}`, 8090 sur ce poste via `.env`) | Oui |
-| `cd gateway && ./mvnw test` | Tests des routes de la gateway | Oui |
+| `cd gateway && ./mvnw test` | Tests des routes et de l'authentification JWT de la gateway | Oui |
+| `curl -X POST -H 'Content-Type: application/json' -d '{"identifiant":"medecin","motDePasse":"medecin_dev"}' http://localhost:8090/auth/login` | Obtient un jeton (comptes `patient`, `medecin`, `admin`, D44) à envoyer en `Authorization: Bearer <jeton>` | Oui |
 | `cd gateway && ./mvnw package -DskipTests && java -jar target/gateway-0.1.0.jar` | Lance la gateway hors Docker (port 8080, services sur localhost:8081–8084) | Oui |
 | `docker compose run --rm -e SCENARIO=scenarios/demo-alertes.json iot-simulator` | Lance les capteurs IoT dans Docker (profil `demo`) | Oui |
 | `docker compose logs -f orchestrator` / `docker compose down` | Suit les workflows / arrête la plateforme (`-v` efface les données) | Oui |

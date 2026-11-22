@@ -41,6 +41,28 @@ spring:
               predicates:
                 - Path=/orchestrator/**,/events
 
+# JWT émis par POST /auth/login et exigé sur les routes des services (P3.4, D41, D44).
+# Secret et mots de passe de DÉVELOPPEMENT, surchargeables par variables d'environnement.
+securite:
+  jwt:
+    secret: ${GATEWAY_JWT_SECRET:smart-healthcare-secret-de-developpement-a-changer}
+    duree: ${GATEWAY_JWT_DUREE:PT1H}
+    emetteur: smart-healthcare-gateway
+  # Comptes de démonstration liés aux identités du seed (contracts/seed)
+  comptes:
+    patient:
+      mot-de-passe: ${GATEWAY_MDP_PATIENT:patient_dev}
+      sujet: TN-0012345
+      role: PATIENT
+    medecin:
+      mot-de-passe: ${GATEWAY_MDP_MEDECIN:medecin_dev}
+      sujet: MED-001
+      role: MEDECIN
+    admin:
+      mot-de-passe: ${GATEWAY_MDP_ADMIN:admin_dev}
+      sujet: admin
+      role: ADMIN
+
 logging:
   level:
     tn.ginf.smarthealthcare.gateway: INFO
