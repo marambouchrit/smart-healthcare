@@ -17,7 +17,8 @@ Modèle :
 ## 2026-11-22 — Client web en conteneur (D40, D51)
 - Fait : accord de l'utilisatrice pour une nouvelle route de la gateway → D51. `web-client/Dockerfile` (construction `node:20.19.5-slim` avec `npm ci` + `npm run build`, service `nginx:1.30.7-alpine3.24` sur le port interne 4200), `web-client/nginx.conf` (repli SPA sur `index.html`, cache long des fichiers hachés, `no-cache` pour `index.html` et `/seed/`). Gateway : route `web-client` (`GATEWAY_WEB_URL`) limitée à la liste des chemins du client, publics en GET (`CHEMINS_CLIENT_WEB`). `docker-compose.yml` : service `web-client` sans port publié, la gateway en dépend. `.dockerignore` : `**/dist`, `web-client/public/seed`. Tests de la gateway : faux client web, 5 routes, 11 chemins publics sans jeton, POST et chemin inconnu toujours refusés, pas de route attrape-tout (`/patients`, `/scripts/app.js` → 404).
 - Vérification : gateway `./mvnw test` → 58 tests, 0 échec (RoutesTest 19, SecuriteTest 39 ; 41 avant). `docker compose build web-client gateway` puis `up -d` → 8 conteneurs, seuls 8090 et 5433 publiés. Par la gateway (8090) : `/` 200 « Smart Healthcare » ; `main-*.js` 200 avec `Cache-Control: public, max-age=31536000, immutable` ; `/connexion`, `/patient/rendez-vous`, `/medecin/patients/TN-0012345`, `/admin`, `/favicon.ico`, `/seed/lettres-cles.json` sans jeton → 200 ; `/inconnu` sans jeton → 401, avec jeton → 404 ; `POST /connexion` → 401 ; `/api/creneaux` sans jeton → 401 ; `/api/patients/TN-0012345` avec jeton → 200.
-- Reste à faire / blocages : contrôle de l'utilisatrice dans le navigateur sur http://localhost:8090 ; phase 5.
+- Vérification utilisatrice : parcours complet dans le navigateur sur http://localhost:8090 (stack Docker, client servi par la gateway) → « tout fonctionne ».
+- Reste à faire / blocages : phase 5.
 - Contrats ou décisions modifiés : aucun contrat ; D51 (route gateway ajoutée avec accord).
 
 ## 2026-11-22 — Vérification de la phase 4
