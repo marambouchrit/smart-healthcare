@@ -73,6 +73,8 @@ Conventions :
 |---|---|---|
 | `node scripts/roadmap-status.mjs` | Résumé de l'avancement et tâche suivante | Oui |
 | `node scripts/check-seed.mjs` | Contrôle des données fictives de `contracts/seed/` | Oui |
+| `bash scripts/tests-unitaires.sh` | Lance les tests des 8 composants (Maven, unittest, Vitest) et affiche un bilan (Docker démarré, `docker compose up -d postgres`) | Oui |
+| `python -X utf8 scripts/test_integration.py` | Test d'intégration du scénario d'alerte complet contre la stack Docker, par la gateway (SSE, gRPC, SOAP, REST, GraphQL, trace) ; `--patients TN-…` pour choisir | Oui |
 | `java scripts/ValidateXsd.java <xsd> <xml>...` | Valide des messages XML contre un XSD (JDK seul) | Oui |
 | `python scripts/check_wsdl.py <wsdl> <xsd>` | Charge le WSDL avec zeep et vérifie chaque opération (prérequis : `pip install zeep==4.3.3`) | Oui |
 | `python scripts/check_proto.py` | Compile `telemetrie.proto` et vérifie le contrat gRPC (prérequis : `pip install grpcio-tools==1.85.1`) | Oui |
