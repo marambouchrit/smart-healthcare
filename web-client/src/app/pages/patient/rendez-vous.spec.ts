@@ -56,6 +56,7 @@ describe('Espace patient — rendez-vous (P4.2)', () => {
       { code: 'URGENCES', libelle: 'Urgences' },
     ]);
     http.expectOne('/api/rendez-vous?patientId=TN-0012345').flush([RDV, RDV_ANNULE]);
+    http.expectOne('seed/lettres-cles.json').flush([]);
     await fixture.whenStable();
   });
 

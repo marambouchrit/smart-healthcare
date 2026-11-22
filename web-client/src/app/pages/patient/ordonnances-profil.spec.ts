@@ -54,6 +54,7 @@ async function monter<T>(composant: Type<T>) {
     { id: 'MED-001', nom: 'Ben Salah', prenom: 'Amine', specialite: 'Cardiologue', serviceCode: 'CARDIO' },
   ]);
   http.expectOne('seed/services-hospitaliers.json').flush([]);
+  http.expectOne('seed/lettres-cles.json').flush([]);
   const rendre = async () => {
     fixture.detectChanges();
     await fixture.whenStable();

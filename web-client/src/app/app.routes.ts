@@ -2,7 +2,7 @@ import { Routes } from '@angular/router';
 
 import { invitesSeulement, redirectionAccueil, roleGuard } from './core/auth/role.guard';
 import { Connexion } from './pages/connexion/connexion';
-import { EspaceAdmin } from './pages/espaces/espaces';
+import { Administration } from './pages/admin/administration';
 import { EspaceMedecin } from './pages/medecin/espace-medecin';
 import { FichePatient } from './pages/medecin/fiche-patient';
 import { TableauDeBord } from './pages/medecin/tableau-de-bord';
@@ -34,7 +34,7 @@ export const routes: Routes = [
       { path: 'patients/:id', component: FichePatient, title: 'Fiche patient' },
     ],
   },
-  { path: 'admin', component: EspaceAdmin, canActivate: [roleGuard('ADMIN')], title: 'Administration' },
+  { path: 'admin', component: Administration, canActivate: [roleGuard('ADMIN')], title: 'Administration' },
   { path: '', pathMatch: 'full', canActivate: [redirectionAccueil], children: [] },
   { path: '**', redirectTo: '' },
 ];

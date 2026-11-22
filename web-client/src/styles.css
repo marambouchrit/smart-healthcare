@@ -319,3 +319,33 @@ h1 .badge {
   font-size: 0.8rem;
   vertical-align: middle;
 }
+
+details {
+  margin-top: 16px;
+}
+
+summary {
+  cursor: pointer;
+  color: var(--accent);
+}
+
+details h3 {
+  margin: 12px 0 4px;
+  font-size: 0.9rem;
+}
+
+pre {
+  margin: 0;
+  padding: 10px;
+  overflow-x: auto;
+  background: var(--fond);
+  border: 1px solid var(--bordure);
+  border-radius: 6px;
+  font-size: 0.8rem;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.choix-patient input {
+  max-width: 260px;
+}

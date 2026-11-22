@@ -1,0 +1,129 @@
+<h1>Administration — Dossier & CNAM</h1>
+<p class="discret">Service SOAP <code>/ws/dossier</code> (namespace <code>http://hopital.tn/dossier</code>), appelé via la gateway.</p>
+
+<section class="panneau">
+  <label class="choix-patient">
+    Patient
+    <input name="identifiant" [(ngModel)]="identifiant" list="patients-connus" placeholder="TN-0012345" />
+    <datalist id="patients-connus">
+      @for (p of patients(); track p.id) {
+        <option [value]="p.id">{{ p.prenom }} {{ p.nom }}</option>
+      }
+    </datalist>
+  </label>
+  @if (!identifiantValide()) {
+    <small class="champ-erreur">Identifiant attendu : TN- suivi de 7 chiffres.</small>
+  }
+</section>
+
+<div class="grille-2">
+  <section class="panneau">
+    <h2>Droits CNAM</h2>
+    <form class="filtres" (ngSubmit)="verifierDroits()">
+      <label>
+        Prestation
+        <select name="lettreCle" [(ngModel)]="lettreCle">
+          @for (l of lettres(); track l.code) {
+            <option [value]="l.code">{{ l.code }} — {{ l.libelle }}</option>
+          }
+        </select>
+      </label>
+      <label>
+        Date
+        <input type="date" name="datePrestation" [(ngModel)]="datePrestation" required />
+      </label>
+      <button type="submit" [disabled]="enCours() === 'droits'">Vérifier</button>
+    </form>
+
+    @if (droits().erreur; as e) {
+      <p class="bandeau erreur" role="alert" data-erreur-droits>{{ e }}</p>
+    }
+    @if (droits().resultat; as d) {
+      <dl class="fiche" data-droits>
+        <dt>Statut</dt>
+        <dd>
+          <span class="badge" [class.critique]="d.statut !== 'OUVERTS'">{{ STATUT[d.statut] }}</span>
+          {{ d.priseEnCharge ? '· prise en charge accordée' : '· pas de prise en charge' }}
+        </dd>
+        @if (d.couverture; as c) {
+          <dt>Vignette</dt>
+          <dd>{{ c.codeVignette }} ({{ c.filiere | lowercase }})</dd>
+          <dt>Validité</dt>
+          <dd>du {{ dateLongue(c.dateDebut) }} au {{ dateLongue(c.dateFin) }}</dd>
+          <dt>Remboursement</dt>
+          <dd>{{ c.tauxRemboursement }} %</dd>
+        }
+        @if (d.motif) {
+          <dt>Motif</dt>
+          <dd>{{ d.motif }}</dd>
+        }
+      </dl>
+    }
+    @if (droits().requete) {
+      <details>
+        <summary>Enveloppes SOAP</summary>
+        <h3>Requête</h3>
+        <pre>{{ droits().requete }}</pre>
+        <h3>Réponse</h3>
+        <pre>{{ droits().reponse }}</pre>
+      </details>
+    }
+  </section>
+
+  <section class="panneau">
+    <h2>Historique médical certifié</h2>
+    <form class="filtres" (ngSubmit)="consulterHistorique()">
+      <label>
+        Du (facultatif)
+        <input type="date" name="dateDebut" [(ngModel)]="dateDebut" />
+      </label>
+      <label>
+        Au (facultatif)
+        <input type="date" name="dateFin" [(ngModel)]="dateFin" />
+      </label>
+      <button type="submit" [disabled]="enCours() === 'historique'">Consulter</button>
+    </form>
+
+    @if (historique().erreur; as e) {
+      <p class="bandeau erreur" role="alert" data-erreur-historique>{{ e }}</p>
+    }
+    @if (historique().resultat; as h) {
+      <p class="discret">Certifié le {{ dateHeure(h.dateCertification) }} · {{ h.entrees.length }} entrée(s)</p>
+      @if (h.entrees.length > 0) {
+        <div class="defilement">
+          <table data-historique>
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Type</th>
+                <th>Description</th>
+                <th>Médecin</th>
+                <th>Feuille de soins</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (e of h.entrees; track $index) {
+                <tr>
+                  <td>{{ dateLongue(e.date) }}</td>
+                  <td>{{ EVENEMENT[e.type] ?? e.type }}</td>
+                  <td>{{ e.description }}</td>
+                  <td>{{ ref.nomMedecin(e.identifiantMedecin) }}</td>
+                  <td>{{ e.numeroFeuilleDeSoins ?? '—' }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    }
+    @if (historique().requete) {
+      <details>
+        <summary>Enveloppes SOAP</summary>
+        <h3>Requête</h3>
+        <pre>{{ historique().requete }}</pre>
+        <h3>Réponse</h3>
+        <pre>{{ historique().reponse }}</pre>
+      </details>
+    }
+  </section>
+</div>

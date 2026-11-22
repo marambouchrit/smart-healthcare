@@ -4,8 +4,8 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { catchError, of } from 'rxjs';
 
 /*
- * Noms des médecins et des services, lus dans les fichiers de contracts/seed/ copiés tels quels
- * dans le build (angular.json → /seed/). Aucune donnée n'est saisie dans le client (D49).
+ * Noms des médecins, des services et des lettres-clés CNAM, lus dans les fichiers de contracts/seed/ copiés tels quels
+ * dans le build par copier-seed.mjs (servis sous /seed/). Aucune donnée n'est saisie dans le client (D49).
  */
 
 export interface Medecin {
@@ -14,6 +14,11 @@ export interface Medecin {
   prenom: string;
   specialite: string;
   serviceCode: string;
+}
+
+export interface LettreCle {
+  code: string;
+  libelle: string;
 }
 
 export interface ServiceHospitalier {
@@ -34,6 +39,11 @@ export class ReferentielService {
       catchError(() => of([] as ServiceHospitalier[])),
     ),
     { initialValue: [] as ServiceHospitalier[] },
+  );
+
+  readonly lettresCles = toSignal(
+    this.http.get<LettreCle[]>('seed/lettres-cles.json').pipe(catchError(() => of([] as LettreCle[]))),
+    { initialValue: [] as LettreCle[] },
   );
 
   private readonly medecinsParId = computed(() => new Map(this.medecins().map((m) => [m.id, m])));
