@@ -1,9 +1,10 @@
 import { Component, inject, signal } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { catchError, of } from 'rxjs';
+import { catchError, debounceTime, filter, of } from 'rxjs';
 
+import { AlertesDirectService } from '../../core/api/alertes-direct';
 import {
   NiveauRisque,
   PatientResume,
@@ -44,6 +45,14 @@ export class TableauDeBord {
 
   constructor() {
     this.rechercher();
+    // P4.5 : une prise en charge terminée met à jour couverture et dernière alerte dans la liste.
+    inject(AlertesDirectService)
+      .evenements.pipe(
+        filter((e) => e.type === 'prise-en-charge'),
+        debounceTime(500),
+        takeUntilDestroyed(),
+      )
+      .subscribe(() => this.rechercher());
   }
 
   rechercher(): void {

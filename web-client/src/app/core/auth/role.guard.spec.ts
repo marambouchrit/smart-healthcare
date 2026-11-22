@@ -4,8 +4,15 @@ import { Router, provideRouter } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 
 import { routes } from '../../app.routes';
+import { FABRIQUE_EVENT_SOURCE } from '../api/alertes-direct';
 import { CLE_SESSION } from './auth.service';
 import { Role } from './session';
+
+/** Les espaces médecin ouvrent le flux SSE : EventSource simulé (absent de jsdom). */
+const FAUX_SSE = {
+  provide: FABRIQUE_EVENT_SOURCE,
+  useValue: () => ({ addEventListener: () => undefined, close: () => undefined }) as unknown as EventSource,
+};
 
 async function naviguer(url: string, role: Role | null): Promise<string> {
   sessionStorage.clear();
@@ -16,7 +23,7 @@ async function naviguer(url: string, role: Role | null): Promise<string> {
     );
   }
   TestBed.resetTestingModule();
-  TestBed.configureTestingModule({ providers: [provideHttpClient(), provideRouter(routes)] });
+  TestBed.configureTestingModule({ providers: [provideHttpClient(), provideRouter(routes), FAUX_SSE] });
   const harnais = await RouterTestingHarness.create();
   await harnais.navigateByUrl(url);
   return TestBed.inject(Router).url;
@@ -58,7 +65,7 @@ describe('Routes et rôles (D48)', () => {
   it('une session expirée est traitée comme une absence de session', async () => {
     sessionStorage.setItem(CLE_SESSION, JSON.stringify({ jeton: 'j', expireLe: Date.now() - 1, sujet: 'x', role: 'ADMIN' }));
     TestBed.resetTestingModule();
-    TestBed.configureTestingModule({ providers: [provideHttpClient(), provideRouter(routes)] });
+    TestBed.configureTestingModule({ providers: [provideHttpClient(), provideRouter(routes), FAUX_SSE] });
     const harnais = await RouterTestingHarness.create();
     await harnais.navigateByUrl('/admin');
     expect(TestBed.inject(Router).url).toBe('/connexion');

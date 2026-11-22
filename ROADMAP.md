@@ -106,7 +106,7 @@ Objectif : le workflow complet fonctionne en version minimale avant d'enrichir q
 - [x] P4.2 Espace patient : créneaux et prise / modification / annulation de rendez-vous (REST)
 - [x] P4.3 Espace patient : ordonnances et profil (REST)
 - [x] P4.4 Tableau de bord médecin : liste filtrable des patients et fiche patient (GraphQL)
-- [ ] P4.5 Alertes en direct et fiche d'urgence affichée sans rechargement (SSE)
+- [x] P4.5 Alertes en direct et fiche d'urgence affichée sans rechargement (SSE)
 - [ ] P4.6 Vue administrateur : consultation SOAP via la gateway (droits CNAM, historique)
 
 **Vérification phase 4** : chaque écran fonctionne contre la stack Docker ; une alerte simulée apparaît en direct sur le tableau de bord.

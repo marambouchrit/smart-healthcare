@@ -1,6 +1,10 @@
 import { Component, effect, inject, input, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { debounceTime, filter } from 'rxjs';
+
+import { AlertesDirectService } from '../../core/api/alertes-direct';
 
 import { DossierPatient, HistoriqueSoins, TableauDeBordService } from '../../core/api/tableau-de-bord';
 import { dateHeure, dateLongue, jourTunis, messageErreur } from '../../core/format';
@@ -9,6 +13,7 @@ import { COUVERTURE, MESURE, NIVEAU, RISQUE, valeurMesure } from './libelles';
 /**
  * Fiche patient consolidée (P4.4) : une requête GraphQL `patient(id)` (profil, couverture, constantes,
  * alertes, traitements, fiches d'urgence) et l'agrégat `historiqueSoins(depuis, jusqua)` à la demande.
+ * P4.5 : un événement SSE (alerte ou prise en charge) concernant ce patient relit la fiche sans recharger la page.
  */
 @Component({
   selector: 'app-fiche-patient',
@@ -44,6 +49,14 @@ export class FichePatient {
       this.charger(id);
       this.calculerHistorique();
     });
+
+    inject(AlertesDirectService)
+      .evenements.pipe(
+        filter((e) => e.donnees.patientId === this.id()),
+        debounceTime(300),
+        takeUntilDestroyed(),
+      )
+      .subscribe(() => this.recharger());
   }
 
   /** Relit le dossier sans vider l'écran (utilisé aussi par les mises à jour en direct, P4.5). */
