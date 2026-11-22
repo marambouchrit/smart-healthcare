@@ -7,11 +7,19 @@ info:
     Données initiales : `contracts/seed/` (patients, médecins, services, traitements).
     Les erreurs suivent le format Problem Details (RFC 9457, `application/problem+json`).
     Codes utilisés : 200, 201, 204, 400, 404, 409 (P2.REST.5).
+    Authentification (P3.4, D44) : via la gateway, chaque appel exige un jeton JWT obtenu par
+    `POST /auth/login` (comptes de démonstration `patient`, `medecin`, `admin`) et envoyé dans
+    `Authorization: Bearer <jeton>` ; sans jeton valide, la gateway répond 401 sans appeler le service.
+    Dans Swagger UI : bouton « Authorize », coller le jeton.
 servers:
+  - url: /
+    description: Via l'API Gateway (même origine que Swagger UI ; port 8080 par défaut)
   - url: http://localhost:8080
-    description: Via l'API Gateway
+    description: Via l'API Gateway (adresse explicite)
   - url: http://localhost:8082
     description: Service REST en direct (développement)
+security:
+  - jetonJwt: []
 tags:
   - name: Créneaux
   - name: Rendez-vous
@@ -42,6 +50,7 @@ paths:
           description: Par défaut, seuls les créneaux libres sont renvoyés.
           schema: { type: boolean, default: true }
       responses:
+        '401': { $ref: '#/components/responses/NonAuthentifie' }
         '200':
           description: Liste des créneaux (éventuellement vide)
           content:
@@ -67,6 +76,7 @@ paths:
           in: query
           schema: { type: string, format: date }
       responses:
+        '401': { $ref: '#/components/responses/NonAuthentifie' }
         '200':
           description: Liste des rendez-vous
           content:
@@ -85,6 +95,7 @@ paths:
           application/json:
             schema: { $ref: '#/components/schemas/RendezVousCreation' }
       responses:
+        '401': { $ref: '#/components/responses/NonAuthentifie' }
         '201':
           description: Rendez-vous créé
           headers:
@@ -106,6 +117,7 @@ paths:
       operationId: obtenirRendezVous
       summary: Détail d'un rendez-vous
       responses:
+        '401': { $ref: '#/components/responses/NonAuthentifie' }
         '200':
           description: Rendez-vous trouvé
           content:
@@ -122,6 +134,7 @@ paths:
           application/json:
             schema: { $ref: '#/components/schemas/RendezVousCreation' }
       responses:
+        '401': { $ref: '#/components/responses/NonAuthentifie' }
         '200':
           description: Rendez-vous modifié
           content:
@@ -140,6 +153,7 @@ paths:
           application/json:
             schema: { $ref: '#/components/schemas/RendezVousModification' }
       responses:
+        '401': { $ref: '#/components/responses/NonAuthentifie' }
         '200':
           description: Rendez-vous modifié
           content:
@@ -153,6 +167,7 @@ paths:
       operationId: supprimerRendezVous
       summary: Annuler et supprimer un rendez-vous (le créneau redevient libre)
       responses:
+        '401': { $ref: '#/components/responses/NonAuthentifie' }
         '204': { description: Rendez-vous supprimé }
         '404': { $ref: '#/components/responses/NonTrouve' }
 
@@ -164,6 +179,7 @@ paths:
       operationId: obtenirProfil
       summary: Profil et coordonnées du patient
       responses:
+        '401': { $ref: '#/components/responses/NonAuthentifie' }
         '200':
           description: Profil trouvé
           content:
@@ -180,6 +196,7 @@ paths:
           application/json:
             schema: { $ref: '#/components/schemas/ProfilModification' }
       responses:
+        '401': { $ref: '#/components/responses/NonAuthentifie' }
         '200':
           description: Profil mis à jour
           content:
@@ -201,6 +218,7 @@ paths:
           description: Ne garder que les ordonnances contenant au moins une ligne de ce statut.
           schema: { $ref: '#/components/schemas/StatutTraitement' }
       responses:
+        '401': { $ref: '#/components/responses/NonAuthentifie' }
         '200':
           description: Liste des ordonnances (éventuellement vide)
           content:
@@ -224,6 +242,7 @@ paths:
           application/json:
             schema: { $ref: '#/components/schemas/DemandeUrgence' }
       responses:
+        '401': { $ref: '#/components/responses/NonAuthentifie' }
         '201':
           description: Rendez-vous d'urgence créé
           headers:
@@ -247,6 +266,7 @@ paths:
           application/json:
             schema: { $ref: '#/components/schemas/DemandeUrgence' }
       responses:
+        '401': { $ref: '#/components/responses/NonAuthentifie' }
         '201':
           description: Intervention d'ambulance enregistrée
           content:
@@ -268,7 +288,16 @@ components:
       required: true
       schema: { $ref: '#/components/schemas/IdentifiantPatient' }
 
+  securitySchemes:
+    jetonJwt:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Jeton émis par la gateway (`POST /auth/login`), valable 1 heure (D44).
+
   responses:
+    NonAuthentifie:
+      description: 'Jeton absent, expiré ou invalide (réponse de la gateway, en-tête `WWW-Authenticate: Bearer`)'
     RequeteInvalide:
       description: Requête invalide (paramètre ou corps non conforme)
       content:
