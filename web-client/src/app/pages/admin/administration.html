@@ -105,7 +105,7 @@
               @for (e of h.entrees; track $index) {
                 <tr>
                   <td>{{ dateLongue(e.date) }}</td>
-                  <td>{{ EVENEMENT[e.type] ?? e.type }}</td>
+                  <td>{{ EVENEMENT[e.type] }}</td>
                   <td>{{ e.description }}</td>
                   <td>{{ ref.nomMedecin(e.identifiantMedecin) }}</td>
                   <td>{{ e.numeroFeuilleDeSoins ?? '—' }}</td>
