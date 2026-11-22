@@ -8,3 +8,6 @@ dist/
 .env
 .idea/
 .claude/settings.local.json
+
+# Outils de contrôle des contrats (scripts/check-contrats.sh)
+.venv-contrats/
