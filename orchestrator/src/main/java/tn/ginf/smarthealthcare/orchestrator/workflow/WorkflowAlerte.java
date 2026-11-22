@@ -20,7 +20,8 @@ import tn.ginf.smarthealthcare.orchestrator.workflow.Ports.RendezVousUrgence;
  * 1. alerte reçue (gRPC) → 2. droits CNAM (SOAP) → 3. créneau d'urgence (REST) → 4. fiche d'urgence (GraphQL).
  * Orchestration codée (D9) ; aucun service n'appelle un autre service (D5).
  * L'alerte puis le résultat sont diffusés en direct au client web (SSE, P3.5, contracts/sse).
- * Phase 1 : pas de nouvelle tentative ni d'ambulance (P5.2, P5.3).
+ * Patient non couvert (P5.1) : la prise en charge continue, marquée « à régulariser » au REST et dans la fiche,
+ * avec la raison donnée par le service SOAP en commentaire.
  */
 @Service
 public class WorkflowAlerte {
@@ -83,7 +84,7 @@ public class WorkflowAlerte {
 
             tableauDeBord.enregistrerAlerte(alerte);
             tableauDeBord.mettreAJourCouverture(alerte.patientId(), droits);
-            String ficheId = tableauDeBord.creerFicheUrgence(alerte, aRegulariser, rdv.get());
+            String ficheId = tableauDeBord.creerFicheUrgence(alerte, aRegulariser, commentaireRegularisation(droits), rdv.get());
             log.info("[{}] Étape 4/4 GraphQL : alerte et couverture enregistrées, fiche d'urgence {} créée", id, ficheId);
 
             log.info("[{}] Workflow terminé : patient {}, rendez-vous {}, fiche {}", id, alerte.patientId(), rdv.get().id(), ficheId);
@@ -92,6 +93,23 @@ public class WorkflowAlerte {
             log.error("[{}] Workflow en échec : {}", id, e.getMessage());
             return new Resultat(Etat.ECHEC, null, false, null, null);
         }
+    }
+
+    /**
+     * P5.1 : patient non couvert (droits EXPIRES ou NON_AFFILIE) → les soins sont assurés, la fiche explique ce qui
+     * reste à régulariser à partir de la réponse SOAP ; null si la prise en charge est validée.
+     */
+    static String commentaireRegularisation(Droits droits) {
+        if (droits.priseEnCharge()) {
+            return null;
+        }
+        String raison = switch (droits.statut()) {
+            case "EXPIRES" -> "droits CNAM expirés" + (droits.codeVignette() == null ? "" : " (vignette " + droits.codeVignette() + ")");
+            case "NON_AFFILIE" -> "patient non affilié à la CNAM";
+            default -> "droits CNAM " + droits.statut();
+        };
+        String motif = droits.motif() == null || droits.motif().isBlank() ? "" : " — " + droits.motif();
+        return "À régulariser : " + raison + motif + ". Soins assurés, dossier administratif à compléter.";
     }
 
     private void diffuser(AlerteRecue alerte, Resultat resultat) {

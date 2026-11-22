@@ -28,6 +28,7 @@ class WorkflowAlerteTest {
     Droits droits = new Droits("OUVERTS", true, 80, null, "VIG-2026-100001", LocalDate.of(2026, 12, 31));
     Optional<RendezVousUrgence> rdv = Optional.of(new RendezVousUrgence("RDV-000001", OffsetDateTime.parse("2026-11-18T08:00:00+01:00")));
     boolean ficheARegulariser;
+    String commentaireFiche;
     final List<PriseEnCharge> resultatsDiffuses = new ArrayList<>();
     /** Fin du workflow : 17h20m01,5 UTC → 18h20m01 à Tunis (tronqué à la seconde). */
     static final Clock HORLOGE = Clock.fixed(Instant.parse("2026-11-22T17:20:01.500Z"), ZoneOffset.UTC);
@@ -44,8 +45,8 @@ class WorkflowAlerteTest {
             public void enregistrerAlerte(AlerteRecue a) { appels.add("GraphQL alerte " + a.id()); }
             public void mettreAJourCouverture(String p, Droits d) { appels.add("GraphQL couverture " + p + " " + d.statut()); }
             public void enregistrerConstantes(String p, List<Ports.ConstanteMesuree> c) { appels.add("GraphQL constantes " + p); }
-            public String creerFicheUrgence(AlerteRecue a, boolean aReg, RendezVousUrgence r) {
-                appels.add("GraphQL fiche " + r.id()); ficheARegulariser = aReg; return "FIC-000001";
+            public String creerFicheUrgence(AlerteRecue a, boolean aReg, String commentaire, RendezVousUrgence r) {
+                appels.add("GraphQL fiche " + r.id()); ficheARegulariser = aReg; commentaireFiche = commentaire; return "FIC-000001";
             }
         };
         return new WorkflowAlerte(dossier, portail, tdb, diffusion, "Africa/Tunis", HORLOGE);
@@ -67,13 +68,50 @@ class WorkflowAlerteTest {
     }
 
     @Test
-    void patientNonCouvertFicheARegulariser() {
-        droits = new Droits("EXPIRES", false, 80, "Vignette expirée", "VIG-2025-100006", LocalDate.of(2025, 12, 31));
+    void patientCouvertSansCommentaire() {
+        workflow().traiter(ALERTE);
+        assertThat(ficheARegulariser).isFalse();
+        assertThat(commentaireFiche).isNull();
+    }
+
+    @Test
+    void droitsExpiresPriseEnChargeARegulariserAvecLaRaison() {
+        // TN-0067890 du seed : vignette 2025 expirée (réponse SOAP réelle)
+        droits = new Droits("EXPIRES", false, 80, "Vignette valide du 2025-01-01 au 2025-12-31",
+                "VIG-2025-100006", LocalDate.of(2025, 12, 31));
+        var r = workflow().traiter(ALERTE);
+        // les soins ne sont pas bloqués : rendez-vous et fiche sont créés
+        assertThat(r.etat()).isEqualTo(Etat.TERMINE);
+        assertThat(r.rendezVousId()).isEqualTo("RDV-000001");
+        assertThat(r.aRegulariser()).isTrue();
+        assertThat(appels).containsExactly("SSE alerte ALR-000001", "SOAP TN-0012345", "REST ALR-000001 aRegulariser=true",
+                "GraphQL alerte ALR-000001", "GraphQL couverture TN-0012345 EXPIRES", "GraphQL fiche RDV-000001",
+                "SSE prise-en-charge TERMINE");
+        assertThat(ficheARegulariser).isTrue();
+        assertThat(commentaireFiche).isEqualTo("À régulariser : droits CNAM expirés (vignette VIG-2025-100006)"
+                + " — Vignette valide du 2025-01-01 au 2025-12-31. Soins assurés, dossier administratif à compléter.");
+        assertThat(resultatsDiffuses).singleElement().satisfies(p -> assertThat(p.aRegulariser()).isTrue());
+    }
+
+    @Test
+    void patientNonAffiliePriseEnChargeARegulariser() {
+        // TN-0089012 du seed : aucune couverture (réponse SOAP réelle)
+        droits = new Droits("NON_AFFILIE", false, null, "Aucune affiliation CNAM pour ce patient", null, null);
         var r = workflow().traiter(ALERTE);
         assertThat(r.etat()).isEqualTo(Etat.TERMINE);
         assertThat(r.aRegulariser()).isTrue();
-        assertThat(ficheARegulariser).isTrue();
-        assertThat(appels).contains("REST ALR-000001 aRegulariser=true");
+        assertThat(appels).contains("REST ALR-000001 aRegulariser=true", "GraphQL couverture TN-0012345 NON_AFFILIE");
+        assertThat(commentaireFiche).isEqualTo("À régulariser : patient non affilié à la CNAM"
+                + " — Aucune affiliation CNAM pour ce patient. Soins assurés, dossier administratif à compléter.");
+    }
+
+    @Test
+    void aucunCreneauPourUnPatientNonCouvertGardeLIndicateur() {
+        droits = new Droits("NON_AFFILIE", false, null, "Aucune affiliation CNAM pour ce patient", null, null);
+        rdv = Optional.empty();
+        var r = workflow().traiter(ALERTE);
+        assertThat(r.etat()).isEqualTo(Etat.AUCUN_CRENEAU);
+        assertThat(resultatsDiffuses).singleElement().satisfies(p -> assertThat(p.aRegulariser()).isTrue());
     }
 
     @Test
@@ -109,7 +147,7 @@ class WorkflowAlerteTest {
             public void enregistrerAlerte(AlerteRecue a) {}
             public void mettreAJourCouverture(String p, Droits d) {}
             public void enregistrerConstantes(String p, List<Ports.ConstanteMesuree> c) {}
-            public String creerFicheUrgence(AlerteRecue a, boolean aReg, RendezVousUrgence r) { return "FIC-000001"; }
+            public String creerFicheUrgence(AlerteRecue a, boolean aReg, String c, RendezVousUrgence r) { return "FIC-000001"; }
         }, enPanne, "Africa/Tunis", HORLOGE);
         var r = w.traiter(ALERTE);
         assertThat(r.etat()).isEqualTo(Etat.TERMINE);

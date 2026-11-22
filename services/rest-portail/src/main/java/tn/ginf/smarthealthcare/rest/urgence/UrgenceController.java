@@ -23,6 +23,7 @@ public class UrgenceController {
 
     private static final Logger log = LoggerFactory.getLogger(UrgenceController.class);
     private static final String SERVICE_URGENCES = "URGENCES";
+    static final String MENTION_A_REGULARISER = " — prise en charge à régulariser (droits CNAM non validés)";
 
     private final RendezVousService rendezVous;
 
@@ -32,9 +33,13 @@ public class UrgenceController {
 
     @PostMapping
     public ResponseEntity<RendezVous> reserverCreneauUrgence(@Valid @RequestBody DemandeUrgence demande) {
-        log.info("POST /api/urgences patient={} alerte={} niveau={}",
-                demande.patientId(), demande.identifiantAlerte(), demande.niveau());
+        log.info("POST /api/urgences patient={} alerte={} niveau={} aRegulariser={}",
+                demande.patientId(), demande.identifiantAlerte(), demande.niveau(), demande.aRegulariser());
         String motif = demande.motif() != null ? demande.motif() : "Urgence — alerte " + demande.identifiantAlerte();
+        // P5.1 : droits CNAM non validés → le rendez-vous est quand même réservé, le motif le signale (D52)
+        if (Boolean.TRUE.equals(demande.aRegulariser())) {
+            motif = motif + MENTION_A_REGULARISER;
+        }
         RendezVous rdv = rendezVous.creerUrgence(demande.patientId(), SERVICE_URGENCES, motif);
         return ResponseEntity.created(URI.create("/api/rendez-vous/" + rdv.id())).body(rdv);
     }

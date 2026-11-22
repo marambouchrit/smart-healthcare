@@ -57,7 +57,8 @@ public final class Ports {
         /** Dernier résultat de la vérification CNAM, affiché dans le dossier consolidé. */
         void mettreAJourCouverture(String patientId, Droits droits);
 
-        String creerFicheUrgence(AlerteRecue alerte, boolean aRegulariser, RendezVousUrgence rendezVous);
+        /** commentaire : raison de la régularisation (P5.1), null si la prise en charge est validée. */
+        String creerFicheUrgence(AlerteRecue alerte, boolean aRegulariser, String commentaire, RendezVousUrgence rendezVous);
 
         /** Dernières constantes d'un patient (mutation enregistrerConstantes). */
         void enregistrerConstantes(String patientId, java.util.List<ConstanteMesuree> constantes);

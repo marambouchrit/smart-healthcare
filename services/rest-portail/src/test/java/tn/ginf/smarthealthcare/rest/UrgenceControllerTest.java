@@ -51,6 +51,27 @@ class UrgenceControllerTest extends PostgresTest.BaseVide {
     }
 
     @Test
+    void motifInchangeSiLaPriseEnChargeEstValidee() throws Exception {
+        mvc.perform(post("/api/urgences").contentType(MediaType.APPLICATION_JSON).content("""
+                        {"patientId":"TN-0012345","identifiantAlerte":"ALR-0001","niveau":"CRITIQUE",
+                         "motif":"Fréquence cardiaque 165 bpm > 140 bpm","aRegulariser":false}"""))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.motif").value("Fréquence cardiaque 165 bpm > 140 bpm"));
+    }
+
+    @Test
+    void patientNonCouvertRendezVousReserveEtMotifARegulariser() throws Exception {
+        // P5.1 : TN-0089012 (non affilié dans le seed) est quand même pris en charge
+        mvc.perform(post("/api/urgences").contentType(MediaType.APPLICATION_JSON).content("""
+                        {"patientId":"TN-0089012","identifiantAlerte":"ALR-0002","niveau":"CRITIQUE",
+                         "motif":"Chute détectée","aRegulariser":true}"""))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.statut").value("CONFIRME"))
+                .andExpect(jsonPath("$.urgence").value(true))
+                .andExpect(jsonPath("$.motif").value("Chute détectée — prise en charge à régulariser (droits CNAM non validés)"));
+    }
+
+    @Test
     void aucunCreneauLibreRenvoie409() throws Exception {
         horloge.regler(17, 19, 45);
         mvc.perform(post("/api/urgences").contentType(MediaType.APPLICATION_JSON).content(DEMANDE.formatted("TN-0012345")))

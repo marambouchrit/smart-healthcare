@@ -59,7 +59,7 @@ public class ClientTableauDeBordGraphql implements Ports.TableauDeBord {
     }
 
     @Override
-    public String creerFicheUrgence(AlerteRecue a, boolean aRegulariser, RendezVousUrgence rdv) {
+    public String creerFicheUrgence(AlerteRecue a, boolean aRegulariser, String commentaire, RendezVousUrgence rdv) {
         Map<String, Object> entree = new LinkedHashMap<>();
         entree.put("identifiantPatient", a.patientId());
         entree.put("identifiantAlerte", a.id());
@@ -67,6 +67,9 @@ public class ClientTableauDeBordGraphql implements Ports.TableauDeBord {
         entree.put("action", "CONSULTATION_URGENCE");
         entree.put("identifiantRendezVous", rdv.id());
         entree.put("dateRendezVous", iso(rdv.debut()));
+        if (commentaire != null) {
+            entree.put("commentaire", commentaire);
+        }
         Map<String, Object> data = executer(CREER_FICHE, Map.of("f", entree));
         @SuppressWarnings("unchecked")
         Map<String, Object> fiche = (Map<String, Object>) data.get("creerFicheUrgence");
