@@ -6,6 +6,10 @@
   --bordure: #d5dbe2;
   --accent: #0b6e75;
   --danger: #b3261e;
+  --danger-fond: #fbe9e7;
+  --ok: #1e6b34;
+  --ok-fond: #e6f4ea;
+  --alerte: #a15c00;
   color-scheme: light;
 }
 
@@ -19,4 +23,250 @@ body {
   color: var(--texte);
   font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   line-height: 1.5;
+}
+
+h1 {
+  margin: 0 0 16px;
+  font-size: 1.5rem;
+}
+
+h2 {
+  margin: 0 0 12px;
+  font-size: 1.15rem;
+}
+
+button {
+  padding: 8px 14px;
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  background: var(--accent);
+  color: #fff;
+  font: inherit;
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+button.secondaire {
+  background: transparent;
+  color: var(--accent);
+}
+
+button.danger {
+  background: transparent;
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+button.lien {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent);
+  text-decoration: underline;
+}
+
+input,
+select,
+textarea {
+  padding: 7px 9px;
+  border: 1px solid var(--bordure);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--texte);
+  font: inherit;
+}
+
+label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-weight: 600;
+}
+
+.onglets {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--bordure);
+}
+
+.onglets a {
+  padding: 8px 14px;
+  color: var(--texte-secondaire);
+  text-decoration: none;
+  border-bottom: 2px solid transparent;
+}
+
+.onglets a.actif {
+  color: var(--texte);
+  border-bottom-color: var(--accent);
+}
+
+.panneau {
+  margin-bottom: 20px;
+  padding: 20px;
+  background: var(--surface);
+  border: 1px solid var(--bordure);
+  border-radius: 8px;
+}
+
+.discret {
+  color: var(--texte-secondaire);
+}
+
+.bandeau {
+  padding: 10px 14px;
+  border-radius: 6px;
+}
+
+.bandeau.ok {
+  background: var(--ok-fond);
+  color: var(--ok);
+}
+
+.bandeau.erreur {
+  background: var(--danger-fond);
+  color: var(--danger);
+}
+
+.liste {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ligne {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 0;
+  border-top: 1px solid var(--bordure);
+}
+
+.ligne:first-child {
+  border-top: 0;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.badge {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--fond);
+  border: 1px solid var(--bordure);
+  font-size: 0.85rem;
+}
+
+.badge.urgence,
+.badge.critique {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.badge.urgent {
+  border-color: var(--alerte);
+  color: var(--alerte);
+}
+
+.badge.annule {
+  text-decoration: line-through;
+}
+
+.filtres {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.en-ligne {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.grille-creneaux {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 8px;
+}
+
+.creneau {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  background: var(--surface);
+  color: var(--texte);
+  border-color: var(--bordure);
+}
+
+.creneau.choisi {
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+
+.confirmation {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--bordure);
+}
+
+.confirmation p {
+  flex-basis: 100%;
+  margin: 0;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  padding: 8px;
+  border-bottom: 1px solid var(--bordure);
+  text-align: left;
+  vertical-align: top;
+}
+
+th {
+  color: var(--texte-secondaire);
+  font-weight: 600;
+}
+
+.grille-2 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+dl.fiche {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 6px 16px;
+  margin: 0;
+}
+
+dl.fiche dt {
+  color: var(--texte-secondaire);
+}
+
+dl.fiche dd {
+  margin: 0;
 }

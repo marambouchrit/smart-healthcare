@@ -1,0 +1,143 @@
+@if (message(); as m) {
+  <p class="bandeau" [class.ok]="m.type === 'ok'" [class.erreur]="m.type === 'erreur'" role="status">{{ m.texte }}</p>
+}
+
+<section class="panneau">
+  <h2>Mes rendez-vous à venir</h2>
+  @if (chargement()) {
+    <p class="discret">Chargement…</p>
+  } @else if (aVenir().length === 0) {
+    <p class="discret">Aucun rendez-vous à venir.</p>
+  } @else {
+    <ul class="liste">
+      @for (r of aVenir(); track r.id) {
+        <li class="ligne" data-rdv [attr.data-id]="r.id">
+          <div>
+            <strong>{{ dateHeure(r.creneau.debut) }}</strong>
+            <span class="discret"> · {{ r.id }}</span>
+            <div>{{ ref.nomMedecin(r.creneau.medecinId) }} — {{ ref.libelleService(r.creneau.serviceCode) }}</div>
+            @if (motifEnEdition() === r.id) {
+              <form class="en-ligne" (ngSubmit)="enregistrerMotif(r)">
+                <input name="nouveauMotif" [(ngModel)]="nouveauMotif" maxlength="500" aria-label="Nouveau motif" />
+                <button type="submit" [disabled]="envoi()">Enregistrer</button>
+                <button type="button" class="secondaire" (click)="motifEnEdition.set(null)">Annuler</button>
+              </form>
+            } @else {
+              <div class="discret">Motif : {{ r.motif || '—' }}</div>
+            }
+          </div>
+          <div class="actions">
+            <span class="badge">{{ libelleStatut(r) }}</span>
+            @if (r.urgence) {
+              <span class="badge urgence">Urgence</span>
+            }
+            <button type="button" class="secondaire" (click)="editerMotif(r)">Modifier le motif</button>
+            <button type="button" class="secondaire" (click)="commencerRemplacement(r)">Changer de créneau</button>
+            <button type="button" class="danger" (click)="annuler(r)" [disabled]="envoi()">Annuler</button>
+          </div>
+        </li>
+      }
+    </ul>
+  }
+</section>
+
+<section class="panneau">
+  @if (enRemplacement(); as r) {
+    <h2>Changer le créneau du rendez-vous {{ r.id }}</h2>
+    <p class="discret">
+      Actuellement : {{ dateHeure(r.creneau.debut) }}.
+      <button type="button" class="lien" (click)="abandonner()">Abandonner le changement</button>
+    </p>
+  } @else {
+    <h2>Prendre un rendez-vous</h2>
+  }
+
+  <form class="filtres" (ngSubmit)="chercher()">
+    <label>
+      Service
+      <select name="serviceCode" [(ngModel)]="serviceCode" (ngModelChange)="changerService()">
+        <option value="">Tous</option>
+        @for (s of servicesConsultation(); track s.code) {
+          <option [value]="s.code">{{ s.libelle }}</option>
+        }
+      </select>
+    </label>
+    <label>
+      Médecin
+      <select name="medecinId" [(ngModel)]="medecinId">
+        <option value="">Tous</option>
+        @for (m of medecinsDuService(); track m.id) {
+          <option [value]="m.id">Dr {{ m.prenom }} {{ m.nom }} ({{ m.specialite }})</option>
+        }
+      </select>
+    </label>
+    <label>
+      Jour
+      <input type="date" name="date" [(ngModel)]="date" [min]="jourMin" [max]="jourMax" required />
+    </label>
+    <button type="submit" [disabled]="recherche()">{{ recherche() ? 'Recherche…' : 'Voir les créneaux libres' }}</button>
+  </form>
+
+  @if (creneaux(); as liste) {
+    @if (liste.length === 0) {
+      <p class="discret">Aucun créneau libre ce jour-là avec ces critères.</p>
+    } @else {
+      <div class="grille-creneaux">
+        @for (c of liste; track c.id) {
+          <button
+            type="button"
+            class="creneau"
+            [class.choisi]="choisi()?.id === c.id"
+            [attr.data-creneau]="c.id"
+            (click)="choisir(c)"
+          >
+            <strong>{{ heure(c.debut) }}</strong>
+            <span>{{ ref.nomMedecin(c.medecinId) }}</span>
+          </button>
+        }
+      </div>
+    }
+  }
+
+  @if (choisi(); as c) {
+    <form class="confirmation" (ngSubmit)="confirmer()">
+      <p>
+        <strong>{{ dateHeure(c.debut) }}</strong> avec {{ ref.nomMedecin(c.medecinId) }}
+        ({{ ref.libelleService(c.serviceCode) }})
+      </p>
+      <label>
+        Motif (facultatif)
+        <input name="motif" [(ngModel)]="motif" maxlength="500" />
+      </label>
+      <button type="submit" [disabled]="envoi()">
+        {{ enRemplacement() ? 'Déplacer le rendez-vous' : 'Confirmer le rendez-vous' }}
+      </button>
+    </form>
+  }
+</section>
+
+<section class="panneau">
+  <h2>Historique</h2>
+  @if (passes().length === 0) {
+    <p class="discret">Aucun rendez-vous passé ou annulé.</p>
+  } @else {
+    <ul class="liste">
+      @for (r of passes(); track r.id) {
+        <li class="ligne" [attr.data-id]="r.id">
+          <div>
+            <strong>{{ dateHeure(r.creneau.debut) }}</strong>
+            <span class="discret"> · {{ r.id }}</span>
+            <div>{{ ref.nomMedecin(r.creneau.medecinId) }} — {{ ref.libelleService(r.creneau.serviceCode) }}</div>
+            <div class="discret">Motif : {{ r.motif || '—' }}</div>
+          </div>
+          <div class="actions">
+            <span class="badge" [class.annule]="r.statut === 'ANNULE'">{{ libelleStatut(r) }}</span>
+            @if (r.urgence) {
+              <span class="badge urgence">Urgence</span>
+            }
+          </div>
+        </li>
+      }
+    </ul>
+  }
+</section>

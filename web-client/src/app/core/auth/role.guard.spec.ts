@@ -30,21 +30,21 @@ describe('Routes et rôles (D48)', () => {
   });
 
   it('la racine mène à la page du rôle connecté', async () => {
-    expect(await naviguer('/', 'PATIENT')).toBe('/patient');
+    expect(await naviguer('/', 'PATIENT')).toBe('/patient/rendez-vous');
     expect(await naviguer('/', 'MEDECIN')).toBe('/medecin');
     expect(await naviguer('/', 'ADMIN')).toBe('/admin');
   });
 
   it('chaque rôle accède à ses pages', async () => {
-    expect(await naviguer('/patient', 'PATIENT')).toBe('/patient');
+    expect(await naviguer('/patient', 'PATIENT')).toBe('/patient/rendez-vous');
     expect(await naviguer('/medecin', 'MEDECIN')).toBe('/medecin');
     expect(await naviguer('/admin', 'ADMIN')).toBe('/admin');
     expect(await naviguer('/medecin', 'ADMIN')).toBe('/medecin');
   });
 
   it('une page interdite renvoie vers l’accueil du rôle', async () => {
-    expect(await naviguer('/medecin', 'PATIENT')).toBe('/patient');
-    expect(await naviguer('/admin', 'PATIENT')).toBe('/patient');
+    expect(await naviguer('/medecin', 'PATIENT')).toBe('/patient/rendez-vous');
+    expect(await naviguer('/admin', 'PATIENT')).toBe('/patient/rendez-vous');
     expect(await naviguer('/patient', 'MEDECIN')).toBe('/medecin');
     expect(await naviguer('/admin', 'MEDECIN')).toBe('/medecin');
     expect(await naviguer('/patient', 'ADMIN')).toBe('/admin');

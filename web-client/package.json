@@ -3,9 +3,13 @@
   "version": "0.1.0",
   "scripts": {
     "ng": "ng",
+    "copier-seed": "node copier-seed.mjs",
+    "prestart": "node copier-seed.mjs",
     "start": "ng serve",
+    "prebuild": "node copier-seed.mjs",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
+    "pretest": "node copier-seed.mjs",
     "test": "ng test"
   },
   "private": true,
