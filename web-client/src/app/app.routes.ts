@@ -2,7 +2,10 @@ import { Routes } from '@angular/router';
 
 import { invitesSeulement, redirectionAccueil, roleGuard } from './core/auth/role.guard';
 import { Connexion } from './pages/connexion/connexion';
-import { EspaceAdmin, EspaceMedecin } from './pages/espaces/espaces';
+import { EspaceAdmin } from './pages/espaces/espaces';
+import { EspaceMedecin } from './pages/medecin/espace-medecin';
+import { FichePatient } from './pages/medecin/fiche-patient';
+import { TableauDeBord } from './pages/medecin/tableau-de-bord';
 import { EspacePatient } from './pages/patient/espace-patient';
 import { OrdonnancesPage } from './pages/patient/ordonnances';
 import { ProfilPage } from './pages/patient/profil';
@@ -22,7 +25,15 @@ export const routes: Routes = [
       { path: '', pathMatch: 'full', redirectTo: 'rendez-vous' },
     ],
   },
-  { path: 'medecin', component: EspaceMedecin, canActivate: [roleGuard('MEDECIN', 'ADMIN')], title: 'Tableau de bord' },
+  {
+    path: 'medecin',
+    component: EspaceMedecin,
+    canActivate: [roleGuard('MEDECIN', 'ADMIN')],
+    children: [
+      { path: '', component: TableauDeBord, title: 'Tableau de bord' },
+      { path: 'patients/:id', component: FichePatient, title: 'Fiche patient' },
+    ],
+  },
   { path: 'admin', component: EspaceAdmin, canActivate: [roleGuard('ADMIN')], title: 'Administration' },
   { path: '', pathMatch: 'full', canActivate: [redirectionAccueil], children: [] },
   { path: '**', redirectTo: '' },

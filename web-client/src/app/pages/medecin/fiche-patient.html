@@ -1,0 +1,189 @@
+<p><a routerLink="/medecin">← Tous les patients</a></p>
+
+@if (erreur(); as e) {
+  <p class="bandeau erreur" role="alert">{{ e }}</p>
+}
+
+@if (dossier() === undefined) {
+  <p class="discret">Chargement…</p>
+} @else if (dossier() === null) {
+  <p class="bandeau erreur" role="alert">Aucun patient {{ id() }}.</p>
+} @else {
+  @let p = dossier()!;
+  <h1>
+    {{ p.prenom }} {{ p.nom }} <span class="discret">· {{ p.id }}</span>
+    <span class="badge" [class.critique]="p.niveauRisque === 'ELEVE'">Risque {{ RISQUE[p.niveauRisque] }}</span>
+  </h1>
+
+  <div class="grille-2">
+    <section class="panneau">
+      <h2>Identité et suivi</h2>
+      <dl class="fiche">
+        <dt>Naissance</dt>
+        <dd>{{ dateLongue(p.dateNaissance) }} ({{ p.sexe === 'F' ? 'F' : 'M' }})</dd>
+        <dt>Téléphone</dt>
+        <dd>{{ p.telephone || '—' }}</dd>
+        <dt>Service</dt>
+        <dd>{{ p.service.libelle }}</dd>
+        <dt>Pathologie</dt>
+        <dd>{{ p.pathologie }}</dd>
+        <dt>Médecin traitant</dt>
+        <dd>
+          @if (p.medecinTraitant; as m) {
+            Dr {{ m.prenom }} {{ m.nom }} ({{ m.specialite }})
+          } @else {
+            —
+          }
+        </dd>
+        <dt>Couverture CNAM</dt>
+        <dd data-couverture>
+          @if (p.couverture; as c) {
+            {{ COUVERTURE[c.statut] }}
+            @if (c.statut === 'OUVERTS') {
+              · {{ c.tauxRemboursement }} %
+            }
+            @if (c.codeVignette) {
+              · {{ c.codeVignette }}
+            }
+            <div class="discret">vérifiée le {{ dateHeure(c.misAJourLe) }}</div>
+          } @else {
+            <span class="discret">Pas encore vérifiée (mise à jour lors d'une prise en charge)</span>
+          }
+        </dd>
+      </dl>
+    </section>
+
+    <section class="panneau">
+      <h2>Dernières constantes</h2>
+      @if (p.dernieresConstantes.length === 0) {
+        <p class="discret">Aucune mesure reçue.</p>
+      } @else {
+        <dl class="fiche" data-constantes>
+          @for (c of p.dernieresConstantes; track c.type) {
+            <dt>{{ MESURE[c.type] }}</dt>
+            <dd>
+              <strong>{{ valeurMesure(c.type, c.valeur) }}</strong>
+              <span class="discret"> · {{ dateHeure(c.horodatage) }}</span>
+            </dd>
+          }
+        </dl>
+      }
+    </section>
+  </div>
+
+  <section class="panneau">
+    <h2>Fiches d'urgence</h2>
+    @if (p.fichesUrgence.length === 0) {
+      <p class="discret">Aucune fiche d'urgence.</p>
+    } @else {
+      <ul class="liste" data-fiches>
+        @for (f of p.fichesUrgence; track f.id) {
+          <li class="ligne" [attr.data-fiche]="f.id">
+            <div>
+              <strong>{{ f.id }}</strong> · {{ dateHeure(f.creeeLe) }}
+              <div>
+                <span class="badge" [class.critique]="f.alerte.niveau === 'CRITIQUE'" [class.urgent]="f.alerte.niveau === 'URGENT'">
+                  {{ NIVEAU[f.alerte.niveau] }}
+                </span>
+                {{ f.alerte.message }} ({{ f.alerte.id }})
+              </div>
+              <div>
+                @if (f.action === 'AMBULANCE') {
+                  Ambulance envoyée
+                } @else {
+                  Consultation d'urgence
+                  @if (f.identifiantRendezVous) {
+                    : {{ f.identifiantRendezVous }}, {{ dateHeure(f.dateRendezVous) }}
+                  }
+                }
+              </div>
+              @if (f.commentaire) {
+                <div class="discret">{{ f.commentaire }}</div>
+              }
+            </div>
+            <div class="actions">
+              <span class="badge" [class.urgent]="f.statutPriseEnCharge === 'A_REGULARISER'">
+                {{ f.statutPriseEnCharge === 'A_REGULARISER' ? 'À régulariser' : 'Prise en charge' }}
+              </span>
+            </div>
+          </li>
+        }
+      </ul>
+    }
+  </section>
+
+  <div class="grille-2">
+    <section class="panneau">
+      <h2>Alertes récentes</h2>
+      @if (p.alertesRecentes.length === 0) {
+        <p class="discret">Aucune alerte.</p>
+      } @else {
+        <ul class="liste" data-alertes>
+          @for (a of p.alertesRecentes; track a.id) {
+            <li class="ligne" [attr.data-alerte]="a.id">
+              <div>
+                <span class="badge" [class.critique]="a.niveau === 'CRITIQUE'" [class.urgent]="a.niveau === 'URGENT'">
+                  {{ NIVEAU[a.niveau] }}
+                </span>
+                {{ a.message }}
+                <div class="discret">{{ a.id }} · {{ dateHeure(a.horodatage) }}</div>
+              </div>
+            </li>
+          }
+        </ul>
+      }
+    </section>
+
+    <section class="panneau">
+      <h2>Traitements en cours</h2>
+      @if (p.traitementsEnCours.length === 0) {
+        <p class="discret">Aucun traitement en cours.</p>
+      } @else {
+        <ul class="liste">
+          @for (t of p.traitementsEnCours; track t.id) {
+            <li class="ligne">
+              <div>
+                <strong>{{ t.medicament }}</strong> {{ t.dosage }} — {{ t.posologie }}
+                <div class="discret">
+                  depuis le {{ dateLongue(t.dateDebut) }} · Dr {{ t.prescripteur.prenom }} {{ t.prescripteur.nom }}
+                </div>
+              </div>
+            </li>
+          }
+        </ul>
+      }
+    </section>
+  </div>
+
+  <section class="panneau">
+    <h2>Historique des soins</h2>
+    <form class="filtres" (ngSubmit)="calculerHistorique()">
+      <label>
+        Du
+        <input type="date" name="depuis" [(ngModel)]="depuis" />
+      </label>
+      <label>
+        Au
+        <input type="date" name="jusqua" [(ngModel)]="jusqua" />
+      </label>
+      <button type="submit">Calculer</button>
+    </form>
+    @if (historique(); as h) {
+      <dl class="fiche" data-historique>
+        <dt>Alertes</dt>
+        <dd>
+          {{ h.nombreAlertes }}
+          @if (h.nombreAlertes > 0) {
+            <span class="discret">({{ repartition(h) }})</span>
+          }
+        </dd>
+        <dt>Fiches d'urgence</dt>
+        <dd>{{ h.nombreFichesUrgence }}</dd>
+        <dt>Ambulances</dt>
+        <dd>{{ h.nombreAmbulances }}</dd>
+        <dt>Traitements actifs</dt>
+        <dd>{{ h.traitements.length }}</dd>
+      </dl>
+    }
+  </section>
+}

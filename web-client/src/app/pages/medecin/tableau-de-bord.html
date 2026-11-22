@@ -1,0 +1,78 @@
+<section class="panneau">
+  <h2>Patients suivis</h2>
+  <form class="filtres" (ngSubmit)="rechercher()">
+    <label>
+      Service
+      <select name="serviceCode" [(ngModel)]="serviceCode" (ngModelChange)="rechercher()">
+        <option value="">Tous</option>
+        @for (s of services(); track s.code) {
+          <option [value]="s.code">{{ s.libelle }}</option>
+        }
+      </select>
+    </label>
+    <label>
+      Pathologie
+      <input name="pathologie" [(ngModel)]="pathologie" placeholder="ex. cardiaque" />
+    </label>
+    <fieldset class="risques">
+      <legend>Risque</legend>
+      @for (n of niveauxRisque; track n) {
+        <label class="case">
+          <input type="checkbox" [name]="'risque-' + n" [(ngModel)]="risques[n]" (ngModelChange)="rechercher()" />
+          {{ RISQUE[n] }}
+        </label>
+      }
+    </fieldset>
+    <button type="submit">Filtrer</button>
+    <button type="button" class="secondaire" (click)="reinitialiser()">Réinitialiser</button>
+  </form>
+
+  @if (erreur(); as e) {
+    <p class="bandeau erreur" role="alert">{{ e }}</p>
+  } @else if (patients() === null) {
+    <p class="discret">Chargement…</p>
+  } @else if (patients()!.length === 0) {
+    <p class="discret">Aucun patient ne correspond à ces critères.</p>
+  } @else {
+    <p class="discret">{{ patients()!.length }} patient(s)</p>
+    <div class="defilement">
+      <table>
+        <thead>
+          <tr>
+            <th>Patient</th>
+            <th>Service</th>
+            <th>Pathologie</th>
+            <th>Risque</th>
+            <th>Couverture</th>
+            <th>Dernière alerte</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (p of patients(); track p.id) {
+            <tr [attr.data-patient]="p.id">
+              <td>
+                <a [routerLink]="['patients', p.id]">{{ p.prenom }} {{ p.nom }}</a>
+                <div class="discret">{{ p.id }}</div>
+              </td>
+              <td>{{ p.service.libelle }}</td>
+              <td>{{ p.pathologie }}</td>
+              <td><span class="badge" [class.critique]="p.niveauRisque === 'ELEVE'">{{ RISQUE[p.niveauRisque] }}</span></td>
+              <td>{{ p.couverture ? COUVERTURE[p.couverture.statut] : 'Non vérifiée' }}</td>
+              <td>
+                @if (p.alertesRecentes[0]; as a) {
+                  <span class="badge" [class.critique]="a.niveau === 'CRITIQUE'" [class.urgent]="a.niveau === 'URGENT'">
+                    {{ NIVEAU[a.niveau] }}
+                  </span>
+                  {{ a.message }}
+                  <div class="discret">{{ dateHeure(a.horodatage) }}</div>
+                } @else {
+                  <span class="discret">—</span>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</section>
