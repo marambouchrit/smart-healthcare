@@ -71,6 +71,23 @@ class TestDepotPostgres(unittest.TestCase):
                       message="m")
         self.assertEqual(self.depot.enregistrer(mesure("TN-0012345", 131), b).identifiant_alerte, "ALR-000002")
 
+    def test_reconnexion_apres_une_coupure_de_la_base(self):
+        """Comme un redémarrage de PostgreSQL : la session du dépôt est tuée côté serveur, l'écriture suivante réussit."""
+        import psycopg
+        self.depot.enregistrer(mesure("TN-0012345", 80))
+        pid = self.depot.requete("SELECT pg_backend_pid()")[0][0]
+        with psycopg.connect(DSN, autocommit=True) as autre:
+            self.assertTrue(autre.execute("SELECT pg_terminate_backend(%s)", (pid,)).fetchone()[0])
+        alerte = pb.Alerte(identifiant_patient="TN-0012345", niveau=pb.CRITIQUE, type=pb.FREQUENCE_CARDIAQUE,
+                           valeur=170, seuil=140, message="FC 170 > 140")
+        with self.assertLogs("telemetrie", "WARNING") as journaux:
+            self.assertEqual(self.depot.enregistrer(mesure("TN-0012345", 170), alerte).identifiant_alerte, "ALR-000001")
+        self.assertIn("reconnexion", journaux.output[0])
+        # nouvelle session, toujours dans le même schéma, sans doublon
+        self.assertNotEqual(self.depot.requete("SELECT pg_backend_pid()")[0][0], pid)
+        self.assertEqual(self.depot.requete("SELECT count(*) FROM mesure")[0][0], 2)
+        self.assertEqual(self.depot.requete("SELECT count(*) FROM alerte")[0][0], 1)
+
     def test_le_service_enregistre_tout_le_flux(self):
         serveur, port = demarrer(port=0, depot=self.depot)
         try:

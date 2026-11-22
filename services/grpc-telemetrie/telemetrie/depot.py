@@ -3,8 +3,10 @@
 DepotPostgres : base PostgreSQL du service (D8, D35), schéma créé par schema.sql au démarrage.
 DepotMemoire  : même interface, en mémoire (tests unitaires qui n'ont pas besoin de base).
 Une mesure et l'éventuelle alerte qu'elle déclenche sont écrites dans la même transaction.
+Si la connexion est coupée (redémarrage de PostgreSQL), DepotPostgres la rouvre et rejoue l'opération une fois.
 """
 import itertools
+import logging
 import re
 import threading
 from datetime import datetime, timezone
@@ -13,6 +15,7 @@ from pathlib import Path
 from .gen import telemetrie_pb2 as pb
 
 SCHEMA = Path(__file__).resolve().parent / "schema.sql"
+log = logging.getLogger("telemetrie")
 
 
 def _instant(ts) -> datetime:
@@ -45,23 +48,48 @@ class DepotMemoire:
 
 
 class DepotPostgres:
-    """Dépôt PostgreSQL (psycopg 3). Une connexion partagée, protégée par un verrou (serveur gRPC multi-fils)."""
+    """Dépôt PostgreSQL (psycopg 3). Une connexion partagée, protégée par un verrou (serveur gRPC multi-fils),
+    rouverte automatiquement si elle a été coupée."""
 
     def __init__(self, dsn: str, schema: str | None = None):
-        import psycopg  # importé ici : le mode mémoire n'exige pas le pilote
-
         if schema is not None and not re.fullmatch(r"[a-z_][a-z0-9_]*", schema):
             raise ValueError(f"nom de schéma invalide : {schema}")
+        self._dsn, self._schema = dsn, schema
         self._verrou = threading.Lock()
-        self._cnx = psycopg.connect(dsn, autocommit=True)
+        self._cnx = self._connecter()
         with self._cnx.cursor() as c:
-            if schema:
-                c.execute(f"CREATE SCHEMA IF NOT EXISTS {schema}")
-                c.execute(f"SET search_path TO {schema}")
             c.execute(SCHEMA.read_text(encoding="utf-8"))
 
+    def _connecter(self):
+        import psycopg  # importé ici : le mode mémoire n'exige pas le pilote
+
+        cnx = psycopg.connect(self._dsn, autocommit=True)
+        if self._schema:
+            cnx.execute(f"CREATE SCHEMA IF NOT EXISTS {self._schema}")
+            cnx.execute(f"SET search_path TO {self._schema}")
+        return cnx
+
+    def _executer(self, operation):
+        """Exécute operation(connexion) sous le verrou ; si la connexion était coupée, la rouvre et réessaie une fois.
+        La transaction interrompue n'a pas été validée : la rejouer n'enregistre rien en double."""
+        import psycopg
+
+        with self._verrou:
+            try:
+                return operation(self._cnx)
+            except psycopg.OperationalError:
+                if not self._cnx.broken and not self._cnx.closed:
+                    raise
+                log.warning("Connexion PostgreSQL perdue : reconnexion")
+                self._cnx = self._connecter()  # si la base est encore indisponible, l'erreur remonte au capteur
+                return operation(self._cnx)
+
     def enregistrer(self, mesure, alerte=None):
-        with self._verrou, self._cnx.transaction(), self._cnx.cursor() as c:
+        return self._executer(lambda cnx: self._inserer(cnx, mesure, alerte))
+
+    @staticmethod
+    def _inserer(cnx, mesure, alerte):
+        with cnx.transaction(), cnx.cursor() as c:
             c.execute("INSERT INTO mesure (patient_id, capteur, type, valeur, horodatage) VALUES (%s, %s, %s, %s, %s) "
                       "RETURNING id",
                       (mesure.identifiant_patient, mesure.identifiant_capteur or None, pb.TypeMesure.Name(mesure.type),
@@ -78,9 +106,11 @@ class DepotPostgres:
 
     def requete(self, sql, params=None):
         """Lecture simple (tests et diagnostic)."""
-        with self._verrou, self._cnx.cursor() as c:
-            c.execute(sql, params)
-            return c.fetchall()
+        def lire(cnx):
+            with cnx.cursor() as c:
+                c.execute(sql, params)
+                return c.fetchall()
+        return self._executer(lire)
 
     def fermer(self):
         self._cnx.close()
