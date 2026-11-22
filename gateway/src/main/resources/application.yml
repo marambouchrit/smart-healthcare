@@ -1,0 +1,46 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: gateway
+  cloud:
+    gateway:
+      server:
+        webflux:
+          # Routes publiques (docs/DECISIONS.md, « Ports et routes ») ; les chemins sont transmis tels quels.
+          # Les adresses des services se surchargent par variables d'environnement (noms de conteneurs dans Docker).
+          routes:
+            # Service SOAP — Dossier & CNAM (y compris ?wsdl pour SoapUI)
+            - id: soap-dossier
+              uri: ${GATEWAY_SOAP_URL:http://localhost:8081}
+              predicates:
+                - Path=/ws/dossier,/ws/dossier/**
+              filters:
+                # CXF écrit l'adresse du service dans le WSDL à partir de l'en-tête Host : on garde celui du client
+                # pour que SoapUI reçoive l'adresse de la gateway et non le nom interne du conteneur
+                - PreserveHostHeader
+            # Service REST — Portail & rendez-vous
+            - id: rest-portail
+              uri: ${GATEWAY_REST_URL:http://localhost:8082}
+              predicates:
+                - Path=/api/**
+            # Documentation REST : Swagger UI affiche le contrat (D29)
+            - id: rest-portail-documentation
+              uri: ${GATEWAY_REST_URL:http://localhost:8082}
+              predicates:
+                - Path=/swagger-ui.html,/swagger-ui/**,/openapi/**,/v3/api-docs,/v3/api-docs/**
+            # Service GraphQL — Tableau de bord (+ GraphiQL pour les tests)
+            - id: graphql-dashboard
+              uri: ${GATEWAY_GRAPHQL_URL:http://localhost:8083}
+              predicates:
+                - Path=/graphql,/graphiql,/graphiql/**
+            # Orchestrateur (+ flux SSE des alertes, P3.5)
+            - id: orchestrator
+              uri: ${GATEWAY_ORCHESTRATOR_URL:http://localhost:8084}
+              predicates:
+                - Path=/orchestrator/**,/events
+
+logging:
+  level:
+    tn.ginf.smarthealthcare.gateway: INFO

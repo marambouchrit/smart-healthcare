@@ -1,15 +1,15 @@
-# Smart Healthcare — composition Docker (P3.2, D8 / D35 / D42).
+# Smart Healthcare — composition Docker (P3.2 / P3.3, D8 / D35 / D42 / D43).
 # Toutes les images se construisent depuis la racine du dépôt (le code est généré depuis contracts/, D40).
 #
-#   docker compose up -d --build         # construit et démarre PostgreSQL + les 5 services
+#   docker compose up -d --build         # construit et démarre PostgreSQL, les 5 services et la gateway
 #   docker compose run --rm -e SCENARIO=scenarios/demo-alertes.json iot-simulator
 #                                        # capteurs IoT à la demande (profil « demo », D42)
 #   docker compose logs -f orchestrator  # suit les workflows d'alerte
 #   docker compose down                  # arrête (les données restent dans le volume)
 #   docker compose down -v               # arrête et efface les données
 #
-# Ports publiés sur l'hôte : PostgreSQL 5433 (D35) ; 8081–8084 TEMPORAIREMENT, jusqu'à la gateway (P3.3),
-# qui deviendra le seul point d'entrée (8080). Le port gRPC 50051 n'est pas publié.
+# Point d'entrée unique : la gateway sur http://localhost:8080 (D43). Les services ne publient aucun port ;
+# seul PostgreSQL reste joignable depuis l'hôte (5433, D35) pour le développement et les tests.
 # Mots de passe de DÉVELOPPEMENT uniquement (surchargeables par variables d'environnement ou fichier .env).
 
 services:
@@ -41,8 +41,6 @@ services:
       SOAP_DB_URL: jdbc:postgresql://postgres:5432/soap_dossier
       SOAP_DB_USER: soap_dossier
       SOAP_DB_PASSWORD: ${SOAP_DB_PASSWORD:-soap_dossier_dev}
-    ports:
-      - "8081:8081"   # temporaire, retiré en P3.3 (gateway)
     depends_on:
       postgres:
         condition: service_healthy
@@ -57,8 +55,6 @@ services:
       PORTAIL_DB_URL: jdbc:postgresql://postgres:5432/rest_portail
       PORTAIL_DB_USER: rest_portail
       PORTAIL_DB_PASSWORD: ${PORTAIL_DB_PASSWORD:-rest_portail_dev}
-    ports:
-      - "8082:8082"   # temporaire, retiré en P3.3 (gateway)
     depends_on:
       postgres:
         condition: service_healthy
@@ -73,8 +69,6 @@ services:
       DASHBOARD_DB_URL: jdbc:postgresql://postgres:5432/graphql_dashboard
       DASHBOARD_DB_USER: graphql_dashboard
       DASHBOARD_DB_PASSWORD: ${DASHBOARD_DB_PASSWORD:-graphql_dashboard_dev}
-    ports:
-      - "8083:8083"   # temporaire, retiré en P3.3 (gateway)
     depends_on:
       postgres:
         condition: service_healthy
@@ -104,13 +98,31 @@ services:
       ORCHESTRATEUR_DOSSIER_URL: http://soap-dossier:8081/ws/dossier
       ORCHESTRATEUR_PORTAIL_URL: http://rest-portail:8082
       ORCHESTRATEUR_TABLEAUDEBORD_URL: http://graphql-dashboard:8083/graphql
-    ports:
-      - "8084:8084"   # temporaire, retiré en P3.3 (gateway : /orchestrator/**, /events)
     depends_on:
       - grpc-telemetrie
       - soap-dossier
       - rest-portail
       - graphql-dashboard
+
+  # API Gateway — seul port publié (8080) : /ws/dossier/**, /api/**, /graphql, /orchestrator/**, /events
+  gateway:
+    build:
+      context: .
+      dockerfile: gateway/Dockerfile
+    image: smart-healthcare/gateway
+    environment:
+      GATEWAY_SOAP_URL: http://soap-dossier:8081
+      GATEWAY_REST_URL: http://rest-portail:8082
+      GATEWAY_GRAPHQL_URL: http://graphql-dashboard:8083
+      GATEWAY_ORCHESTRATOR_URL: http://orchestrator:8084
+    ports:
+      # Port de l'hôte configurable (D43) : 8080 par défaut ; GATEWAY_PORT dans .env si 8080 est déjà pris sur le poste
+      - "${GATEWAY_PORT:-8080}:8080"
+    depends_on:
+      - soap-dossier
+      - rest-portail
+      - graphql-dashboard
+      - orchestrator
 
   # Capteurs IoT virtuels — lancés à la demande seulement (profil « demo », D42) :
   #   docker compose run --rm -e SCENARIO=scenarios/demo-alertes.json iot-simulator

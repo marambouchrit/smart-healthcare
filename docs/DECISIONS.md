@@ -48,6 +48,7 @@ Toute décision prise avec l'utilisateur est notée ici. Une décision ne change
 | D40 | 2026-11-21 | P3.1 couvre les Dockerfiles des composants existants (SOAP, REST, GraphQL, gRPC, orchestrateur, capteurs IoT) ; le Dockerfile de la gateway est écrit et vérifié avec P3.3, celui du client web en phase 4 | Choix de l'utilisatrice : chaque Dockerfile est vérifié quand son composant existe |
 | D41 | 2026-11-21 | JWT émis **et** vérifié par la gateway : point `/auth/login` avec des comptes de démonstration (patient, médecin, administrateur) (réponse à Q1) | Choix de l'utilisatrice : un seul composant gère la sécurité |
 | D42 | 2026-11-21 | `docker-compose.yml` (P3.2) : PostgreSQL + SOAP, REST, GraphQL, gRPC, orchestrateur construits depuis la racine du dépôt ; configuration uniquement par variables d'environnement (noms de conteneurs : `postgres:5432`, `grpc-telemetrie`, `soap-dossier`…) ; services Spring et gRPC démarrés après PostgreSQL `healthy` ; ports **8081–8084 publiés temporairement** jusqu'à la gateway (P3.3), 50051 jamais publié ; simulateur IoT **à la demande** (profil `demo`, `docker compose run --rm -e SCENARIO=… iot-simulator`) | Choix de l'utilisatrice : tester avec SoapUI / Postman / GraphiQL avant P3.3 ; `up` ne déclenche aucune alerte tout seul |
+| D43 | 2026-11-22 | Gateway (P3.3) : Spring Cloud Gateway **réactif** (`spring-cloud-starter-gateway-server-webflux`, Spring Cloud 2025.0.3) ; routes de la table ci-dessous, chemins transmis tels quels, adresses des services par variables `GATEWAY_*_URL` ; routes de test en plus : `/swagger-ui.html`, `/swagger-ui/**`, `/openapi/**`, `/v3/api-docs` (REST) et `/graphiql` (GraphQL) ; `PreserveHostHeader` sur la route SOAP pour que le WSDL annonce l'adresse de la gateway ; plus aucun port de service publié (fin de la mesure temporaire de D42) ; port de l'hôte **`${GATEWAY_PORT:-8080}`** (8080 par défaut, `.env` local `GATEWAY_PORT=8090` sur le poste de développement où le listener Oracle occupe 8080), port interne toujours 8080 | WebFlux relaie le flux SSE sans bloquer de thread ; SoapUI, Swagger UI et GraphiQL restent utilisables par la seule porte d'entrée ; même solution que PostgreSQL (5433) pour un port déjà pris |
 
 ## Ports et routes
 
@@ -87,6 +88,7 @@ Toute décision prise avec l'utilisateur est notée ici. Une décision ne change
 | Images de base Docker | eclipse-temurin:21.0.9_10-jdk-noble / 21.0.9_10-jre-noble ; python:3.12.16-slim-bookworm | 2026-11-21 |
 | grpc-java (orchestrateur) | 1.85.1 ; protobuf-java 4.36.2 (même protobuf 36.2 que Python) | 2026-11-17 |
 | protobuf-maven-plugin (org.xolstice) / os-maven-plugin | 0.6.1 / 1.7.1 | 2026-11-17 |
+| Spring Cloud (gateway) | 2025.0.3 (construit sur Spring Boot 3.5.15) ; Spring Cloud Gateway 4.3.5 | 2026-11-22 |
 | zeep (outil de vérification du WSDL) | 4.3.3 | 2026-11-17 |
 | graphql-core (outil de vérification du schéma GraphQL) | 3.3.2 | 2026-11-17 |
 | springdoc-openapi-starter-webmvc-ui (service REST) | 2.10.1 (cible Spring Boot 3.5.16) | 2026-11-21 |
